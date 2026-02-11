@@ -148,6 +148,7 @@ const types = {
 - All handlers receive `api` as the last parameter
 - `start` is optional
 
+
 ## Systems
 
 Global logic that runs after all entity handlers for the same event:
@@ -289,6 +290,125 @@ const store = createStore({
 - `add` - Add entity (triggers `create`)
 - `remove` - Remove entity (triggers `destroy`)
 
+
+## Migration from Redux Toolkit (RTK)
+
+The package exposes migration helpers at `@inglorious/store/migration/rtk`:
+
+```javascript
+import {
+  convertSlice,
+  convertAsyncThunk,
+  createRTKCompatDispatch,
+} from "@inglorious/store/migration/rtk"
+```
+
+### What `convertSlice()` does
+
+- Converts `slice.caseReducers` into Inglorious handlers with the same names.
+- Wraps RTK reducers with an RTK-like action object: `{ type, payload }`.
+- Generates a `create(entity)` handler that copies `slice.getInitialState()` into the entity.
+- Can merge async thunk mappings via `options.asyncThunks`.
+- Can merge custom handlers via `options.extraHandlers`.
+
+### What `convertAsyncThunk()` does
+
+Maps RTK lifecycle handlers to `handleAsync` lifecycle:
+
+- `onPending` -> `start`
+- `payloadCreator` -> `run`
+- `onFulfilled` -> `success`
+- `onRejected` -> `error`
+- `onSettled` -> `finally`
+- Adapts thunk API dispatch to `api.dispatch` (with `notify` fallback) when calling `payloadCreator(arg, thunkAPI)`.
+- Supports `scope: "entity" | "type" | "global"` (default: `"entity"`).
+- If `onPending` is omitted, no `*Start` handler is generated.
+
+### Quick migration pattern
+
+```javascript
+import { createStore } from "@inglorious/store"
+import { convertSlice } from "@inglorious/store/migration/rtk"
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
+
+const fetchTodos = createAsyncThunk("todos/fetchTodos", async () => {
+  const res = await fetch("/api/todos")
+  return res.json()
+})
+
+const todosSlice = createSlice({
+  name: "todos",
+  initialState: { items: [], status: "idle", error: null },
+  reducers: {
+    addTodo(state, action) {
+      state.items.push({
+        id: Date.now(),
+        text: action.payload,
+        completed: false,
+      })
+    },
+    toggleTodo(state, action) {
+      const todo = state.items.find((t) => t.id === action.payload)
+      if (todo) todo.completed = !todo.completed
+    },
+  },
+})
+
+const todoList = convertSlice(todosSlice, {
+  asyncThunks: {
+    fetchTodos: {
+      payloadCreator: fetchTodos.payloadCreator,
+      onPending: (entity) => {
+        entity.status = "loading"
+      },
+      onFulfilled: (entity, todos) => {
+        entity.status = "success"
+        entity.items = todos
+      },
+      onRejected: (entity, error) => {
+        entity.status = "error"
+        entity.error = error.message
+      },
+    },
+  },
+})
+
+const store = createStore({
+  types: { todoList },
+  autoCreateEntities: true,
+})
+
+store.notify("#todoList:addTodo", "Buy milk")
+store.notify("#todoList:toggleTodo", 1)
+store.notify("#todoList:fetchTodos")
+```
+
+`convertSlice()` expects a slice object with `name`, `getInitialState()`, and `caseReducers` (the object returned by `createSlice()` provides these).
+
+### RTK dispatch compatibility layer
+
+Use `createRTKCompatDispatch(api, entityId)` to keep RTK-style action calls while migrating:
+
+```javascript
+const dispatch = createRTKCompatDispatch(api, "todos")
+
+dispatch({ type: "todos/addTodo", payload: "Buy milk" })
+// -> api.notify("#todos:addTodo", "Buy milk")
+```
+
+Notes:
+
+- Function thunks are not supported in compat mode (it logs a warning).
+- Non-standard action types fall back to `#<entityId>:<type>`.
+
+### Mapping cheatsheet
+
+- `dispatch(addTodo(payload))` -> `api.notify("#todos:addTodo", payload)`
+- `dispatch(toggleTodo(id))` -> `api.notify("#todos:toggleTodo", id)`
+- `addCase(thunk.pending)` -> `onPending` / `fetchXStart`
+- `addCase(thunk.fulfilled)` -> `onFulfilled` / `fetchXSuccess`
+- `addCase(thunk.rejected)` -> `onRejected` / `fetchXError`
+
 ## Testing
 
 ```javascript
@@ -381,3 +501,4 @@ const types = {
   },
 }
 ```
+
