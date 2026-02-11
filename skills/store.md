@@ -308,6 +308,7 @@ import {
 - Converts `slice.caseReducers` into Inglorious handlers with the same names.
 - Wraps RTK reducers with an RTK-like action object: `{ type, payload }`.
 - Generates a `create(entity)` handler that copies `slice.getInitialState()` into the entity.
+- Detects RTK `create.asyncThunk` reducers and maps lifecycle handlers automatically.
 - Can merge async thunk mappings via `options.asyncThunks`.
 - Can merge custom handlers via `options.extraHandlers`.
 
@@ -323,6 +324,28 @@ Maps RTK lifecycle handlers to `handleAsync` lifecycle:
 - Adapts thunk API dispatch to `api.dispatch` (with `notify` fallback) when calling `payloadCreator(arg, thunkAPI)`.
 - Supports `scope: "entity" | "type" | "global"` (default: `"entity"`).
 - If `onPending` is omitted, no `*Start` handler is generated.
+
+### `buildCreateSlice` + `create.asyncThunk`
+
+`convertSlice()` supports slices created with:
+
+```javascript
+import { buildCreateSlice, asyncThunkCreator } from "@reduxjs/toolkit"
+
+const createAppSlice = buildCreateSlice({
+  creators: { asyncThunk: asyncThunkCreator },
+})
+```
+
+For a reducer like `fetchTodo: create.asyncThunk(...)`:
+
+- Without `options.asyncThunks.fetchTodo.payloadCreator`, lifecycle handlers are generated from RTK case reducers:
+- `fetchTodoPending`, `fetchTodoFulfilled`, `fetchTodoRejected`, `fetchTodoSettled` (when defined)
+- With `options.asyncThunks.fetchTodo.payloadCreator`, runnable async handlers are generated:
+- `fetchTodo`, `fetchTodoStart`, `fetchTodoRun`, `fetchTodoSuccess`, `fetchTodoError`, `fetchTodoFinally`
+- Pending/fulfilled/rejected/settled reducers from the RTK slice are reused as defaults.
+
+Use the second mode when you want full trigger-and-run migration behavior.
 
 ### Quick migration pattern
 
