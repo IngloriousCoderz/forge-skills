@@ -6,6 +6,10 @@
 npm install @inglorious/web
 ```
 
+## Companion Guide
+
+- For file structure, styling, theming, stories, and test conventions for web UI types, see `skills/web-best-practices.md`.
+
 ## Core Concepts
 
 **Architecture:** Re-render everything → let lit-html update only what changed.

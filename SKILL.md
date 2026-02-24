@@ -56,6 +56,7 @@ Use for web UI architecture with `@inglorious/store` and `lit-html`.
 - Whole-tree re-rendering with efficient DOM updates
 - Built-in form, table, list, select, and router modules
 - Testing patterns
+- Web UI type conventions: `skills/web-best-practices.md`
 
 ### [@inglorious/charts](skills/charts.md)
 
@@ -64,6 +65,15 @@ Use for SVG chart construction.
 - Declarative and composable chart primitives
 - Configuration-driven chart behavior
 - SSR-friendly chart rendering
+
+### [@inglorious/ui](skills/ui.md)
+
+Use for design system components and theming.
+
+- Render-function components (button, input, card, etc.)
+- CSS tokens for colors, spacing, radii, typography
+- Themeable with Inglorious, Material, and Bootstrap themes
+- Light and dark mode variants
 
 ### [@inglorious/ssx](skills/ssx.md)
 
