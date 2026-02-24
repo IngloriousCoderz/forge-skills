@@ -29,15 +29,70 @@ Suggested top-level categories:
 
 Suggested structure:
 
-- `src/components/controls/button/...`
-- `src/components/controls/input/...`
-- `src/components/widgets/card/...`
+- `src/controls/button/...`
+- `src/controls/input/...`
+- `src/widgets/card/...`
 
 Common practice in design systems:
 
 - Start flat while the library is small.
 - Introduce categories once discovery or ownership becomes harder.
 - Keep export paths stable (barrels or explicit exports) so internal folder moves do not break consumers.
+
+## Type composition and sub-renderers
+
+### Behavior composition (recommended)
+
+Treat a type as a composition unit:
+
+- A behavior object: `{ render, click, ... }`
+- Or a behavior array: `[baseBehavior, decoratorBehaviorFn, overrideBehavior]`
+
+Prefer behavior arrays for extensibility and cross-cutting concerns.
+
+Example:
+
+```javascript
+const baseButton = { render, click };
+
+function withRenderValidation(type) {
+  return {
+    ...type,
+    render(entity, api) {
+      if (entity == null || api == null) {
+        throw new TypeError("render(entity, api): both arguments are required");
+      }
+      return type.render(entity, api);
+    },
+  };
+}
+
+export const button = [baseButton, withRenderValidation];
+```
+
+### Overridable sub-renderers (recommended)
+
+Split large templates into overridable sub-renderers and call them through the resolved type.
+
+Example pattern:
+
+```javascript
+export function render(entity, api) {
+  const type = api.getType(entity.type);
+  return html`
+    <div>
+      ${type.renderHeader(entity, api)} ${type.renderBody(entity, api)}
+      ${type.renderFooter(entity, api)}
+    </div>
+  `;
+}
+
+export function renderFooter() {
+  return null;
+}
+```
+
+Then customize via composition instead of putting templates/functions into entities.
 
 ## Choose a styling mode
 
@@ -112,6 +167,7 @@ This ensures theme switching actually changes component tokens.
 - Build classes predictably (for example with `classMap` or a helper).
 - Dispatch events through `api.notify()` using stable event ids such as `#${entity.id}:click`.
 - Add concise JSDoc typedef imports for entity and API types when useful.
+- Extract sub-renderers (`renderHeader`, `renderBody`, `renderFooter`, etc.) when template complexity grows.
 
 ### `style.module.css` or `style.css`
 
@@ -133,18 +189,21 @@ This ensures theme switching actually changes component tokens.
 
 ### `index.js`
 
-- Compose renderers and handlers into a single type object.
+- Compose the type surface from behaviors/renderers/handlers.
+- Prefer behavior arrays when you need decorators, validation wrappers, or override layers.
 - Re-export only selected helpers as part of the public API.
 
-Recommended pattern:
+Recommended patterns:
 
 ```javascript
-import * as helpers from "./helpers.js"
-import * as handlers from "./handlers.js"
-import * as renderers from "./template.js"
+// Object style (simple)
+export const button = { ...handlers, ...renderers };
+```
 
-export const button = { ...handlers, ...renderers }
-export const { formatLabel } = helpers
+```javascript
+// Behavior-array style (extensible)
+const baseButton = { ...handlers, ...renderers };
+export const button = [baseButton, withRenderValidation];
 ```
 
 If optional files are absent, omit those imports/exports instead of creating empty modules.
@@ -170,8 +229,8 @@ If optional files are absent, omit those imports/exports instead of creating emp
 For published packages, add a typed public contract (for example `types/button.d.ts`) that matches runtime behavior:
 
 - Entity interface with supported props and unions
-- Type interface for `render` and handlers
-- Exported `button` declaration
+- Type interface for `render` and handlers/sub-renderers
+- Exported type declaration
 
 ## Migration notes
 
@@ -180,6 +239,7 @@ For published packages, add a typed public contract (for example `types/button.d
 - Add `index.js` as the single public entry for the type.
 - If the type uses BEM classes, rename to flat prefixed classes and nest selectors under the root class.
 - If themes use `:root` component tokens, migrate them to theme-class scoping.
+- If entities contain template/function fields, migrate those customizations to type composition and sub-renderer overrides.
 - Update imports to target the new type entry, for example:
   - `import { button } from "./types/button/index.js"`
 
@@ -192,4 +252,5 @@ For published packages, add a typed public contract (for example `types/button.d
 - Theme tokens are class-scoped and Storybook theme switching updates class names.
 - Stories are controls-friendly by default (single instance per args story).
 - Tests verify both visual contract (DOM/classes) and behavior contract (events).
-- `index.js` exposes a clean public API and keeps internals private by default.
+- Composition strategy is explicit (object or behavior array, with behavior arrays preferred for extensibility).
+- Complex templates are decomposed into overridable sub-renderers.
