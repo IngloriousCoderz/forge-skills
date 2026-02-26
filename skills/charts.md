@@ -50,12 +50,12 @@ More control - compose chart components. **Requires `chart` type to be registere
 
 ```javascript
 // In store/index.js
-import { charts, lineChart } from "@inglorious/charts"
+import { chart, lineChart } from "@inglorious/charts"
 
 export const store = createStore({
   types: {
     line: lineChart,
-    chart: charts, // Required for chart() helper
+    chart, // Required for chart() helper
   },
   entities,
 })
@@ -134,6 +134,34 @@ c.renderLineChart([
   c.renderLine({ dataKey: "value", stroke: "#8884d8", showDots: true }),
 ])
 ```
+
+### Realtime Streaming (Line)
+
+Realtime is entity-first and works in both Config and Composition rendering modes.
+
+```javascript
+{
+  type: "line",
+  realtime: {
+    enabled: true,
+    // optional overrides:
+    // intervalMs: 500,
+    // visibleWindow: 30,
+    // min: -80,
+    // max: 220,
+    // variation: 25,
+    // currentValue: 220,
+    // maxHistory: 2000,
+  },
+}
+```
+
+Runtime notes:
+
+- Realtime is configured on chart entities (`realtime: { enabled, ... }`)
+- No public realtime system setup is required in `createStore`
+- An internal scheduler provides a single shared pulse
+- Each entity applies its own cadence via `realtime.intervalMs` (no per-entity timers)
 
 ### Area Chart
 
@@ -491,7 +519,7 @@ import { charts } from "@inglorious/charts"
 export const store = createStore({
   types: {
     line: lineChart,
-    chart: charts, // Required for chart() helper
+    chart, // Required for chart() helper
   },
   entities,
 })
