@@ -86,6 +86,13 @@ ${chart(api, "myChart", (c) =>
 
 ### Line Chart
 
+Line charts expose two type entries:
+
+- `lineBaseChart`: base line renderer without realtime behavior.
+- `lineChart`: default line type composed as `[lineBaseChart, withRealtime]`.
+
+Use `lineBaseChart` when you need custom composition order in app/store types.
+
 **Config mode:**
 
 ```javascript
@@ -135,6 +142,22 @@ c.renderLineChart([
 ])
 ```
 
+**Type composition mode (store types):**
+
+```javascript
+import { lineBaseChart, lineChart, withRealtime } from "@inglorious/charts"
+
+export const store = createStore({
+  types: {
+    // Standard realtime-enabled line type
+    line: lineChart,
+
+    // Custom composition example
+    customLine: [lineBaseChart, withRealtime, myCustomBehavior],
+  },
+})
+```
+
 ### Realtime Streaming (Line)
 
 Realtime is entity-first and works in both Config and Composition rendering modes.
@@ -147,11 +170,8 @@ Realtime is entity-first and works in both Config and Composition rendering mode
     // optional overrides:
     // intervalMs: 500,
     // visibleWindow: 30,
-    // min: -80,
-    // max: 220,
-    // variation: 25,
-    // currentValue: 220,
     // maxHistory: 2000,
+    // min/max/variation can be provided per entity if needed
   },
 }
 ```
@@ -162,6 +182,7 @@ Runtime notes:
 - No public realtime system setup is required in `createStore`
 - An internal scheduler provides a single shared pulse
 - Each entity applies its own cadence via `realtime.intervalMs` (no per-entity timers)
+- If no `min/max` are provided, realtime resolves from entity values and falls back to `0..100`
 
 ### Area Chart
 
@@ -514,7 +535,7 @@ Helper for Composition mode. **Requires `chart` type to be registered in store:*
 
 ```javascript
 // In store/index.js
-import { charts } from "@inglorious/charts"
+import { chart, lineChart } from "@inglorious/charts"
 
 export const store = createStore({
   types: {
@@ -538,7 +559,9 @@ chart(api, "myChart", (c) => c.renderLineChart([...], config))
 
 ```javascript
 import {
+  lineBaseChart,
   lineChart,
+  withRealtime,
   areaChart,
   barChart,
   pieChart,
