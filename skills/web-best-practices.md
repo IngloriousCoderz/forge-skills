@@ -1,12 +1,12 @@
 # Best Practices: File Structure for Inglorious Web Types
 
-This document defines recommended folder structures and export patterns for Inglorious Web types. Each type lives in its own folder so rendering, styling, behavior, and documentation stay modular and predictable.
+This document defines recommended folder structures and export patterns for Inglorious Web types. Each type lives in its own folder so rendering, styling, behavior, and documentation stay modular and predictable. Prefer plain props-first renderers for primitives, and let `index.js` attach store behavior only when needed.
 
 ## Standard structure
 
 For a type named `button`, create `types/button` with the following files:
 
-- `template.js`: Exports `render(entity, api)` and optional sub-renderers such as `renderRow(entity, row, api)`.
+- `template.js`: Exports plain renderers such as `render(props)` and optional sub-renderers such as `renderItem(props, payload)`.
 - `style.module.css` or `style.css`: Styles used by `template.js`.
 - `handlers.js` (optional): Named exports for event handlers and event-related logic.
 - `helpers.js` (optional): Named exports for reusable utilities used by template/handlers.
@@ -41,58 +41,111 @@ Common practice in design systems:
 
 ## Type composition and sub-renderers
 
-### Behavior composition (recommended)
+### Simple primitives (recommended)
 
-Treat a type as a composition unit:
+For simple primitives such as `input`, `button`, or `select`, prefer plain render functions that accept props.
 
-- A behavior object: `{ render, click, ... }`
-- Or a behavior array: `[baseBehavior, decoratorBehaviorFn, overrideBehavior]`
-
-Prefer behavior arrays for extensibility and cross-cutting concerns.
+- Use `render(props)` in `template.js`.
+- Treat event handlers such as `onChange` or `onClick` as normal props.
+- Do not force a store API into simple templates.
 
 Example:
 
 ```javascript
-const baseButton = { render, click };
+export function render(props) {
+  const { value = "", onChange } = props;
 
-function withRenderValidation(type) {
-  return {
-    ...type,
-    render(entity, api) {
-      if (entity == null || api == null) {
-        throw new TypeError("render(entity, api): both arguments are required");
-      }
-      return type.render(entity, api);
-    },
-  };
+  return html`<input .value=${value} @input=${(event) => onChange?.(event.target.value)} />`;
 }
-
-export const button = [baseButton, withRenderValidation];
 ```
 
-### Overridable sub-renderers (recommended)
+### Wiring a primitive to the store
 
-Split large templates into overridable sub-renderers and call them through the resolved type.
+If a primitive needs store integration, keep the template plain and attach behavior in `index.js`.
 
-Example pattern:
+Example:
 
 ```javascript
-export function render(entity, api) {
-  const type = api.getType(entity.type);
-  return html`
-    <div>
-      ${type.renderHeader(entity, api)} ${type.renderBody(entity, api)}
-      ${type.renderFooter(entity, api)}
-    </div>
-  `;
-}
+import * as renderers from "./template.js";
 
-export function renderFooter() {
-  return null;
-}
+export const input = {
+  ...renderers,
+};
+
+export const myInput = {
+  ...renderers,
+  change(entity, value) {
+    entity.value = value;
+  },
+  render(entity, api) {
+    return renderers.render({
+      ...entity,
+      onChange: (value) => api.notify(`#${entity.id}:change`, value),
+    });
+  },
+};
 ```
 
-Then customize via composition instead of putting templates/functions into entities.
+This keeps `template.js` presentational and moves store wiring to the container layer.
+
+### Composite primitives must be objects
+
+If a primitive has overridable sub-renderers such as `renderHeader`, `renderFooter`, or `renderItem`, export it as an object with methods.
+
+Example:
+
+```javascript
+export const card = {
+  render(props) {
+    return html`<article>${this.renderBody(props)} ${this.renderFooter(props)}</article>`;
+  },
+  renderBody(props) {
+    return props.children;
+  },
+  renderFooter() {
+    return null;
+  },
+};
+```
+
+Then consumers can override behavior predictably:
+
+```javascript
+const myCard = {
+  ...card,
+  renderFooter(props) {
+    return html`<footer>${props.footer}</footer>`;
+  },
+};
+```
+
+### Stateful primitives
+
+A few primitives such as `combobox` or `data-grid` may need richer behavior, but the template should still stay plain.
+
+- Keep `template.js` as an object of render methods that accept props.
+- Use `index.js` to wire store notifications and derived event handlers.
+- Avoid introducing ad-hoc local state objects inside the primitive.
+- If true local component state is required, prefer a web component instead.
+
+Example:
+
+```javascript
+import * as renderers from "./template.js";
+
+export const combobox = {
+  ...renderers,
+  toggle(entity) {
+    entity.isOpen = !entity.isOpen;
+  },
+  render(entity, api) {
+    return renderers.render({
+      ...entity,
+      onToggle: () => api.notify(`#${entity.id}:toggle`),
+    });
+  },
+};
+```
 
 ## Choose a styling mode
 
@@ -162,12 +215,12 @@ This ensures theme switching actually changes component tokens.
 
 ### `template.js`
 
-- Keep `render(entity, api)` pure and side-effect free.
-- Destructure entity props with defaults near the top.
-- Build classes predictably (for example with `classMap` or a helper).
-- Dispatch events through `api.notify()` using stable event ids such as `#${entity.id}:click`.
-- Add concise JSDoc typedef imports for entity and API types when useful.
-- Extract sub-renderers (`renderHeader`, `renderBody`, `renderFooter`, etc.) when template complexity grows.
+- Keep templates pure and side-effect free.
+- Prefer `render(props)` for simple primitives.
+- Treat event handlers such as `onChange`, `onClick`, and `onToggle` as normal props.
+- Add concise JSDoc typedef imports for props and payload types when useful.
+- Extract sub-renderers (`renderHeader`, `renderBody`, `renderFooter`, `renderItem`, etc.) when template complexity grows.
+- If sub-renderers exist, export an object with methods so consumers can override them.
 
 ### `style.module.css` or `style.css`
 
@@ -189,21 +242,32 @@ This ensures theme switching actually changes component tokens.
 
 ### `index.js`
 
-- Compose the type surface from behaviors/renderers/handlers.
-- Prefer behavior arrays when you need decorators, validation wrappers, or override layers.
+- Use `index.js` as the container layer when store wiring is needed.
+- Map store events to plain handler props passed into `template.js`.
 - Re-export only selected helpers as part of the public API.
 
 Recommended patterns:
 
 ```javascript
-// Object style (simple)
-export const button = { ...handlers, ...renderers };
+// Pure primitive
+export { render } from "./template.js";
 ```
 
 ```javascript
-// Behavior-array style (extensible)
-const baseButton = { ...handlers, ...renderers };
-export const button = [baseButton, withRenderValidation];
+// Store-wired primitive
+import * as handlers from "./handlers.js";
+import * as renderers from "./template.js";
+
+export const input = {
+  ...handlers,
+  ...renderers,
+  render(entity, api) {
+    return renderers.render({
+      ...entity,
+      onChange: (value) => api.notify(`#${entity.id}:change`, value),
+    });
+  },
+};
 ```
 
 If optional files are absent, omit those imports/exports instead of creating empty modules.
@@ -246,11 +310,13 @@ For published packages, add a typed public contract (for example `types/button.d
 ## Pre-ship checklist
 
 - Every type has its own folder.
-- `render(entity, api)` stays pure.
+- Simple primitives use plain `render(props)`.
+- Store wiring lives in `index.js`, not in simple templates.
 - Styling mode is explicit (`style.module.css` for local types, `style.css` + prefix/tokens for reusable design-system types).
 - Global component CSS avoids BEM and uses nested rules under one root selector.
 - Theme tokens are class-scoped and Storybook theme switching updates class names.
 - Stories are controls-friendly by default (single instance per args story).
 - Tests verify both visual contract (DOM/classes) and behavior contract (events).
-- Composition strategy is explicit (object or behavior array, with behavior arrays preferred for extensibility).
+- Composite primitives are exported as objects with overridable methods.
 - Complex templates are decomposed into overridable sub-renderers.
+- Stateful behavior is still wired through plain props; if true local state is needed, use a web component.
