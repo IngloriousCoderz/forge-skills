@@ -22,6 +22,7 @@ npm install @inglorious/ui
 - Templates always dispatch events via `api.notify()`
 - Handler logic lives in type definitions, not entities
 - Import CSS tokens and themes before component styles
+- UI primitive conventions: `ui-best-practices.md`
 
 ## Basic Setup
 

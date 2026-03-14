@@ -74,6 +74,7 @@ Use for design system components and theming.
 - CSS tokens for colors, spacing, radii, typography
 - Themeable with Inglorious, Material, and Bootstrap themes
 - Light and dark mode variants
+- UI primitive conventions: `skills/ui-best-practices.md`
 
 ### [@inglorious/ssx](skills/ssx.md)
 
