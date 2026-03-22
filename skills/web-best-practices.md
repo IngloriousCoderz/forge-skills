@@ -119,6 +119,58 @@ const myCard = {
 };
 ```
 
+### Composite primitives: prefer a base render function
+
+For composed primitives, expose a top-level `render()` that delegates to a named base renderer such as `renderPrimitive()`. This keeps `render()` overrideable while still letting users invoke the canonical internal implementation from their overrides.
+
+Example pattern (template renderers):
+
+```javascript
+export const primitive = {
+  render(props) {
+    return this.renderPrimitive(props);
+  },
+  renderPrimitive(props) {
+    return html`<div class="iw-primitive">
+      ${this.renderHeader?.(props)}
+      ${this.renderBody?.(props)}
+      ${this.renderFooter?.(props)}
+    </div>`;
+  },
+  renderHeader(props) {
+    // ...
+  },
+  renderBody(props) {
+    // ...
+  },
+  renderFooter(props) {
+    // ...
+  },
+};
+```
+
+Example pattern (type wiring):
+
+```javascript
+export const wiredPrimitive = {
+  ...handlers,
+  ...renderers,
+  render(entity, api) {
+    const id = entity.id;
+    const props = {
+      ...entity,
+      onChange: (value) => api.notify(`#${id}:change`, value),
+    };
+
+    return this.renderPrimitive(props);
+  },
+};
+```
+
+Do not call `this.render()` from `render()`; always delegate to a named base renderer (for example `renderPrimitive()`) to avoid infinite recursion.
+
+Avoid defining `render()` as a monolithic implementation for composite primitives. Prefer a single, named base renderer that can be reused from both the default `render()` and user overrides.
+
 ### Stateful primitives
 
 A few primitives such as `combobox` or `data-grid` may need richer behavior, but the template should still stay plain.
