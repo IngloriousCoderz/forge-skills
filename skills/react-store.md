@@ -15,44 +15,44 @@ Official React bindings for @inglorious/store, built on `react-redux` with a sim
 ### 1. Create a Store
 
 ```javascript
-import { createStore } from "@inglorious/store"
+import { createStore } from "@inglorious/store";
 
 const types = {
-  counter: {
+  Counter: {
     increment(entity) {
-      entity.value++
+      entity.value++;
     },
     decrement(entity) {
-      entity.value--
+      entity.value--;
     },
   },
-}
+};
 
 const entities = {
-  myCounter: { type: "counter", value: 0 },
-}
+  myCounter: { type: "Counter", value: 0 },
+};
 
-export const store = createStore({ types, entities })
+export const store = createStore({ types, entities });
 ```
 
 ### 2. Create React Bindings
 
 ```javascript
-import { createReactStore } from "@inglorious/react-store"
-import { store } from "./store"
+import { createReactStore } from "@inglorious/react-store";
+import { store } from "./store";
 
 export const { Provider, useSelector, useNotify, useEntity } =
-  createReactStore(store)
+  createReactStore(store);
 ```
 
 ### 3. Use in Components
 
 ```jsx
-import { useNotify, useEntity } from "./react-store"
+import { useNotify, useEntity } from "./react-store";
 
 function Counter() {
-  const notify = useNotify()
-  const { value } = useEntity("myCounter")
+  const notify = useNotify();
+  const { value } = useEntity("myCounter");
 
   return (
     <div>
@@ -60,7 +60,7 @@ function Counter() {
       <button onClick={() => notify("increment")}>+</button>
       <button onClick={() => notify("decrement")}>-</button>
     </div>
-  )
+  );
 }
 ```
 

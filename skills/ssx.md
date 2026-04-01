@@ -48,13 +48,13 @@ src/pages/
 Required. Returns a lit-html template.
 
 ```javascript
-import { html } from "@inglorious/web"
+import { html } from "@inglorious/web";
 
-export const index = {
+export const Index = {
   render(entity, api) {
-    return html`<h1>${entity.title}</h1>`
+    return html`<h1>${entity.title}</h1>`;
   },
-}
+};
 ```
 
 ### `metadata`
@@ -68,14 +68,14 @@ export const metadata = {
     description: "Welcome",
     "og:image": "/og-image.png",
   },
-}
+};
 
 export const metadata = (entity) => ({
   title: `${entity.user.name}'s Profile`,
   meta: {
     description: entity.user.bio,
   },
-})
+});
 ```
 
 ### `load(entity, page)`
@@ -84,8 +84,8 @@ Optional. Runs at build time for SSR data loading.
 
 ```javascript
 export async function load(entity, page) {
-  const response = await fetch("https://api.example.com/posts")
-  entity.posts = await response.json()
+  const response = await fetch("https://api.example.com/posts");
+  entity.posts = await response.json();
 }
 ```
 
@@ -95,8 +95,8 @@ For dynamic routes, use `page.params`:
 export async function load(entity, page) {
   const response = await fetch(
     `https://api.example.com/posts/${page.params.slug}`,
-  )
-  entity.post = await response.json()
+  );
+  entity.post = await response.json();
 }
 ```
 
@@ -108,11 +108,11 @@ Required for dynamic routes. Returns the paths to generate.
 export async function staticPaths() {
   const posts = await fetch("https://api.example.com/posts").then((r) =>
     r.json(),
-  )
+  );
   return posts.map((post) => ({
     params: { slug: post.slug },
     path: `/posts/${post.slug}`,
-  }))
+  }));
 }
 ```
 
@@ -122,11 +122,11 @@ Pages can use entity state like @inglorious/web:
 
 ```javascript
 // src/pages/about.js
-import { html } from "@inglorious/web"
+import { html } from "@inglorious/web";
 
-export const about = {
+export const About = {
   click(entity) {
-    entity.count++
+    entity.count++;
   },
   render(entity, api) {
     return html`
@@ -135,16 +135,16 @@ export const about = {
       <button @click=${() => api.notify(`#${entity.id}:click`)}>
         Increment
       </button>
-    `
+    `;
   },
-}
+};
 ```
 
 ```javascript
 // src/store/entities.js
 export const entities = {
-  about: { type: "about", count: 0 },
-}
+  about: { type: "About", count: 0 },
+};
 ```
 
 ## Client-Side Hydration & Navigation
@@ -153,8 +153,8 @@ SSX hydrates the pre-rendered HTML and wires up the @inglorious/web router.
 
 ```javascript
 // Programmatic navigation
-api.notify("#router:navigate", "/posts")
-api.notify("#router:navigate", { to: "/posts/123", replace: true })
+api.notify("#router:navigate", "/posts");
+api.notify("#router:navigate", { to: "/posts/123", replace: true });
 ```
 
 ## Site Configuration
@@ -182,7 +182,7 @@ export default {
   markdown: {
     theme: "github-dark",
   },
-}
+};
 ```
 
 ## Markdown Pages

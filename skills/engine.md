@@ -20,33 +20,33 @@ Functional game engine built on entity-based state management. Uses the same ent
 ## Basic Setup
 
 ```javascript
-import { Engine } from "@inglorious/engine/core/engine"
-import { createRenderer } from "@inglorious/renderer-2d"
+import { Engine } from "@inglorious/engine/core/engine";
+import { createRenderer } from "@inglorious/renderer-2d";
 
 const game = {
   types: {
-    player: {
+    Player: {
       update(entity, deltaTime) {
-        entity.position.x += entity.velocity.x * deltaTime
-        entity.position.y += entity.velocity.y * deltaTime
+        entity.position.x += entity.velocity.x * deltaTime;
+        entity.position.y += entity.velocity.y * deltaTime;
       },
     },
   },
   entities: {
     player1: {
-      type: "player",
+      type: "Player",
       position: { x: 0, y: 0 },
       velocity: { x: 100, y: 0 },
     },
   },
-}
+};
 
-const canvas = document.getElementById("canvas")
-const renderer = createRenderer(canvas)
-const engine = new Engine(renderer, game)
+const canvas = document.getElementById("canvas");
+const renderer = createRenderer(canvas);
+const engine = new Engine(renderer, game);
 
-await engine.init()
-engine.start()
+await engine.init();
+engine.start();
 ```
 
 ## Event System
@@ -61,11 +61,11 @@ The engine has built-in single-word events:
 
 ### Custom Events
 
-Use multi-word `camelCase` names for custom events to avoid conflicts:
+Use multi-word names for custom events to avoid conflicts:
 
 ```javascript
 const types = {
-  player: {
+  Player: {
     playerJump(entity) {
       /* ... */
     },
@@ -76,7 +76,7 @@ const types = {
       /* ... */
     },
   },
-}
+};
 ```
 
 ### Event Queue
@@ -85,16 +85,16 @@ Events are queued and processed once per frame:
 
 ```javascript
 const types = {
-  enemy: {
+  Enemy: {
     takeDamage(entity, damage) {
-      entity.health -= damage
+      entity.health -= damage;
       if (entity.health <= 0) {
         // This event is queued, processed next frame
-        api.notify("enemyDestroyed", entity.id)
+        api.notify("enemyDestroyed", entity.id);
       }
     },
   },
-}
+};
 ```
 
 ## Update Loop
@@ -103,19 +103,19 @@ The `update` event is fired every frame with `deltaTime`:
 
 ```javascript
 const types = {
-  player: {
+  Player: {
     update(entity, deltaTime) {
       // Movement based on time, not frame rate
-      entity.position.x += entity.velocity.x * deltaTime
-      entity.position.y += entity.velocity.y * deltaTime
+      entity.position.x += entity.velocity.x * deltaTime;
+      entity.position.y += entity.velocity.y * deltaTime;
 
       // Boundary checking
       if (entity.position.x > 800) {
-        entity.position.x = 0
+        entity.position.x = 0;
       }
     },
   },
-}
+};
 ```
 
 **Rules:**
@@ -128,25 +128,25 @@ const types = {
 
 ```javascript
 const types = {
-  bullet: {
+  Bullet: {
     create(entity) {
-      entity.createdAt = Date.now()
-      entity.lifetime = 2000 // 2 seconds
+      entity.createdAt = Date.now();
+      entity.lifetime = 2000; // 2 seconds
     },
 
     update(entity, deltaTime) {
-      entity.lifetime -= deltaTime * 1000
+      entity.lifetime -= deltaTime * 1000;
       if (entity.lifetime <= 0) {
-        api.notify("remove", { id: entity.id })
+        api.notify("remove", { id: entity.id });
       }
     },
 
     destroy(entity) {
       // Cleanup: remove from pools, cancel timers, etc.
-      console.log(`Bullet ${entity.id} destroyed`)
+      console.log(`Bullet ${entity.id} destroyed`);
     },
   },
-}
+};
 ```
 
 ## Behavior Composition
@@ -156,29 +156,29 @@ Build complex behaviors by composing functions:
 ```javascript
 const movable = {
   update(entity, deltaTime) {
-    entity.position.x += entity.velocity.x * deltaTime
-    entity.position.y += entity.velocity.y * deltaTime
+    entity.position.x += entity.velocity.x * deltaTime;
+    entity.position.y += entity.velocity.y * deltaTime;
   },
-}
+};
 
 const collidable = {
   checkCollision(entity, other) {
     // Collision detection logic
   },
-}
+};
 
 const controllable = {
   handleInput(entity, input) {
     if (input.key === "ArrowLeft") {
-      entity.velocity.x = -100
+      entity.velocity.x = -100;
     }
   },
-}
+};
 
 // Compose behaviors
 const types = {
-  player: [movable, collidable, controllable],
-}
+  Player: [movable, collidable, controllable],
+};
 ```
 
 ## Renderers
@@ -186,13 +186,13 @@ const types = {
 ### 2D Canvas Renderer
 
 ```javascript
-import { createRenderer } from "@inglorious/renderer-2d"
+import { createRenderer } from "@inglorious/renderer-2d";
 
-const canvas = document.getElementById("canvas")
-const renderer = createRenderer(canvas)
+const canvas = document.getElementById("canvas");
+const renderer = createRenderer(canvas);
 
 // renderer returns { types, entities, systems } to pass to Engine
-const engine = new Engine(renderer, game)
+const engine = new Engine(renderer, game);
 ```
 
 **Note:** `createRenderer(canvas)` returns a configuration object with `types`, `entities`, and `systems` that must be passed to the Engine constructor along with your game configuration.
@@ -202,38 +202,38 @@ const engine = new Engine(renderer, game)
 For performance-critical scenarios (bullet hell, particles):
 
 ```javascript
-import { createPool } from "@inglorious/engine"
+import { createPool } from "@inglorious/engine";
 
 const bulletPool = createPool({
-  create: () => ({ type: "bullet", x: 0, y: 0, active: false }),
+  create: () => ({ type: "Bullet", x: 0, y: 0, active: false }),
   reset: (entity) => {
-    entity.active = false
-    entity.x = 0
-    entity.y = 0
+    entity.active = false;
+    entity.x = 0;
+    entity.y = 0;
   },
-})
+});
 
 const types = {
-  player: {
+  Player: {
     shoot(entity) {
-      const bullet = bulletPool.acquire()
-      bullet.x = entity.position.x
-      bullet.y = entity.position.y
-      bullet.active = true
-      api.notify("add", bullet)
+      const bullet = bulletPool.acquire();
+      bullet.x = entity.position.x;
+      bullet.y = entity.position.y;
+      bullet.active = true;
+      api.notify("add", bullet);
     },
   },
 
-  bullet: {
+  Bullet: {
     update(entity, deltaTime) {
-      entity.y -= 200 * deltaTime
+      entity.y -= 200 * deltaTime;
       if (entity.y < 0) {
-        bulletPool.release(entity)
-        api.notify("remove", { id: entity.id })
+        bulletPool.release(entity);
+        api.notify("remove", { id: entity.id });
       }
     },
   },
-}
+};
 ```
 
 ## IngloriousScript (Optional)
@@ -244,11 +244,11 @@ IngloriousScript adds vector operators for intuitive 2D math. Requires Babel con
 
 ```javascript
 // Without IngloriousScript
-import { add, scale, mod } from "@inglorious/utils"
-const newPosition = mod(add(position, scale(velocity, dt)), worldSize)
+import { add, scale, mod } from "@inglorious/utils";
+const newPosition = mod(add(position, scale(velocity, dt)), worldSize);
 
 // With IngloriousScript (requires babel-plugin-inglorious-script)
-const newPosition = (position + velocity * dt) % worldSize
+const newPosition = (position + velocity * dt) % worldSize;
 ```
 
 ## Systems
@@ -260,21 +260,21 @@ const systems = [
   {
     update(state, deltaTime) {
       // Collision detection across all entities
-      const players = Object.values(state).filter((e) => e.type === "player")
-      const enemies = Object.values(state).filter((e) => e.type === "enemy")
+      const players = Object.values(state).filter((e) => e.type === "Player");
+      const enemies = Object.values(state).filter((e) => e.type === "Enemy");
 
       players.forEach((player) => {
         enemies.forEach((enemy) => {
           if (checkCollision(player, enemy)) {
-            api.notify("playerHit", { playerId: player.id, enemyId: enemy.id })
+            api.notify("playerHit", { playerId: player.id, enemyId: enemy.id });
           }
-        })
-      })
+        });
+      });
     },
   },
-]
+];
 
-const engine = new Engine({ types, entities, systems })
+const engine = new Engine({ types, entities, systems });
 ```
 
 ## API Reference
@@ -282,7 +282,7 @@ const engine = new Engine({ types, entities, systems })
 ### `new Engine(renderer, game)`
 
 ```javascript
-const renderer = createRenderer(canvas)
+const renderer = createRenderer(canvas);
 const game = {
   types: {
     /* entity behaviors */
@@ -293,11 +293,11 @@ const game = {
   systems: [
     /* optional: global handlers */
   ],
-}
+};
 
-const engine = new Engine(renderer, game)
-await engine.init()
-engine.start()
+const engine = new Engine(renderer, game);
+await engine.init();
+engine.start();
 ```
 
 **Parameters:**
@@ -337,59 +337,59 @@ engine.start()
 
 ```javascript
 const types = {
-  player: {
+  Player: {
     update(entity) {
-      entity.position.x += 5 // Wrong - assumes 60fps
+      entity.position.x += 5; // Wrong - assumes 60fps
     },
   },
-}
+};
 ```
 
 ### ✅ Correct: Use deltaTime
 
 ```javascript
 const types = {
-  player: {
+  Player: {
     update(entity, deltaTime) {
-      entity.position.x += 300 * deltaTime // Correct - 300 pixels per second
+      entity.position.x += 300 * deltaTime; // Correct - 300 pixels per second
     },
   },
-}
+};
 ```
 
 ### ❌ Wrong: Immediate event processing
 
 ```javascript
 const types = {
-  enemy: {
+  Enemy: {
     takeDamage(entity, damage) {
-      entity.health -= damage
+      entity.health -= damage;
       // Wrong - expects immediate processing
       if (entity.health <= 0) {
-        api.notify("enemyDestroyed", entity.id)
+        api.notify("enemyDestroyed", entity.id);
         // This entity might still exist in other handlers this frame
       }
     },
   },
-}
+};
 ```
 
 ### ✅ Correct: Queue events for next frame
 
 ```javascript
 const types = {
-  enemy: {
+  Enemy: {
     takeDamage(entity, damage) {
-      entity.health -= damage
+      entity.health -= damage;
       // Correct - event queued for next frame
       if (entity.health <= 0) {
-        api.notify("enemyDestroyed", entity.id)
+        api.notify("enemyDestroyed", entity.id);
       }
     },
     enemyDestroyed(entity) {
       // This runs next frame, after health check
-      api.notify("remove", { id: entity.id })
+      api.notify("remove", { id: entity.id });
     },
   },
-}
+};
 ```

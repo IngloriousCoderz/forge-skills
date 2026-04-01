@@ -30,23 +30,23 @@ npm install @inglorious/web
 ### Store Definition
 
 ```javascript
-import { createStore, html } from "@inglorious/web"
+import { createStore, html } from "@inglorious/web";
 
 const types = {
-  counter: {
+  Counter: {
     // Handler with only entity (payload and api are passed but can be omitted)
     increment(entity) {
-      entity.value++
+      entity.value++;
     },
 
     // Handler with entity and payload
     set(entity, newValue) {
-      entity.value = newValue
+      entity.value = newValue;
     },
 
     // Handler with all three parameters
     reset(entity, _, api) {
-      api.notify(`#${entity.id}:set`, 0)
+      api.notify(`#${entity.id}:set`, 0);
     },
 
     render(entity, api) {
@@ -57,16 +57,16 @@ const types = {
             +1
           </button>
         </div>
-      `
+      `;
     },
   },
-}
+};
 
 const entities = {
-  counter1: { type: "counter", value: 0 },
-}
+  counter1: { type: "Counter", value: 0 },
+};
 
-export const store = createStore({ types, entities })
+export const store = createStore({ types, entities });
 ```
 
 ## Event Scopes
@@ -78,25 +78,25 @@ Event names determine which entities receive a handler:
 - `"#entityId:event"` - only the entity with that id
 
 ```javascript
-api.notify("save") // broadcast
-api.notify("chart:refresh") // only chart entities
-api.notify("#chart1:refresh") // only chart1
+api.notify("save"); // broadcast
+api.notify("Chart:refresh"); // only chart entities
+api.notify("#chart1:refresh"); // only chart1
 ```
 
 ### Mounting
 
 ```javascript
-import { mount, html } from "@inglorious/web"
-import { store } from "./store.js"
+import { mount, html } from "@inglorious/web";
+import { store } from "./store.js";
 
 const renderApp = (api) => {
   return html`
     <h1>App</h1>
     ${api.render("counter1")}
-  `
-}
+  `;
+};
 
-mount(store, renderApp, document.getElementById("root"))
+mount(store, renderApp, document.getElementById("root"));
 ```
 
 ## Auto-Creating Entities
@@ -105,33 +105,33 @@ mount(store, renderApp, document.getElementById("root"))
 
 ```javascript
 const types = {
-  header: {
+  Header: {
     create(entity) {
-      entity.title = "Welcome"
+      entity.title = "Welcome";
     },
     render(entity) {
-      return html`<header>${entity.title}</header>`
+      return html`<header>${entity.title}</header>`;
     },
   },
-}
+};
 
 const store = createStore({
   types,
   autoCreateEntities: true,
-})
+});
 ```
 
 If you need multiple instances of the same component (e.g., four charts), define them explicitly in `entities`:
 
 ```javascript
 const entities = {
-  chart1: { type: "chart" },
-  chart2: { type: "chart" },
-  chart3: { type: "chart" },
-  chart4: { type: "chart" },
-}
+  chart1: { type: "Chart" },
+  chart2: { type: "Chart" },
+  chart3: { type: "Chart" },
+  chart4: { type: "Chart" },
+};
 
-const store = createStore({ types, entities })
+const store = createStore({ types, entities });
 ```
 
 ## Type Composition
@@ -141,14 +141,14 @@ Types are composable as arrays of behaviors:
 ```javascript
 const logging = (type) => ({
   render(entity, api) {
-    console.log(`Rendering ${entity.id}`)
-    return type.render(entity, api)
+    console.log(`Rendering ${entity.id}`);
+    return type.render(entity, api);
   },
-})
+});
 
 const types = {
-  counter: [counterBase, logging],
-}
+  Counter: [CounterBase, logging],
+};
 ```
 
 ## Built-in Components
@@ -157,18 +157,18 @@ const types = {
 
 ```javascript
 import {
-  form,
+  Form,
   getFieldValue,
   getFieldError,
   isFieldTouched,
-} from "@inglorious/web/form"
+} from "@inglorious/web/form";
 
 const entities = {
   myForm: {
-    type: "form",
+    type: "Form",
     initialValues: { name: "", email: "" },
   },
-}
+};
 ```
 
 **Events:**
@@ -181,93 +181,31 @@ const entities = {
 - `#<id>:validateAsync` - Async validation (payload: `{ validate }`)
 - `#<id>:submit` - Typically handled by your own `submit` handler (if you add one)
 
-### Table
-
-```javascript
-import { table } from "@inglorious/web/table"
-import "@inglorious/web/table/base.css"
-import "@inglorious/web/table/theme.css"
-
-const productTable = {
-  ...table,
-  data: [{ id: 1, name: "Product A", price: 100 }],
-  columns: [
-    { id: "id", label: "ID" },
-    { id: "name", label: "Name" },
-  ],
-  renderValue(value, column) {
-    return formatters[column.formatter]?.(value) ?? value
-  },
-}
-```
-
-### Select
-
-```javascript
-import { select } from "@inglorious/web/select"
-import "@inglorious/web/select/base.css"
-import "@inglorious/web/select/theme.css"
-
-const countrySelect = {
-  type: "select",
-  options: [
-    { value: "us", label: "United States" },
-    { value: "ca", label: "Canada" },
-  ],
-  isMulti: false,
-  isSearchable: true,
-  placeholder: "Select...",
-}
-```
-
-### Virtualized List
-
-```javascript
-import { list } from "@inglorious/web/list"
-
-const productList = {
-  ...list,
-  renderItem(item, index) {
-    return html`<div>${index}: <strong>${item.name}</strong></div>`
-  },
-}
-
-const entities = {
-  products: {
-    type: "list",
-    items: Array.from({ length: 10000 }, (_, i) => ({ name: `Product ${i}` })),
-    viewportHeight: 400,
-    estimatedHeight: 40,
-    bufferSize: 5,
-  },
-}
-```
-
 ### Router
 
 ```javascript
-import { router, setRoutes } from "@inglorious/web/router"
+import { Router, setRoutes } from "@inglorious/web/router";
 
-const types = { router, homePage, userPage, notFoundPage }
-const entities = { router: { type: "router" } }
+const types = { Router, HomePage, UserPage, NotFoundPage };
+const entities = { router: { type: "Router" } };
 
 setRoutes({
-  "/": "homePage",
-  "/users/:id": "userPage",
-  "*": "notFoundPage",
-})
+  "/": "HomePage",
+  "/users/:id": "UserPage",
+  "*": "NotFoundPage",
+});
 
 const renderApp = (api) => {
-  const { route } = api.getEntity("router")
+  const { route } = api.getEntity("router");
   return html`
     <nav><a href="/">Home</a></nav>
     <main>${route ? api.render(route) : ""}</main>
-  `
-}
+  `;
+};
 
 // Navigation
-api.notify("#router:navigate", "/users/456")
-api.notify("#router:navigate", { to: "/users/456", replace: true })
+api.notify("#router:navigate", "/users/456");
+api.notify("#router:navigate", { to: "/users/456", replace: true });
 ```
 
 ### Route Guards
@@ -275,19 +213,19 @@ api.notify("#router:navigate", { to: "/users/456", replace: true })
 ```javascript
 const requireAuth = (type) => ({
   routeChange(entity, payload, api) {
-    if (payload.route !== entity.type) return
-    const user = localStorage.getItem("user")
+    if (payload.route !== entity.type) return;
+    const user = localStorage.getItem("user");
     if (!user) {
-      api.notify("#router:navigate", { to: "/login", replace: true })
-      return
+      api.notify("#router:navigate", { to: "/login", replace: true });
+      return;
     }
-    type.routeChange?.(entity, payload, api)
+    type.routeChange?.(entity, payload, api);
   },
-})
+});
 
 const types = {
-  adminPage: [adminPageBase, requireAuth],
-}
+  AdminPage: [AdminPageBase, requireAuth],
+};
 ```
 
 ## Selectors
@@ -296,28 +234,28 @@ Use `api.select(selector)` to run selector functions against the current state. 
 
 ```javascript
 // 1. Define selectors (pure functions)
-const count = (state) => state.counter1.value
-const userRole = (state) => state.session.role // Accessing a different entity ('session')
+const count = (state) => state.counter1.value;
+const userRole = (state) => state.session.role; // Accessing a different entity ('session')
 
 // 2. Use in render
 const page = {
   render(entity, api) {
-    const currentCount = api.select(count)
-    const role = api.select(userRole)
+    const currentCount = api.select(count);
+    const role = api.select(userRole);
 
     return html`
       <div>
         <p>Count: ${currentCount}</p>
 
         ${role === "admin"
-          ? html`<button @click=${() => api.notify("admin:action")}>
+          ? html`<button @click=${() => api.notify("AdminPage:action")}>
               Admin Panel
             </button>`
           : html`<span>Standard User</span>`}
       </div>
-    `
+    `;
   },
-}
+};
 ```
 
 **Benefits:**
@@ -329,47 +267,47 @@ const page = {
 ## Testing
 
 ```javascript
-import { html } from "@inglorious/web"
-import { trigger, render } from "@inglorious/web/test"
+import { html } from "@inglorious/web";
+import { trigger, render } from "@inglorious/web/test";
 
-const counter = {
+const Counter = {
   increment(entity, payload) {
-    entity.value += payload.amount
+    entity.value += payload.amount;
   },
   render(entity) {
-    return html`<div>Count: ${entity.value}</div>`
+    return html`<div>Count: ${entity.value}</div>`;
   },
-}
+};
 
 // Test handlers
 const { entity, events } = trigger(
-  { type: "counter", id: "counter1", value: 10 },
-  counter.increment,
+  { type: "Counter", id: "counter1", value: 10 },
+  Counter.increment,
   { amount: 5 },
-)
-expect(entity.value).toBe(15)
+);
+expect(entity.value).toBe(15);
 
 // Test rendering
-const template = counter.render(
+const template = Counter.render(
   { id: "counter1", value: 42 },
   { notify: jest.fn() },
-)
-const root = document.createElement("div")
-render(template, root)
-expect(root.textContent).toContain("Count: 42")
+);
+const root = document.createElement("div");
+render(template, root);
+expect(root.textContent).toContain("Count: 42");
 ```
 
 ## Redux DevTools
 
 ```javascript
-import { createDevtools } from "@inglorious/web"
+import { createDevtools } from "@inglorious/web";
 
-const middlewares = []
+const middlewares = [];
 if (import.meta.env.DEV) {
-  middlewares.push(createDevtools().middleware)
+  middlewares.push(createDevtools().middleware);
 }
 
-export const store = createStore({ types, entities, middlewares })
+export const store = createStore({ types, entities, middlewares });
 ```
 
 ## API Reference
@@ -414,20 +352,17 @@ import {
   styleMap,
   unsafeHTML,
   when,
-} from "@inglorious/web"
+} from "@inglorious/web";
 
 // Subpath imports
 import {
-  form,
+  Form,
   getFieldError,
   getFieldValue,
   isFieldTouched,
-} from "@inglorious/web/form"
-import { list } from "@inglorious/web/list"
-import { router } from "@inglorious/web/router"
-import { select } from "@inglorious/web/select"
-import { table } from "@inglorious/web/table"
-import { render, trigger } from "@inglorious/web/test"
+} from "@inglorious/web/form";
+import { Router } from "@inglorious/web/router";
+import { render, trigger } from "@inglorious/web/test";
 ```
 
 ## Common Pitfalls
@@ -436,59 +371,59 @@ import { render, trigger } from "@inglorious/web/test"
 
 ```javascript
 const types = {
-  counter: {
+  Counter: {
     render(entity, api) {
       // Wrong - mutation outside handler won't trigger re-render
-      entity.value++
-      return html`<div>${entity.value}</div>`
+      entity.value++;
+      return html`<div>${entity.value}</div>`;
     },
   },
-}
+};
 ```
 
 ### ✅ Correct: Use api.notify() in event handlers
 
 ```javascript
 const types = {
-  counter: {
+  Counter: {
     increment(entity) {
-      entity.value++ // Correct - mutation in handler
+      entity.value++; // Correct - mutation in handler
     },
     render(entity, api) {
       return html`
         <div>${entity.value}</div>
         <button @click=${() => api.notify(`#${entity.id}:increment`)}>+</button>
-      `
+      `;
     },
   },
-}
+};
 ```
 
 ### ❌ Wrong: Storing state in closures
 
 ```javascript
 // Wrong - state in closure, not in entity
-let count = 0
+let count = 0;
 const types = {
-  counter: {
+  Counter: {
     render() {
-      return html`<div>${count}</div>` // Wrong - won't trigger re-render
+      return html`<div>${count}</div>`; // Wrong - won't trigger re-render
     },
   },
-}
+};
 ```
 
 ### ✅ Correct: Store state in entities
 
 ```javascript
 const entities = {
-  counter1: { type: "counter", value: 0 }, // Correct - state in entity
-}
+  counter1: { type: "Counter", value: 0 }, // Correct - state in entity
+};
 const types = {
-  counter: {
+  Counter: {
     render(entity) {
-      return html`<div>${entity.value}</div>` // Correct - triggers re-render
+      return html`<div>${entity.value}</div>`; // Correct - triggers re-render
     },
   },
-}
+};
 ```

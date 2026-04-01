@@ -21,21 +21,21 @@ A Redux-compatible, ECS-inspired state library that eliminates boilerplate while
 ## Basic Setup
 
 ```javascript
-import { createStore } from "@inglorious/store"
+import { createStore } from "@inglorious/store";
 
 const types = {
-  counter: {
+  Counter: {
     increment(entity) {
-      entity.value++
+      entity.value++;
     },
   },
-}
+};
 
 const entities = {
-  counter1: { type: "counter", value: 0 },
-}
+  counter1: { type: "Counter", value: 0 },
+};
 
-const store = createStore({ types, entities })
+const store = createStore({ types, entities });
 ```
 
 ## Event Handlers
@@ -44,92 +44,92 @@ Handlers are called with: `entity`, `payload`, `api` (you can omit unused parame
 
 ```javascript
 const types = {
-  tasks: {
+  Tasks: {
     addTask(entity, text, api) {
-      entity.items.push({ id: Date.now(), text })
-      api.notify("taskAdded", { count: entity.items.length })
+      entity.items.push({ id: Date.now(), text });
+      api.notify("taskAdded", { count: entity.items.length });
     },
   },
-}
+};
 ```
 
 ## Lifecycle Events
 
 ```javascript
 const types = {
-  logger: {
+  Logger: {
     create(entity) {
-      entity.startTime = Date.now()
+      entity.startTime = Date.now();
     },
     destroy(entity) {
-      entity.endTime = Date.now()
+      entity.endTime = Date.now();
     },
   },
-}
+};
 ```
 
 ## Event Targeting
 
 ```javascript
-store.notify("event") // All entities with handler
-store.notify("type:event") // Only entities of type
-store.notify("#id:event") // Only entity with id
-store.notify("type#id:event") // Specific type and id
+store.notify("event"); // All entities with handler
+store.notify("type:event"); // Only entities of type
+store.notify("#id:event"); // Only entity with id
+store.notify("type#id:event"); // Specific type and id
 ```
 
 ## Dynamic Entities
 
 ```javascript
-store.notify("add", { id: "counter4", type: "counter", value: 0 })
-store.notify("remove", "counter4")
+store.notify("add", { id: "counter4", type: "Counter", value: 0 });
+store.notify("remove", "counter4");
 ```
 
 ## Async Operations
 
 ```javascript
 const types = {
-  todos: {
+  Todos: {
     async itemsLoad(entity, _, api) {
-      entity.loading = true
-      const response = await fetch("/api/todos")
-      const data = await response.json()
-      api.notify("itemsLoadSuccess", data)
+      entity.loading = true;
+      const response = await fetch("/api/todos");
+      const data = await response.json();
+      api.notify("itemsLoadSuccess", data);
     },
     itemsLoadSuccess(entity, items) {
-      entity.items = items
-      entity.loading = false
+      entity.items = items;
+      entity.loading = false;
     },
   },
-}
+};
 ```
 
 ### handleAsync Helper
 
 ```javascript
-import { handleAsync } from "@inglorious/store"
+import { handleAsync } from "@inglorious/store";
 
 const types = {
-  todos: {
+  Todos: {
     ...handleAsync("fetchTodos", {
       start(entity) {
-        entity.loading = true
+        entity.loading = true;
       },
       async run(payload, api) {
-        const res = await fetch("/api/todos")
-        return res.json()
+        const res = await fetch("/api/todos");
+        return res.json();
       },
       success(entity, todos) {
-        entity.todos = todos
+        entity.todos = todos;
       },
       error(entity, error) {
-        entity.error = error.message
+        entity.error = error.message;
       },
       finally(entity) {
-        entity.loading = false
+        entity.loading = false;
       },
     }),
   },
-}
+};
 ```
 
 **Lifecycle events generated:**
@@ -148,7 +148,6 @@ const types = {
 - All handlers receive `api` as the last parameter
 - `start` is optional
 
-
 ## Systems
 
 Global logic that runs after all entity handlers for the same event:
@@ -158,16 +157,16 @@ const systems = [
   {
     taskCompleted(state, taskId) {
       const allTodos = Object.values(state)
-        .filter((e) => e.type === "todoList")
-        .flatMap((e) => e.todos)
+        .filter((e) => e.type === "TodoList")
+        .flatMap((e) => e.todos);
 
-      state.stats.total = allTodos.length
-      state.stats.completed = allTodos.filter((t) => t.completed).length
+      state.stats.total = allTodos.length;
+      state.stats.completed = allTodos.filter((t) => t.completed).length;
     },
   },
-]
+];
 
-const store = createStore({ types, entities, systems })
+const store = createStore({ types, entities, systems });
 ```
 
 ## Behavior Composition
@@ -175,19 +174,19 @@ const store = createStore({ types, entities, systems })
 ```javascript
 const incrementable = {
   increment(entity) {
-    entity.value++
+    entity.value++;
   },
-}
+};
 
 const resettable = {
   reset(entity) {
-    entity.value = 0
+    entity.value = 0;
   },
-}
+};
 
 const types = {
-  counter: [incrementable, resettable],
-}
+  Counter: [incrementable, resettable],
+};
 ```
 
 ### Decorator Pattern
@@ -196,14 +195,14 @@ const types = {
 const withValidation = (type) => ({
   ...type,
   submit(entity, value, api) {
-    if (!value.trim()) return
-    type.submit?.(entity, value, api)
+    if (!value.trim()) return;
+    type.submit?.(entity, value, api);
   },
-})
+});
 
 const types = {
-  form: [withValidation],
-}
+  Form: [withValidation],
+};
 ```
 
 ## Batched Mode
@@ -213,11 +212,11 @@ const store = createStore({
   types,
   entities,
   updateMode: "manual",
-})
+});
 
-store.notify("playerMoved", { x: 100, y: 50 })
-store.notify("enemyAttacked", { damage: 10 })
-store.update() // Process batch
+store.notify("playerMoved", { x: 100, y: 50 });
+store.notify("enemyAttacked", { damage: 10 });
+store.update(); // Process batch
 ```
 
 ## Derived State
@@ -225,32 +224,32 @@ store.update() // Process batch
 **Using `compute` (memoized selectors):**
 
 ```javascript
-import { compute } from "@inglorious/store"
+import { compute } from "@inglorious/store";
 
-const value = (state) => state.counter1.value
-const multiplier = (state) => state.settings.multiplier
+const value = (state) => state.counter1.value;
+const multiplier = (state) => state.settings.multiplier;
 
-const result = compute((count, mult) => count * mult, [value, multiplier])
+const result = compute((count, mult) => count * mult, [value, multiplier]);
 
 // Later:
-const total = result(store.getState())
+const total = result(store.getState());
 ```
 
 **Using `api.select()` (direct selectors):**
 
 ```javascript
-const value = (state) => state.counter1.value
-const multiplier = (state) => state.settings.multiplier
+const value = (state) => state.counter1.value;
+const multiplier = (state) => state.settings.multiplier;
 
 const types = {
-  stats: {
+  Stats: {
     recalc(entity, _, api) {
-      const count = api.select(value)
-      const mult = api.select(multiplier)
-      entity.result = count * mult
+      const count = api.select(value);
+      const mult = api.select(multiplier);
+      entity.result = count * mult;
     },
   },
-}
+};
 ```
 
 ## API Reference
@@ -265,7 +264,7 @@ const store = createStore({
   autoCreateEntities, // Optional: boolean (default false)
   updateMode, // Optional: 'auto' | 'manual'
   middlewares, // Optional: middleware array
-})
+});
 ```
 
 ### Handler API (`api` parameter)
@@ -290,7 +289,6 @@ const store = createStore({
 - `add` - Add entity (triggers `create`)
 - `remove` - Remove entity (triggers `destroy`)
 
-
 ## Migration from Redux Toolkit (RTK)
 
 The package exposes migration helpers at `@inglorious/store/migration/rtk`:
@@ -300,7 +298,7 @@ import {
   convertSlice,
   convertAsyncThunk,
   createRTKCompatDispatch,
-} from "@inglorious/store/migration/rtk"
+} from "@inglorious/store/migration/rtk";
 ```
 
 ### What `convertSlice()` does
@@ -330,11 +328,11 @@ Maps RTK lifecycle handlers to `handleAsync` lifecycle:
 `convertSlice()` supports slices created with:
 
 ```javascript
-import { buildCreateSlice, asyncThunkCreator } from "@reduxjs/toolkit"
+import { buildCreateSlice, asyncThunkCreator } from "@reduxjs/toolkit";
 
 const createAppSlice = buildCreateSlice({
   creators: { asyncThunk: asyncThunkCreator },
-})
+});
 ```
 
 For a reducer like `fetchTodo: create.asyncThunk(...)`:
@@ -350,14 +348,14 @@ Use the second mode when you want full trigger-and-run migration behavior.
 ### Quick migration pattern
 
 ```javascript
-import { createStore } from "@inglorious/store"
-import { convertSlice } from "@inglorious/store/migration/rtk"
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit"
+import { createStore } from "@inglorious/store";
+import { convertSlice } from "@inglorious/store/migration/rtk";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 const fetchTodos = createAsyncThunk("todos/fetchTodos", async () => {
-  const res = await fetch("/api/todos")
-  return res.json()
-})
+  const res = await fetch("/api/todos");
+  return res.json();
+});
 
 const todosSlice = createSlice({
   name: "todos",
@@ -368,42 +366,44 @@ const todosSlice = createSlice({
         id: Date.now(),
         text: action.payload,
         completed: false,
-      })
+      });
     },
     toggleTodo(state, action) {
-      const todo = state.items.find((t) => t.id === action.payload)
-      if (todo) todo.completed = !todo.completed
+      const todo = state.items.find((t) => t.id === action.payload);
+      if (todo) todo.completed = !todo.completed;
     },
   },
-})
+});
 
-const todoList = convertSlice(todosSlice, {
+const TodoList = convertSlice(todosSlice, {
   asyncThunks: {
     fetchTodos: {
       payloadCreator: fetchTodos.payloadCreator,
       onPending: (entity) => {
-        entity.status = "loading"
+        entity.status = "loading";
       },
       onFulfilled: (entity, todos) => {
-        entity.status = "success"
-        entity.items = todos
+        entity.status = "success";
+        entity.items = todos;
       },
       onRejected: (entity, error) => {
-        entity.status = "error"
-        entity.error = error.message
+        entity.status = "error";
+        entity.error = error.message;
       },
     },
   },
-})
+});
 
 const store = createStore({
-  types: { todoList },
-  autoCreateEntities: true,
-})
+  types: { TodoList },
+  entities: {
+    todoList: { type: "TodoList" },
+  },
+});
 
-store.notify("#todoList:addTodo", "Buy milk")
-store.notify("#todoList:toggleTodo", 1)
-store.notify("#todoList:fetchTodos")
+store.notify("#todoList:addTodo", "Buy milk");
+store.notify("#todoList:toggleTodo", 1);
+store.notify("#todoList:fetchTodos");
 ```
 
 `convertSlice()` expects a slice object with `name`, `getInitialState()`, and `caseReducers` (the object returned by `createSlice()` provides these).
@@ -413,9 +413,9 @@ store.notify("#todoList:fetchTodos")
 Use `createRTKCompatDispatch(api, entityId)` to keep RTK-style action calls while migrating:
 
 ```javascript
-const dispatch = createRTKCompatDispatch(api, "todos")
+const dispatch = createRTKCompatDispatch(api, "todos");
 
-dispatch({ type: "todos/addTodo", payload: "Buy milk" })
+dispatch({ type: "todos/addTodo", payload: "Buy milk" });
 // -> api.notify("#todos:addTodo", "Buy milk")
 ```
 
@@ -435,40 +435,36 @@ Notes:
 ## Testing
 
 ```javascript
-import { trigger, createMockApi } from "@inglorious/store/test"
+import { trigger, createMockApi } from "@inglorious/store/test";
 
 // Test handlers
-const { entity, events } = trigger(
-  { type: "counter", id: "counter1", value: 99 },
-  increment,
-  { amount: 5 },
-)
-expect(entity.value).toBe(104)
+const { entity, events } = trigger({ value: 99 }, increment, { amount: 5 });
+expect(entity.value).toBe(104);
 
 // With mock API
 const api = createMockApi({
-  counter1: { type: "counter", value: 10 },
-})
+  counter1: { type: "Counter", value: 10 },
+});
 const { entity: copied } = trigger(
-  { id: "counter2", type: "counter", value: 20 },
+  { id: "counter2", type: "Counter", value: 20 },
   copyValue,
   { sourceId: "counter1" },
   api,
-)
+);
 ```
 
 ## TypeScript
 
 ```typescript
 interface TodoListTypes {
-  form: {
-    inputChange: (entity: FormEntity, value: string) => void
-    formSubmit: (entity: FormEntity) => void
-  }
+  Form: {
+    inputChange: (entity: FormEntity, value: string) => void;
+    formSubmit: (entity: FormEntity) => void;
+  };
 }
 
 export const types: TodoListTypes = {
-  form: {
+  Form: {
     inputChange(entity, value) {
       /* ... */
     },
@@ -476,12 +472,12 @@ export const types: TodoListTypes = {
       /* ... */
     },
   },
-}
+};
 
 const store = createStore<TodoListEntity, TodoListState>({
   types: types as unknown as TypesConfig<TodoListEntity>,
   entities,
-})
+});
 ```
 
 ## Common Pitfalls
@@ -489,39 +485,38 @@ const store = createStore<TodoListEntity, TodoListState>({
 ### ❌ Wrong: Direct mutation outside handler
 
 ```javascript
-const entity = store.getState().counter1
-entity.value++ // Wrong - no event
+const entity = store.getState().counter1;
+entity.value++; // Wrong - no event
 ```
 
 ### ✅ Correct: Use notify() or dispatch()
 
 ```javascript
-store.notify("#counter1:increment")
-store.dispatch({ type: "increment", payload: null })
+store.notify("#counter1:increment");
+store.dispatch({ type: "increment", payload: null });
 ```
 
 ### ❌ Wrong: Mutating read-only entity from api.getEntity()
 
 ```javascript
 const types = {
-  counter: {
+  Counter: {
     increment(entity, _, api) {
-      const other = api.getEntity("counter2")
-      other.value++ // Wrong - read-only
+      const other = api.getEntity("counter2");
+      other.value++; // Wrong - read-only
     },
   },
-}
+};
 ```
 
 ### ✅ Correct: Notify event to target entity
 
 ```javascript
 const types = {
-  counter: {
+  Counter: {
     increment(entity, _, api) {
-      api.notify("#counter2:increment")
+      api.notify("#counter2:increment");
     },
   },
-}
+};
 ```
-

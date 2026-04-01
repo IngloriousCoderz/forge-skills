@@ -4,7 +4,7 @@ This document defines recommended folder structures and export patterns for Ingl
 
 ## Standard structure
 
-For a type named `button`, create `types/button` with the following files:
+For a type named `Button`, create `types/button` with the following files:
 
 - `template.js`: Exports plain renderers such as `render(props)` and optional sub-renderers such as `renderItem(props, payload)`.
 - `style.module.css` or `style.css`: Styles used by `template.js`.
@@ -55,7 +55,10 @@ Example:
 export function render(props) {
   const { value = "", onChange } = props;
 
-  return html`<input .value=${value} @input=${(event) => onChange?.(event.target.value)} />`;
+  return html`<input
+    .value=${value}
+    @input=${(event) => onChange?.(event.target.value)}
+  />`;
 }
 ```
 
@@ -68,11 +71,11 @@ Example:
 ```javascript
 import * as renderers from "./template.js";
 
-export const input = {
+export const Input = {
   ...renderers,
 };
 
-export const myInput = {
+export const MyInput = {
   ...renderers,
   change(entity, value) {
     entity.value = value;
@@ -95,9 +98,11 @@ If a primitive has overridable sub-renderers such as `renderHeader`, `renderFoot
 Example:
 
 ```javascript
-export const card = {
+export const Card = {
   render(props) {
-    return html`<article>${this.renderBody(props)} ${this.renderFooter(props)}</article>`;
+    return html`<article>
+      ${this.renderBody(props)} ${this.renderFooter(props)}
+    </article>`;
   },
   renderBody(props) {
     return props.children;
@@ -111,8 +116,8 @@ export const card = {
 Then consumers can override behavior predictably:
 
 ```javascript
-const myCard = {
-  ...card,
+const MyCard = {
+  ...Card,
   renderFooter(props) {
     return html`<footer>${props.footer}</footer>`;
   },
@@ -126,14 +131,13 @@ For composed primitives, expose a top-level `render()` that delegates to a named
 Example pattern (template renderers):
 
 ```javascript
-export const primitive = {
+export const Primitive = {
   render(props) {
     return this.renderPrimitive(props);
   },
   renderPrimitive(props) {
     return html`<div class="iw-primitive">
-      ${this.renderHeader?.(props)}
-      ${this.renderBody?.(props)}
+      ${this.renderHeader?.(props)} ${this.renderBody?.(props)}
       ${this.renderFooter?.(props)}
     </div>`;
   },
@@ -152,7 +156,7 @@ export const primitive = {
 Example pattern (type wiring):
 
 ```javascript
-export const wiredPrimitive = {
+export const WiredPrimitive = {
   ...handlers,
   ...renderers,
   render(entity, api) {
@@ -185,7 +189,7 @@ Example:
 ```javascript
 import * as renderers from "./template.js";
 
-export const combobox = {
+export const Combobox = {
   ...renderers,
   toggle(entity) {
     entity.isOpen = !entity.isOpen;
@@ -310,7 +314,7 @@ export { render } from "./template.js";
 import * as handlers from "./handlers.js";
 import * as renderers from "./template.js";
 
-export const input = {
+export const Input = {
   ...handlers,
   ...renderers,
   render(entity, api) {
@@ -357,7 +361,7 @@ For published packages, add a typed public contract (for example `types/button.d
 - If themes use `:root` component tokens, migrate them to theme-class scoping.
 - If entities contain template/function fields, migrate those customizations to type composition and sub-renderer overrides.
 - Update imports to target the new type entry, for example:
-  - `import { button } from "./types/button/index.js"`
+  - `import { Button } from "./types/button/index.js"`
 
 ## Pre-ship checklist
 

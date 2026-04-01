@@ -9,12 +9,12 @@ npm install -D @inglorious/vite-plugin-jsx
 ## Vite Configuration
 
 ```ts
-import { defineConfig } from "vite"
-import { jsx } from "@inglorious/vite-plugin-jsx"
+import { defineConfig } from "vite";
+import { jsx } from "@inglorious/vite-plugin-jsx";
 
 export default defineConfig({
   plugins: [jsx()],
-})
+});
 ```
 
 ## Core Concept
@@ -35,7 +35,7 @@ function render(entity, api) {
         </p>
       ))}
     </div>
-  )
+  );
 }
 ```
 
@@ -53,7 +53,7 @@ function render(entity, api) {
           html`<p @click=${() => api.notify("select", item)}>${item.name}</p>`,
       )}
     </div>
-  `
+  `;
 }
 ```
 
@@ -62,21 +62,21 @@ function render(entity, api) {
 ### Events
 
 ```jsx
-export const button = {
+export const Button = {
   render(entity, api) {
     return (
       <button onClick={() => api.notify(`#${entity.id}:click`)}>
         {entity.label}
       </button>
-    )
+    );
   },
-}
+};
 ```
 
 ### Lists
 
 ```jsx
-export const todoList = {
+export const TodoList = {
   render(entity) {
     return (
       <ul>
@@ -84,9 +84,9 @@ export const todoList = {
           <li key={todo.id}>{todo.text}</li>
         ))}
       </ul>
-    )
+    );
   },
-}
+};
 ```
 
 ## TypeScript Notes

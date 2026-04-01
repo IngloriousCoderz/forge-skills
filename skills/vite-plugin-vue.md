@@ -10,12 +10,12 @@ npm install @inglorious/vite-plugin-vue
 
 ```javascript
 // vite.config.js
-import { defineConfig } from "vite"
-import { vue } from "@inglorious/vite-plugin-vue"
+import { defineConfig } from "vite";
+import { vue } from "@inglorious/vite-plugin-vue";
 
 export default defineConfig({
   plugins: [vue()],
-})
+});
 ```
 
 ## Core Concept
@@ -33,25 +33,25 @@ Transforms Vue-like templates into lit-html templates for @inglorious/web. There
 </template>
 
 <script>
-const count = 0
+const count = 0;
 
 const increment = (entity) => {
-  entity.count++
-}
+  entity.count++;
+};
 </script>
 ```
 
 Compiles to:
 
 ```javascript
-import { html } from "@inglorious/web"
+import { html } from "@inglorious/web";
 
-export const counter = {
+export const Counter = {
   create(entity) {
-    entity.count = 0
+    entity.count = 0;
   },
   increment(entity) {
-    entity.count++
+    entity.count++;
   },
   render(entity, api) {
     return html`
@@ -59,9 +59,9 @@ export const counter = {
         <h2>Count: ${entity.count}</h2>
         <button @click=${() => api.notify(`#${entity.id}:increment`)}>+</button>
       </div>
-    `
+    `;
   },
-}
+};
 ```
 
 ## Template Syntax
@@ -133,11 +133,11 @@ The plugin derives:
 
 ```vue
 <script>
-const count = 0
-const items = []
+const count = 0;
+const items = [];
 
-const increment = (entity) => entity.count++
-const addItem = (entity, item) => entity.items.push(item)
+const increment = (entity) => entity.count++;
+const addItem = (entity, item) => entity.items.push(item);
 </script>
 ```
 
@@ -161,16 +161,16 @@ const addItem = (entity, item) => entity.items.push(item)
 </template>
 
 <script>
-const todos = []
+const todos = [];
 
 const toggle = (entity, id) => {
-  const todo = entity.todos.find((t) => t.id === id)
-  if (todo) todo.done = !todo.done
-}
+  const todo = entity.todos.find((t) => t.id === id);
+  if (todo) todo.done = !todo.done;
+};
 
 const remove = (entity, id) => {
-  entity.todos = entity.todos.filter((t) => t.id !== id)
-}
+  entity.todos = entity.todos.filter((t) => t.id !== id);
+};
 </script>
 ```
 
@@ -179,7 +179,7 @@ const remove = (entity, id) => {
 All `.vue` files compile to standard @inglorious/web components:
 
 ```javascript
-export const componentName = {
+export const ComponentName = {
   create(entity) {
     // Initialize from script variables
   },
@@ -187,9 +187,9 @@ export const componentName = {
     // From script functions
   },
   render(entity, api) {
-    return html`...`
+    return html`...`;
   },
-}
+};
 ```
 
 ## Important Notes
