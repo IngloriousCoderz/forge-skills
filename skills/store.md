@@ -106,7 +106,7 @@ const types = {
 ### handleAsync Helper
 
 ```javascript
-import { handleAsync } from "@inglorious/store";
+import { handleAsync } from "@inglorious/store/async";
 
 const types = {
   Todos: {
@@ -224,7 +224,7 @@ store.update(); // Process batch
 **Using `compute` (memoized selectors):**
 
 ```javascript
-import { compute } from "@inglorious/store";
+import { compute } from "@inglorious/store/select";
 
 const value = (state) => state.counter1.value;
 const multiplier = (state) => state.settings.multiplier;

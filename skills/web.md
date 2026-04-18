@@ -30,7 +30,8 @@ npm install @inglorious/web
 ### Store Definition
 
 ```javascript
-import { createStore, html } from "@inglorious/web";
+import { createStore } from "@inglorious/store";
+import { html } from "@inglorious/web";
 
 const types = {
   Counter: {
@@ -300,7 +301,7 @@ expect(root.textContent).toContain("Count: 42");
 ## Redux DevTools
 
 ```javascript
-import { createDevtools } from "@inglorious/web";
+import { createDevtools } from "@inglorious/store/client/devtools";
 
 const middlewares = [];
 if (import.meta.env.DEV) {
@@ -337,32 +338,38 @@ Connect store to DOM. Returns unsubscribe function.
 ### Exports
 
 ```javascript
-import {
-  createStore,
-  createDevtools,
-  compute, // store
-  createSelector, // store, Redux-compatible
-  mount,
-  html,
-  svg, // lit-html
-  choose,
-  classMap,
-  ref,
-  repeat, // directives
-  styleMap,
-  unsafeHTML,
-  when,
-} from "@inglorious/web";
+// store
+import { createStore } from "@inglorious/store";
 
-// Subpath imports
+// store extras
+import { createDevtools } from "@inglorious/store/client/devtools";
+import { compute, createSelector } from "@inglorious/store/select";
+export { createMockApi, trigger } from "@inglorious/store/test";
+
+// web
+import { mount, html, svg } from "@inglorious/web";
+
+// web extras
+import { createMockApi, render, trigger } from "@inglorious/web/test";
+
+// web directives
+import { choose } from "@inglorious/web/directives/choose";
+import { classMap } from "@inglorious/web/directives/class-map";
+import { ref } from "@inglorious/web/directives/ref";
+import { repeat } from "@inglorious/web/directives/repeat";
+import { styleMap } from "@inglorious/web/directives/style-map";
+import { unsafeHTML } from "@inglorious/web/directives/unsafe-html";
+import { when } from "@inglorious/web/directives/when";
+
+// form primitive
 import {
   Form,
   getFieldError,
   getFieldValue,
   isFieldTouched,
 } from "@inglorious/web/form";
+// router primitive
 import { Router } from "@inglorious/web/router";
-import { render, trigger } from "@inglorious/web/test";
 ```
 
 ## Common Pitfalls
