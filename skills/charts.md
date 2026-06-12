@@ -11,7 +11,7 @@ A high-performance chart engine designed for both config-driven and primitive-dr
 
 ### Core Pieces
 
-- `chart`: the universal engine that handles standardization and SVG rendering
+- `Chart`: the universal engine that handles standardization and SVG rendering
 - `withRealtime`: a separate decorator that adds stream seeding, data sliding, and brush synchronization
 - `primitives`: pure building blocks such as `XAxis`, `Line`, and `Tooltip`
 
@@ -20,51 +20,51 @@ A high-performance chart engine designed for both config-driven and primitive-dr
 ### Engines and Decorators
 
 ```js
-import { chart } from "@inglorious/charts"
-import { withRealtime } from "@inglorious/charts/realtime"
+import { Chart } from "@inglorious/charts";
+import { withRealtime } from "@inglorious/charts/realtime";
 ```
 
 ### Optional Styles
 
 ```js
-import "@inglorious/charts/base.css"
-import "@inglorious/charts/theme.css"
+import "@inglorious/charts/base.css";
+import "@inglorious/charts/theme.css";
 ```
 
 ## Rendering Modes
 
 ### 1. Config Mode
 
-In config mode, the visual chart type comes from `entity.type`. The store maps those types to the unified engine. Realtime behavior is added by composing `[chart, withRealtime]` in the store.
+In config mode, the visual chart type comes from `entity.type`. The store maps those types to the unified engine. Realtime behavior is added by composing `[Chart, withRealtime]` in the store.
 
 #### Store Configuration
 
 ```js
-import { createStore } from "@inglorious/web"
-import { chart } from "@inglorious/charts"
-import { withRealtime } from "@inglorious/charts/realtime"
+import { createStore } from "@inglorious/store";
+import { Chart } from "@inglorious/charts";
+import { withRealtime } from "@inglorious/charts/realtime";
 
 export const store = createStore({
   types: {
-    line: chart,
-    bar: chart,
-    area: chart,
-    composed: chart,
-    pie: chart,
-    donut: chart,
+    Line: Chart,
+    Bar: Chart,
+    Area: Chart,
+    Composed: Chart,
+    Pie: Chart,
+    Donut: Chart,
 
-    "line-rt": [chart, withRealtime],
-    "bar-rt": [chart, withRealtime],
-    "area-rt": [chart, withRealtime],
+    LineRT: [Chart, withRealtime],
+    BarRT: [Chart, withRealtime],
+    AreaRT: [Chart, withRealtime],
   },
   entities,
-})
+});
 ```
 
 Notes:
 
-- Standard visual types point directly to `chart`
-- Realtime aliases such as `line-rt` are resolved back to their base visual types during standardization
+- Standard visual types point directly to `Chart`
+- Realtime aliases such as `LineRT` are resolved back to their base visual types during standardization
 - The decorator stays explicit and consumer-owned
 
 ### 2. Composition Mode
@@ -72,24 +72,24 @@ Notes:
 In composition mode, the visual type is inferred from the primitives passed in `children`. Explicit `type` values are usually unnecessary.
 
 ```js
-chart.render(
+Chart.render(
   {
     width: 800,
     height: 400,
     data: dataset,
     children: [
-      chart.CartesianGrid(),
-      chart.XAxis({ dataKey: "name" }),
-      chart.YAxis(),
-      chart.Line({ dataKey: "value" }),
-      chart.Tooltip(),
+      Chart.CartesianGrid(),
+      Chart.XAxis({ dataKey: "name" }),
+      Chart.YAxis(),
+      Chart.Line({ dataKey: "value" }),
+      Chart.Tooltip(),
     ],
   },
   api,
-)
+);
 ```
 
-In the example above, the visual type is inferred as `line` from `chart.Line(...)`.
+In the example above, the visual type is inferred as `Line` from `Chart.Line(...)`.
 
 ## Realtime
 
@@ -111,7 +111,7 @@ Realtime is a composable behavior and is never baked into the base engine.
 Use the array composition syntax in the store:
 
 ```js
-"line-rt": [chart, withRealtime]
+"LineRT": [Chart, withRealtime]
 ```
 
 #### Composition Mode
@@ -119,28 +119,28 @@ Use the array composition syntax in the store:
 Wrap the engine manually:
 
 ```js
-const realtimeChart = withRealtime(chart)
-realtimeChart.render(...)
+const RealtimeChart = withRealtime(Chart)
+RealtimeChart.render(...)
 ```
 
 ## Available Primitives
 
 ### Cartesian
 
-- `chart.CartesianGrid()`
-- `chart.XAxis()`
-- `chart.YAxis()`
-- `chart.Line()`
-- `chart.Area()`
-- `chart.Bar()`
-- `chart.Dots()`
-- `chart.Tooltip()`
-- `chart.Legend()`
-- `chart.Brush()`
+- `Chart.CartesianGrid()`
+- `Chart.XAxis()`
+- `Chart.YAxis()`
+- `Chart.Line()`
+- `Chart.Area()`
+- `Chart.Bar()`
+- `Chart.Dots()`
+- `Chart.Tooltip()`
+- `Chart.Legend()`
+- `Chart.Brush()`
 
 ### Polar
 
-- `chart.Pie()`
+- `Chart.Pie()`
 
 ## Naming Conventions
 
