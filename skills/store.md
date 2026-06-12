@@ -226,8 +226,8 @@ store.update(); // Process batch
 ```javascript
 import { compute } from "@inglorious/store/select";
 
-const value = (state) => state.counter1.value;
-const multiplier = (state) => state.settings.multiplier;
+const value = (entities) => entities.counter1.value;
+const multiplier = (entities) => entities.settings.multiplier;
 
 const result = compute((count, mult) => count * mult, [value, multiplier]);
 
@@ -238,8 +238,8 @@ const total = result(store.getState());
 **Using `api.select()` (direct selectors):**
 
 ```javascript
-const value = (state) => state.counter1.value;
-const multiplier = (state) => state.settings.multiplier;
+const value = (entities) => entities.counter1.value;
+const multiplier = (entities) => entities.settings.multiplier;
 
 const types = {
   Stats: {
@@ -396,9 +396,7 @@ const TodoList = convertSlice(todosSlice, {
 
 const store = createStore({
   types: { TodoList },
-  entities: {
-    todoList: { type: "TodoList" },
-  },
+  autoCreateEntities: true,
 });
 
 store.notify("#todoList:addTodo", "Buy milk");

@@ -148,11 +148,44 @@ const logging = (type) => ({
 });
 
 const types = {
-  Counter: [CounterBase, logging],
+  LoggingCounter: [Counter, logging],
 };
 ```
 
 ## Built-in Components
+
+### Compass
+
+```javascript
+import { Compass } from "@inglorious/web/compass";
+
+const types = { Compass };
+const entities = { compass: { type: "Compass" } };
+```
+
+The `Compass` type keeps device orientation and heading state in the store.
+
+**Entity state:**
+
+- `isSupported` — whether device orientation sensors are available
+- `isLoading` — whether permission or heading data is pending
+- `isCompassPermissionGranted` — whether permission has been granted
+- `isCompassActive` — whether a valid heading is currently active
+- `heading` — latest heading in degrees, or `null`
+- `error` — latest normalized `{ code, message }`
+- `manualOffset` — optional heading offset in degrees
+
+**Events:**
+
+- `compassPermissionsRequest` — request compass permission when needed
+- `compassWatch` — start listening for orientation events
+- `compassUnwatch` — stop listening
+
+```javascript
+api.notify("compassPermissionsRequest");
+api.notify("compassWatch");
+api.notify("compassUnwatch");
+```
 
 ### Form
 
@@ -164,10 +197,11 @@ import {
   isFieldTouched,
 } from "@inglorious/web/form";
 
+const types = { Form };
 const entities = {
-  myForm: {
+  loginForm: {
     type: "Form",
-    initialValues: { name: "", email: "" },
+    initialValues: { username: "", password: "" },
   },
 };
 ```
@@ -182,6 +216,45 @@ const entities = {
 - `#<id>:validateAsync` - Async validation (payload: `{ validate }`)
 - `#<id>:submit` - Typically handled by your own `submit` handler (if you add one)
 
+# <<<<<<< Updated upstream
+
+### Geolocation
+
+```javascript
+import { Geolocation } from "@inglorious/web/geolocation";
+
+const types = { Geolocation };
+const entities = { geolocation: { type: "Geolocation" } };
+```
+
+The `Geolocation` type keeps browser location state in the store.
+
+**Entity state:**
+
+- `isSupported` — whether `navigator.geolocation` is available
+- `isLoading` — whether a current request or first watch result is pending
+- `isWatching` — whether a geolocation watch is active
+- `position` — latest normalized `{ coords, timestamp }`
+- `error` — latest normalized `{ code, message }`
+- `watchId` — active browser watch ID or `null`
+
+**Events:**
+
+- `geolocationRequest` — request the current position once
+- `geolocationWatch` — start watching position updates
+- `geolocationUnwatch` — stop the active watch
+
+```javascript
+api.notify("geolocationRequest", {
+  enableHighAccuracy: true,
+  timeout: 5000,
+});
+api.notify("geolocationWatch");
+api.notify("geolocationUnwatch");
+```
+
+> > > > > > > Stashed changes
+
 ### Router
 
 ```javascript
@@ -191,9 +264,9 @@ const types = { Router, HomePage, UserPage, NotFoundPage };
 const entities = { router: { type: "Router" } };
 
 setRoutes({
-  "/": "HomePage",
-  "/users/:id": "UserPage",
-  "*": "NotFoundPage",
+  "/": "homePage",
+  "/users/:id": "userPage",
+  "*": "notFoundPage",
 });
 
 const renderApp = (api) => {
@@ -249,7 +322,7 @@ const page = {
         <p>Count: ${currentCount}</p>
 
         ${role === "admin"
-          ? html`<button @click=${() => api.notify("AdminPage:action")}>
+          ? html`<button @click=${() => api.notify("adminPage:action")}>
               Admin Panel
             </button>`
           : html`<span>Standard User</span>`}
@@ -264,6 +337,26 @@ const page = {
 - Simpler API: `api.select(value)` instead of `value(api.getEntities())`
 - Natural naming: Selectors can be named `value` instead of `selectValue`
 - Cleaner code: Less verbose than manually calling selectors with state
+
+### Derived state with `compute`
+
+Use `compute(fn, inputs)` when your derived value depends on one or more state selectors.
+
+```javascript
+import { compute } from "@inglorious/store";
+
+const fullName = compute(
+  (firstName, lastName) => `${firstName} ${lastName}`,
+  [({ user }) => user.firstName, ({ user }) => user.lastName],
+);
+
+const page = {
+  render(entity, api) {
+    const displayName = api.select(fullName);
+    return html`<div>Hello ${displayName}</div>`;
+  },
+};
+```
 
 ## Testing
 
@@ -349,9 +442,6 @@ export { createMockApi, trigger } from "@inglorious/store/test";
 // web
 import { mount, html, svg } from "@inglorious/web";
 
-// web extras
-import { createMockApi, render, trigger } from "@inglorious/web/test";
-
 // web directives
 import { choose } from "@inglorious/web/directives/choose";
 import { classMap } from "@inglorious/web/directives/class-map";
@@ -361,15 +451,19 @@ import { styleMap } from "@inglorious/web/directives/style-map";
 import { unsafeHTML } from "@inglorious/web/directives/unsafe-html";
 import { when } from "@inglorious/web/directives/when";
 
-// form primitive
+// built-in primitives
+import { Compass } from "@inglorious/web/compass";
 import {
   Form,
   getFieldError,
   getFieldValue,
   isFieldTouched,
 } from "@inglorious/web/form";
-// router primitive
+import { Geolocation } from "@inglorious/web/geolocation";
 import { Router } from "@inglorious/web/router";
+
+// web extras
+import { render } from "@inglorious/web/test";
 ```
 
 ## Common Pitfalls
