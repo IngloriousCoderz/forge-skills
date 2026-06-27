@@ -89,6 +89,20 @@ export async function load(entity, page) {
 }
 ```
 
+SSX is primarily a static site generator. Pages without `export const ssr = true` are rendered during `ssx build` and written as static HTML files in `dist/`.
+
+If you need request-time rendering for a specific page, mark it explicitly with `export const ssr = true`:
+
+```javascript
+export const ssr = true
+
+export async function load(entity, page) {
+  entity.user = await getCurrentUser(page.request)
+}
+```
+
+SSR pages are skipped during the static build and instead rendered on demand by the dev server or by `ssx ssr`.
+
 For dynamic routes, use `page.params`:
 
 ```javascript
@@ -246,6 +260,20 @@ npm run preview
 ```
 
 Serves `dist/` using `serve`.
+
+### SSR Runtime
+
+```bash
+npm run ssr
+```
+
+Starts a dedicated SSR runtime server that renders pages marked with `export const ssr = true` on demand.
+
+Options:
+
+- `-c, --config <file>` (default: `site.config.js`)
+- `-r, --root <dir>` (default: `.`)
+- `-p, --port <port>` (default: `3000`)
 
 ## Rules & Constraints
 
