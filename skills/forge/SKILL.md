@@ -1,8 +1,3 @@
----
-name: forge-skills
-description: Ecosystem guide for building web apps and 2D games with Inglorious Forge packages. Use when selecting packages, combining @inglorious modules, or implementing architecture with @inglorious/store, @inglorious/web, @inglorious/engine, @inglorious/ssx, and related tooling.
----
-
 # Forge Skills
 
 Use this file as the routing entry point for the Inglorious Forge skill set. Load only the specific files in `skills/` that match the user request.
@@ -16,7 +11,7 @@ Use this file as the routing entry point for the Inglorious Forge skill set. Loa
 
 ## Skills Map
 
-### [@inglorious/utils](skills/utils.md)
+### [@inglorious/utils](skills/utils/SKILL.md)
 
 Use for utility functions and algorithmic helpers.
 
@@ -25,7 +20,7 @@ Use for utility functions and algorithmic helpers.
 - Functional helpers (composition, piping)
 - Data structures and algorithms
 
-### [@inglorious/store](skills/store.md)
+### [@inglorious/store](skills/store/SKILL.md)
 
 Use for entity-based state management.
 
@@ -34,21 +29,21 @@ Use for entity-based state management.
 - Redux-compatible API and DevTools integration
 - Multiplayer-friendly patterns
 
-### [@inglorious/server](skills/server.md)
+### [@inglorious/server](skills/server/SKILL.md)
 
 Use for realtime server patterns.
 
 - Store-backed server architecture
 - Entity and event synchronization over WebSockets
 
-### [@inglorious/react-store](skills/react-store.md)
+### [@inglorious/react-store](skills/react-store/SKILL.md)
 
 Use for React integration with `@inglorious/store`.
 
 - Provider setup and simplified hooks
 - `useEntity` and `useNotify` patterns
 
-### [@inglorious/web](skills/web.md)
+### [@inglorious/web](skills/web/SKILL.md)
 
 Use for web UI architecture with `@inglorious/store` and `lit-html`.
 
@@ -56,9 +51,9 @@ Use for web UI architecture with `@inglorious/store` and `lit-html`.
 - Whole-tree re-rendering with efficient DOM updates
 - Built-in form, table, list, select, and router modules
 - Testing patterns
-- Web UI type conventions: `skills/web-best-practices.md`
+- Web UI type conventions: `skills/web-best-practices/SKILL.md`
 
-### [@inglorious/charts](skills/charts.md)
+### [@inglorious/charts](skills/charts/SKILL.md)
 
 Use for SVG chart construction.
 
@@ -66,7 +61,7 @@ Use for SVG chart construction.
 - Configuration-driven chart behavior
 - SSR-friendly chart rendering
 
-### [@inglorious/ui](skills/ui.md)
+### [@inglorious/ui](skills/ui/SKILL.md)
 
 Use for design system components and theming.
 
@@ -74,9 +69,9 @@ Use for design system components and theming.
 - CSS tokens for colors, spacing, radii, typography
 - Themeable with Inglorious, Material, and Bootstrap themes
 - Light and dark mode variants
-- UI primitive conventions: `skills/ui-best-practices.md`
+- UI primitive conventions: `skills/ui-best-practices/SKILL.md`
 
-### [@inglorious/ssx](skills/ssx.md)
+### [@inglorious/ssx](skills/ssx/SKILL.md)
 
 Use for static site generation and hydration workflows.
 
@@ -86,7 +81,7 @@ Use for static site generation and hydration workflows.
 - SEO support (sitemaps, manifests, metadata)
 - Fast hydration with `@lit-labs/ssr`
 
-### [@inglorious/engine](skills/engine.md)
+### [@inglorious/engine](skills/engine/SKILL.md)
 
 Use for functional 2D game loop architecture.
 
@@ -96,7 +91,7 @@ Use for functional 2D game loop architecture.
 
 ## Tooling & Integration
 
-- **[JSX Vite Plugin](skills/vite-plugin-jsx.md):** Use JSX syntax instead of `lit-html` templates.
-- **[Vue Vite Plugin](skills/vite-plugin-vue.md):** Use Vue-like template syntax instead of `lit-html`.
-- **[Create App](skills/create-app.md):** Scaffold Inglorious Web applications.
-- **[Create Game](skills/create-game.md):** Scaffold Inglorious Engine games.
+- **[JSX Vite Plugin](skills/vite-plugin-jsx/SKILL.md):** Use JSX syntax instead of `lit-html` templates.
+- **[Vue Vite Plugin](skills/vite-plugin-vue/SKILL.md):** Use Vue-like template syntax instead of `lit-html`.
+- **[Create App](skills/create-app/SKILL.md):** Scaffold Inglorious Web applications.
+- **[Create Game](skills/create-game/SKILL.md):** Scaffold Inglorious Engine games.

@@ -11,28 +11,27 @@ This repo contains focused skill/reference files that help an agent work with th
 
 ## Repository Layout
 
-- `SKILL.md`: Root routing skill for the ecosystem
-- `skills/*.md`: Package-specific references and implementation guidance
+- `skills/**/SKILL.md`: Package-specific references and implementation guidance
 - `LICENSE`: License for this repository
 
 ## Included Skills
 
-- `skills/utils.md` - Utility functions and algorithms
-- `skills/store.md` - Entity-based state management
-- `skills/server.md` - Realtime WebSocket server patterns
-- `skills/react-store.md` - React bindings for the store
-- `skills/web.md` - lit-html based web framework patterns
-- `skills/charts.md` - SVG charting primitives
-- `skills/ssx.md` - Static site generation and hydration
-- `skills/engine.md` - Functional 2D game engine
-- `skills/vite-plugin-jsx.md` - JSX transform for `@inglorious/web`
-- `skills/vite-plugin-vue.md` - Vue-like template transform for `@inglorious/web`
-- `skills/create-app.md` - App scaffolding workflows
-- `skills/create-game.md` - Game scaffolding workflows
+- `skills/utils/SKILL.md` - Utility functions and algorithms
+- `skills/store/SKILL.md` - Entity-based state management
+- `skills/server/SKILL.md` - Realtime WebSocket server patterns
+- `skills/react-store/SKILL.md` - React bindings for the store
+- `skills/web/SKILL.md` - lit-html based web framework patterns
+- `skills/charts/SKILL.md` - SVG charting primitives
+- `skills/ssx/SKILL.md` - Static site generation and hydration
+- `skills/engine/SKILL.md` - Functional 2D game engine
+- `skills/vite-plugin-jsx/SKILL.md` - JSX transform for `@inglorious/web`
+- `skills/vite-plugin-vue/SKILL.md` - Vue-like template transform for `@inglorious/web`
+- `skills/create-app/SKILL.md` - App scaffolding workflows
+- `skills/create-game/SKILL.md` - Game scaffolding workflows
 
 ## Usage
 
-Use `SKILL.md` as the entry point. It maps user goals to the smallest relevant files in `skills/` so an agent can load only the needed context.
+Use `skills/forge/SKILL.md` as the entry point. It maps user goals to the smallest relevant files in `skills/` so an agent can load only the needed context.
 
 ## Scope
 

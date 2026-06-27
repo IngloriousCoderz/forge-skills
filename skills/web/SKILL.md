@@ -8,7 +8,7 @@ npm install @inglorious/web
 
 ## Companion Guide
 
-- For file structure, styling, theming, stories, and test conventions for web UI types, see `skills/web-best-practices.md`.
+- For file structure, styling, theming, stories, and test conventions for web UI types, see `skills/web-best-practices/SKILL.md`.
 
 ## Core Concepts
 
