@@ -1,3 +1,8 @@
+---
+name: create-app
+description: Guidance for scaffolding new Inglorious Web and game projects with the create-app tool.
+---
+
 # @inglorious/create-app - Complete Reference
 
 ## Installation
@@ -47,3 +52,4 @@ cd my-awesome-app
 pnpm install
 pnpm dev
 ```
+

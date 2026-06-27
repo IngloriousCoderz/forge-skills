@@ -1,3 +1,8 @@
+---
+name: web-best-practices
+description: Best practices for organizing Inglorious Web types and page structure in large apps.
+---
+
 # Best Practices: File Structure for Inglorious Web Types
 
 This document defines recommended folder structures and export patterns for Inglorious Web types. Each type lives in its own folder so rendering, styling, behavior, and documentation stay modular and predictable. Prefer plain props-first renderers for primitives, and let `index.js` attach store behavior only when needed.
@@ -376,3 +381,4 @@ For published packages, add a typed public contract (for example `types/button.d
 - Composite primitives are exported as objects with overridable methods.
 - Complex templates are decomposed into overridable sub-renderers.
 - Stateful behavior is still wired through plain props; if true local state is needed, use a web component.
+

@@ -1,3 +1,8 @@
+---
+name: react-store
+description: React integration patterns for @inglorious/store, including hooks and provider setup.
+---
+
 # @inglorious/react-store - Complete Reference
 
 ## Installation
@@ -91,3 +96,4 @@ Convenience hook to select a single entity by ID.
 
 - Compatible with Redux DevTools via @inglorious/store.
 - Works anywhere `react-redux` works (including React Native).
+

@@ -1,3 +1,8 @@
+---
+name: ssx
+description: Static site generation and hydration workflows for Inglorious Web with SSX.
+---
+
 # @inglorious/ssx - Complete Reference
 
 ## Installation
@@ -282,3 +287,4 @@ Options:
 3. **Dynamic routes require `staticPaths()`.**
 4. **Entity state works the same as @inglorious/web.**
 5. **Pages live in `src/pages/` under the root dir.**
+

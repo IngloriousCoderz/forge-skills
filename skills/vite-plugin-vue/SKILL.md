@@ -1,3 +1,8 @@
+---
+name: vite-plugin-vue
+description: Documentation for using Vue-like template syntax in Inglorious projects with the Vite Vue plugin.
+---
+
 # @inglorious/vite-plugin-vue - Complete Reference
 
 ## Installation
@@ -199,3 +204,4 @@ export const ComponentName = {
 3. **Handlers receive `(entity, payload, api)`** (extra args optional).
 4. **`@click="method"` becomes `api.notify(#id:method)`**.
 5. **Inline handlers** are passed through as-is.
+

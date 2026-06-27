@@ -1,3 +1,8 @@
+---
+name: utils
+description: Utility and helper function patterns for Inglorious Forge applications.
+---
+
 # @inglorious/utils - Complete Reference
 
 ## Installation
@@ -249,3 +254,4 @@ const gravityStep = applyGravity(
   0.016,
 )
 ```
+

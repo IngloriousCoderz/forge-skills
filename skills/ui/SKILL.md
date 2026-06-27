@@ -1,3 +1,8 @@
+---
+name: ui
+description: Design system guidance for components, theming, and UI primitives with Inglorious UI.
+---
+
 # @inglorious/ui - Complete Reference
 
 ## Installation
@@ -461,3 +466,4 @@ import "@inglorious/ui/button.css";
 import "@inglorious/ui/input.css";
 import "@inglorious/ui/card.css";
 ```
+

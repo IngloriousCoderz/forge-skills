@@ -1,3 +1,8 @@
+---
+name: store
+description: Entity-based state management reference for @inglorious/store.
+---
+
 # @inglorious/store - Complete Reference
 
 ## Installation
@@ -518,3 +523,4 @@ const types = {
   },
 };
 ```
+

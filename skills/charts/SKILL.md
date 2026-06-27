@@ -1,3 +1,8 @@
+---
+name: charts
+description: High-performance chart engine designed for both config-driven and primitive-driven visualizations.
+---
+
 # @inglorious/charts
 
 A high-performance chart engine designed for both config-driven and primitive-driven visualizations.
@@ -201,3 +206,4 @@ When modifying `charts`, run at least:
 pnpm -C packages/charts test
 pnpm -C packages/charts lint
 ```
+

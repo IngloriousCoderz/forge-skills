@@ -1,3 +1,8 @@
+---
+name: web
+description: Web UI architecture reference for @inglorious/web, including render patterns and routing.
+---
+
 # @inglorious/web - Complete Reference
 
 ## Installation
@@ -528,3 +533,4 @@ const types = {
   },
 };
 ```
+

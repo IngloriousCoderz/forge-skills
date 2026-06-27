@@ -1,0 +1,16 @@
+--- a/skills/charts/SKILL.md
+--- a/skills/create-app/SKILL.md
+--- a/skills/create-game/SKILL.md
+--- a/skills/engine/SKILL.md
+--- a/skills/forge/SKILL.md
+--- a/skills/react-store/SKILL.md
+--- a/skills/server/SKILL.md
+--- a/skills/ssx/SKILL.md
+--- a/skills/store/SKILL.md
+--- a/skills/ui-best-practices/SKILL.md
+--- a/skills/ui/SKILL.md
+--- a/skills/utils/SKILL.md
+--- a/skills/vite-plugin-jsx/SKILL.md
+--- a/skills/vite-plugin-vue/SKILL.md
+--- a/skills/web-best-practices/SKILL.md
+--- a/skills/web/SKILL.md

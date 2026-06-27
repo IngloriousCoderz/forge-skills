@@ -1,3 +1,8 @@
+---
+name: forge-skills
+description: Repository entry point for the Inglorious Forge skill set and routing guidance for related skills.
+---
+
 # Forge Skills
 
 Use this file as the routing entry point for the Inglorious Forge skill set. Load only the specific files in `skills/` that match the user request.
@@ -95,3 +100,4 @@ Use for functional 2D game loop architecture.
 - **[Vue Vite Plugin](skills/vite-plugin-vue/SKILL.md):** Use Vue-like template syntax instead of `lit-html`.
 - **[Create App](skills/create-app/SKILL.md):** Scaffold Inglorious Web applications.
 - **[Create Game](skills/create-game/SKILL.md):** Scaffold Inglorious Engine games.
+

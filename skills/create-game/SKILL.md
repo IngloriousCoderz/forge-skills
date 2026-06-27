@@ -1,3 +1,8 @@
+---
+name: create-game
+description: Reference for scaffolding and configuring new Inglorious Engine game projects.
+---
+
 # @inglorious/create-game - Complete Reference
 
 ## Installation
@@ -40,3 +45,4 @@ cd my-awesome-game
 pnpm install
 pnpm dev
 ```
+

@@ -1,3 +1,8 @@
+---
+name: vite-plugin-jsx
+description: Documentation for using JSX syntax in Inglorious projects with the Vite JSX plugin.
+---
+
 # @inglorious/vite-plugin-jsx - Complete Reference
 
 ## Installation
@@ -101,3 +106,4 @@ Use `jsx: "preserve"` in `tsconfig.json` and avoid automatic React imports.
   }
 }
 ```
+

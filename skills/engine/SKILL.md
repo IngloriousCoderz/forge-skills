@@ -1,3 +1,8 @@
+---
+name: engine
+description: Complete reference for the Inglorious Engine 2D game loop and entity update architecture.
+---
+
 # @inglorious/engine - Complete Reference
 
 ## Installation
@@ -393,3 +398,4 @@ const types = {
   },
 };
 ```
+

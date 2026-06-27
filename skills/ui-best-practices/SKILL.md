@@ -1,3 +1,8 @@
+---
+name: ui-best-practices
+description: Best practices for designing predictable, accessible, and composable Inglorious UI primitives.
+---
+
 # UI Best Practices: Primitive Props and Semantics
 
 Use this guide when defining or refining `@inglorious/ui` primitives. Keep primitives predictable, composable, and easy to theme without custom CSS.
@@ -43,3 +48,4 @@ Use this guide when defining or refining `@inglorious/ui` primitives. Keep primi
 - `radius="none"` → `class="iw-*-radius-none"`
 - `padding="md"` → `class="iw-*-padding-md"`
 - `shape="circle"` → `class="iw-*-shape-circle"`
+

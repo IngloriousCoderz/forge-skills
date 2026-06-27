@@ -1,3 +1,8 @@
+---
+name: server
+description: Server-side guidance for real-time backend patterns and store-backed synchronization.
+---
+
 # @inglorious/server - Complete Reference
 
 ## Installation
@@ -51,3 +56,4 @@ If no path is provided, the server starts with an empty game config.
 
 - Requires Node 22+.
 - Uses `ws` for WebSockets and `pino` for logging.
+
