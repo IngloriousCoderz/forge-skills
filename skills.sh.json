@@ -1,0 +1,57 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Web UI",
+      "description": "Frontend architecture, rendering patterns, and UI toolkit guidance.",
+      "skills": [
+        "web",
+        "web-best-practices",
+        "vite-plugin-jsx",
+        "vite-plugin-vue",
+        "ui",
+        "ui-best-practices"
+      ]
+    },
+    {
+      "title": "Data & State",
+      "description": "Entity-based application state, stores, and server integration.",
+      "skills": [
+        "store",
+        "react-store",
+        "server",
+        "utils"
+      ]
+    },
+    {
+      "title": "Static Sites",
+      "description": "Static site generation, hydration, and content-driven workflows.",
+      "skills": [
+        "ssx"
+      ]
+    },
+    {
+      "title": "UI & Charts",
+      "description": "Visual components, theming, and charting patterns.",
+      "skills": [
+        "charts"
+      ]
+    },
+    {
+      "title": "Game Engine",
+      "description": "2D game loop architecture and game project scaffolding.",
+      "skills": [
+        "engine",
+        "create-game"
+      ]
+    },
+    {
+      "title": "Scaffolding",
+      "description": "Create new Inglorious Web and game projects quickly.",
+      "skills": [
+        "create-app"
+      ]
+    }
+  ]
+}
