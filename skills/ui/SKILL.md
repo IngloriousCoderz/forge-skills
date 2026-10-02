@@ -13,7 +13,7 @@ npm install @inglorious/ui
 
 ## Core Concepts
 
-**Architecture:** Render-function components that integrate seamlessly with `@inglorious/web`.
+**Architecture:**
 
 - Components are plain objects with a `render(entity, api)` method
 - Two invocation patterns: direct render or via `api.render()`
@@ -27,7 +27,7 @@ npm install @inglorious/ui
 - Templates always dispatch events via `api.notify()`
 - Handler logic lives in type definitions, not entities
 - Import CSS tokens and themes before component styles
-- UI primitive conventions: `ui-best-practices/SKILL.md`
+- UI primitive conventions: [`skills/ui-best-practices/SKILL.md`](../ui-best-practices/SKILL.md)
 
 ## Basic Setup
 
@@ -437,7 +437,7 @@ export default {
 const Template = (args) => {
   const container = document.createElement("div");
   const entity = { id: "story-component", ...args };
-  const api = createMockApi(entity);
+  const api = createMockApi({ [entity.id]: entity });
   render(renderTemplate(entity, api), container);
   return container;
 };

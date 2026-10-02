@@ -5,15 +5,10 @@ description: Reference for scaffolding and configuring new Inglorious Engine gam
 
 # @inglorious/create-game - Complete Reference
 
-## Installation
-
-```bash
-npm create @inglorious/game@latest
-```
-
 ## Core Concept
 
-Scaffolding tool for new games built with @inglorious/engine. It creates a new project directory from a template and sets `package.json` name.
+Scaffolding tool for new games built with `@inglorious/engine`. Same flow as
+[`skills/create-app/SKILL.md`](../create-app/SKILL.md) — different package name and template set.
 
 ## Usage
 
@@ -38,6 +33,9 @@ You’ll be prompted for the project name and template.
 - `ijs` — IngloriousScript + JavaScript (Vite)
 - `its` — IngloriousScript + TypeScript (Vite)
 
+The `ijs`/`its` templates wire up `babel-plugin-inglorious-script`; see
+[`skills/engine/SKILL.md`](../engine/SKILL.md).
+
 ## After Creation
 
 ```bash
@@ -45,4 +43,3 @@ cd my-awesome-game
 pnpm install
 pnpm dev
 ```
-

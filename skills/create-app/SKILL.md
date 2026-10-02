@@ -37,6 +37,12 @@ pnpm create @inglorious/app
 
 You’ll be prompted for the project name and template.
 
+Pass `--template <name>` (and a directory argument) to skip the prompts:
+
+```bash
+pnpm create @inglorious/app my-site --template ssx-js
+```
+
 ## Templates
 
 - `minimal` — plain HTML/CSS/JS, no bundler
@@ -52,4 +58,3 @@ cd my-awesome-app
 pnpm install
 pnpm dev
 ```
-

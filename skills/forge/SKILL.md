@@ -1,5 +1,5 @@
 ---
-name: forge-skills
+name: forge
 description: Repository entry point for the Inglorious Forge skill set and routing guidance for related skills.
 ---
 
@@ -25,11 +25,12 @@ or let one of these own it:
 
 `@inglorious/ssx` is SSG/SSR for `@inglorious/web`, so it uses both. `@inglorious/ui` and
 `@inglorious/charts` are component libraries built on web. `@inglorious/react-store` provides
-native React bindings for the store. `@inglorious/utils` is standalone.
+native React bindings for the store. `@inglorious/utils` is standalone. See
+[`skills/store/SKILL.md`](../store/SKILL.md) for the store's own event and naming rules.
 
 ## Skills Map
 
-### [@inglorious/utils](skills/utils/SKILL.md)
+### [@inglorious/utils](../utils/SKILL.md)
 
 Use for utility functions and algorithmic helpers.
 
@@ -38,7 +39,7 @@ Use for utility functions and algorithmic helpers.
 - Functional helpers (composition, piping)
 - Data structures and algorithms
 
-### [@inglorious/store](skills/store/SKILL.md)
+### [@inglorious/store](../store/SKILL.md)
 
 Use for entity-based state management.
 
@@ -47,21 +48,21 @@ Use for entity-based state management.
 - Redux-compatible API and DevTools integration
 - Multiplayer-friendly patterns
 
-### [@inglorious/server](skills/server/SKILL.md)
+### [@inglorious/server](../server/SKILL.md)
 
 Use for realtime server patterns.
 
 - Store-backed server architecture
 - Entity and event synchronization over WebSockets
 
-### [@inglorious/react-store](skills/react-store/SKILL.md)
+### [@inglorious/react-store](../react-store/SKILL.md)
 
 Use for React integration with `@inglorious/store`.
 
 - Provider setup and simplified hooks
 - `useEntity` and `useNotify` patterns
 
-### [@inglorious/web](skills/web/SKILL.md)
+### [@inglorious/web](../web/SKILL.md)
 
 Use for web UI architecture with `@inglorious/store` and `lit-html`.
 
@@ -69,9 +70,9 @@ Use for web UI architecture with `@inglorious/store` and `lit-html`.
 - Whole-tree re-rendering with efficient DOM updates
 - Built-in form, table, list, select, and router modules
 - Testing patterns
-- Web UI type conventions: `skills/web-best-practices/SKILL.md`
+- Web UI type conventions: [`skills/web-best-practices/SKILL.md`](../web-best-practices/SKILL.md)
 
-### [@inglorious/charts](skills/charts/SKILL.md)
+### [@inglorious/charts](../charts/SKILL.md)
 
 Use for SVG chart construction.
 
@@ -79,7 +80,7 @@ Use for SVG chart construction.
 - Configuration-driven chart behavior
 - SSR-friendly chart rendering
 
-### [@inglorious/ui](skills/ui/SKILL.md)
+### [@inglorious/ui](../ui/SKILL.md)
 
 Use for design system components and theming.
 
@@ -87,9 +88,9 @@ Use for design system components and theming.
 - CSS tokens for colors, spacing, radii, typography
 - Themeable with Inglorious, Material, and Bootstrap themes
 - Light and dark mode variants
-- UI primitive conventions: `skills/ui-best-practices/SKILL.md`
+- UI primitive conventions: [`skills/ui-best-practices/SKILL.md`](../ui-best-practices/SKILL.md)
 
-### [@inglorious/ssx](skills/ssx/SKILL.md)
+### [@inglorious/ssx](../ssx/SKILL.md)
 
 Use for static site generation and hydration workflows.
 
@@ -99,7 +100,7 @@ Use for static site generation and hydration workflows.
 - SEO support (sitemaps, manifests, metadata)
 - Fast hydration with `@lit-labs/ssr`
 
-### [@inglorious/engine](skills/engine/SKILL.md)
+### [@inglorious/engine](../engine/SKILL.md)
 
 Use for functional 2D game loop architecture on top of `@inglorious/store`.
 
@@ -109,8 +110,8 @@ Use for functional 2D game loop architecture on top of `@inglorious/store`.
 
 ## Tooling & Integration
 
-- **[JSX Vite Plugin](skills/vite-plugin-jsx/SKILL.md):** Use JSX syntax instead of `lit-html` templates.
-- **[Vue Vite Plugin](skills/vite-plugin-vue/SKILL.md):** Use Vue-like template syntax instead of `lit-html`.
-- **[Create App](skills/create-app/SKILL.md):** Scaffold Inglorious Web applications.
-- **[Create Game](skills/create-game/SKILL.md):** Scaffold Inglorious Engine games.
+- **[JSX Vite Plugin](../vite-plugin-jsx/SKILL.md):** Use JSX syntax instead of `lit-html` templates.
+- **[Vue Vite Plugin](../vite-plugin-vue/SKILL.md):** Use Vue-like template syntax instead of `lit-html`.
+- **[Create App](../create-app/SKILL.md):** Scaffold Inglorious Web applications.
+- **[Create Game](../create-game/SKILL.md):** Scaffold Inglorious Engine games.
 

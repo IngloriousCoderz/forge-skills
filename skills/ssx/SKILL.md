@@ -64,7 +64,7 @@ export const Index = {
 
 ### `metadata`
 
-Optional. Controls the HTML `<head>`.
+Optional. Controls the HTML `<head>`. Either a plain object:
 
 ```javascript
 export const metadata = {
@@ -74,7 +74,11 @@ export const metadata = {
     "og:image": "/og-image.png",
   },
 };
+```
 
+…or a function of the entity, for values derived from page state:
+
+```javascript
 export const metadata = (entity) => ({
   title: `${entity.user.name}'s Profile`,
   meta: {
@@ -272,19 +276,10 @@ Serves `dist/` using `serve`.
 npm run ssr
 ```
 
-Starts a dedicated SSR runtime server that renders pages marked with `export const ssr = true` on demand.
-
-Options:
-
-- `-c, --config <file>` (default: `site.config.js`)
-- `-r, --root <dir>` (default: `.`)
-- `-p, --port <port>` (default: `3000`)
+Starts a dedicated SSR runtime server that renders pages marked with `export const ssr = true` on demand. Same options as `dev`.
 
 ## Rules & Constraints
 
-1. **Pages MUST export `render`.**
-2. **`load` runs at build time**, not in the browser.
-3. **Dynamic routes require `staticPaths()`.**
-4. **Entity state works the same as @inglorious/web.**
-5. **Pages live in `src/pages/` under the root dir.**
+1. **Dynamic routes require `staticPaths()`.**
+2. **Entity state works the same as `@inglorious/web`.**
 

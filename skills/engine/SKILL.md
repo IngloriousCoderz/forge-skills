@@ -93,7 +93,7 @@ Events are queued and processed once per frame:
 ```javascript
 const types = {
   Enemy: {
-    enemyDamage(entity, damage) {
+    enemyDamage(entity, damage, api) {
       entity.health -= damage;
       if (entity.health <= 0) {
         // This event is queued, processed next frame
@@ -141,10 +141,10 @@ const types = {
       entity.lifetime = 2000; // 2 seconds
     },
 
-    update(entity, deltaTime) {
+    update(entity, deltaTime, api) {
       entity.lifetime -= deltaTime * 1000;
       if (entity.lifetime <= 0) {
-        api.notify("remove", { id: entity.id });
+        api.notify("remove", entity.id);
       }
     },
 
@@ -198,50 +198,51 @@ import { createRenderer } from "@inglorious/renderer-2d";
 const canvas = document.getElementById("canvas");
 const renderer = createRenderer(canvas);
 
-// renderer returns { types, entities, systems } to pass to Engine
+// game is the config object holding types, entities, and systems
 const engine = new Engine(renderer, game);
+await engine.init();
+engine.start();
 ```
 
-**Note:** `createRenderer(canvas)` returns a configuration object with `types`, `entities`, and `systems` that must be passed to the Engine constructor along with your game configuration.
+**Note:** the two arguments are separate — `renderer` (from `createRenderer(canvas)`) drives
+drawing, and `game` is your config object with `types`, `entities` and optional `systems`.
 
 ## Entity Pooling
 
-For performance-critical scenarios (bullet hell, particles):
+For performance-critical scenarios (bullet hell, particles). `Engine` installs
+`entityPoolMiddleware()` for you, so pooling works through two events rather than a pool object:
+
+- `spawn` — payload is the entity's props, including its `type`. The middleware reuses an
+  inactive entity of that type, assigning an `id` if the pool has none free.
+- `despawn` — payload is the entity to recycle.
 
 ```javascript
-import { createPool } from "@inglorious/engine";
-
-const bulletPool = createPool({
-  create: () => ({ type: "Bullet", x: 0, y: 0, active: false }),
-  reset: (entity) => {
-    entity.active = false;
-    entity.x = 0;
-    entity.y = 0;
-  },
-});
-
 const types = {
   Player: {
-    playerShoot(entity) {
-      const bullet = bulletPool.acquire();
-      bullet.x = entity.position.x;
-      bullet.y = entity.position.y;
-      bullet.active = true;
-      api.notify("add", bullet);
+    playerShoot(entity, api) {
+      api.notify("spawn", {
+        type: "Bullet",
+        x: entity.position.x,
+        y: entity.position.y,
+        active: true,
+      });
     },
   },
 
   Bullet: {
-    update(entity, deltaTime) {
+    update(entity, deltaTime, api) {
       entity.y -= 200 * deltaTime;
       if (entity.y < 0) {
-        bulletPool.release(entity);
-        api.notify("remove", { id: entity.id });
+        api.notify("despawn", entity);
       }
     },
   },
 };
 ```
+
+Pools are keyed by `type` and created on first use. `store.extras.getAllActivePoolEntities()`
+returns every live pooled entity, and in dev mode `store.extras.getEntityPoolsStats()` reports
+`{ active, inactive }` per type.
 
 ## IngloriousScript (Optional)
 
@@ -251,23 +252,33 @@ IngloriousScript adds vector operators for intuitive 2D math. Requires Babel con
 
 ```javascript
 // Without IngloriousScript
-import { add, scale, mod } from "@inglorious/utils";
+import { add } from "@inglorious/utils/math/vectors.js";
+import { scale, mod } from "@inglorious/utils/math/vector.js";
+
 const newPosition = mod(add(position, scale(velocity, dt)), worldSize);
 
 // With IngloriousScript (requires babel-plugin-inglorious-script)
 const newPosition = (position + velocity * dt) % worldSize;
 ```
 
+Note the two modules: `vectors.js` holds operations over *several* vectors (`add` sums them
+componentwise), `vector.js` holds operations on *one* (`scale`, `mod`). The same split appears
+throughout `@inglorious/utils` — plural file when more than one thing is involved, singular when
+there is only one.
+
 ## Systems
 
 Global logic that runs after all entity handlers:
 
 ```javascript
-const collides = (a, b) => /* pure overlap test, not an event handler */;
+const collides = (a, b) => {
+  // Pure overlap test, not an event handler
+  return false;
+};
 
 const systems = [
   {
-    update(state, deltaTime) {
+    update(state, deltaTime, api) {
       // Collision detection across all entities
       const players = Object.values(state).filter((e) => e.type === "Player");
       const enemies = Object.values(state).filter((e) => e.type === "Enemy");
@@ -283,7 +294,7 @@ const systems = [
   },
 ];
 
-const engine = new Engine({ types, entities, systems });
+const engine = new Engine(renderer, { types, entities, systems });
 ```
 
 ## API Reference
@@ -371,7 +382,7 @@ const types = {
 ```javascript
 const types = {
   Enemy: {
-    enemyDamage(entity, damage) {
+    enemyDamage(entity, damage, api) {
       entity.health -= damage;
       // Wrong - expects immediate processing
       if (entity.health <= 0) {
@@ -388,16 +399,16 @@ const types = {
 ```javascript
 const types = {
   Enemy: {
-    enemyDamage(entity, damage) {
+    enemyDamage(entity, damage, api) {
       entity.health -= damage;
       // Correct - event queued for next frame
       if (entity.health <= 0) {
         api.notify("enemyDestroy", entity.id);
       }
     },
-    enemyDestroy(entity) {
+    enemyDestroy(entity, api) {
       // This runs next frame, after health check
-      api.notify("remove", { id: entity.id });
+      api.notify("remove", entity.id);
     },
   },
 };

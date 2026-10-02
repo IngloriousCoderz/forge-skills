@@ -17,6 +17,22 @@ npm install @inglorious/utils
 - Vector helpers use arrays tagged by `v()` with a non-enumerable `__isVector__` property.
 - Prefer subpath imports for tree-shaking and smaller bundles.
 
+### Singular vs plural modules
+
+File names follow what the function operates on. A function that affects **one** thing lives in
+the singular file; one that involves **several** lives in the plural:
+
+| Module | Holds | Example |
+| --- | --- | --- |
+| `math/vector.js` | one vector | `scale`, `mod`, `magnitude`, `clamp` |
+| `math/vectors.js` | several vectors | `add` (sums them), `subtract` |
+| `math/numbers.js` | several scalars | `clamp`, `mod` |
+| `data-structures/object.js` | one object | `get`, `set`, `clone`, `produce` |
+| `data-structures/objects.js` | several objects | `extend`, `merge`, `defaults` |
+
+So `clamp` exists twice: `clamp(num, min, max)` in `numbers.js`, and `clamp(vector, min, max)` in
+`vector.js`, which delegates to the scalar one internally.
+
 ## Entry Points
 
 Use either subpath imports (preferred) or the namespace exports.
@@ -29,6 +45,8 @@ import {
   set,
   clone,
   produce,
+  serialize,
+  deserialize,
 } from "@inglorious/utils/data-structures/object.js"
 import { magnitude } from "@inglorious/utils/math/vector.js"
 import { sum } from "@inglorious/utils/math/vectors.js"
@@ -109,6 +127,21 @@ const next = produce(obj, (draft) => {
 })
 
 const deepCopy = clone(next)
+```
+
+### Serialization
+
+`serialize` / `deserialize` convert an event to and from the wire format. Used by the multiplayer
+middleware to send events over a WebSocket, so payloads must be serializable.
+
+```javascript
+import {
+  serialize,
+  deserialize,
+} from "@inglorious/utils/data-structures/object.js"
+
+const wire = serialize({ type: "playerHit", payload: { x: 10 } })
+const event = deserialize(wire)
 ```
 
 ### Deep Merge

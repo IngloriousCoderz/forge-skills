@@ -13,7 +13,7 @@ npm install @inglorious/web
 
 ## Companion Guide
 
-- For file structure, styling, theming, stories, and test conventions for web UI types, see `skills/web-best-practices/SKILL.md`.
+- For file structure, styling, theming, stories, and test conventions for web UI types, see [`skills/web-best-practices/SKILL.md`](../web-best-practices/SKILL.md).
 
 ## Core Concepts
 
@@ -84,7 +84,7 @@ Event names determine which entities receive a handler:
 - `"#entityId:event"` - only the entity with that id
 
 ```javascript
-api.notify("save"); // broadcast
+api.notify("formSave"); // broadcast
 api.notify("Chart:refresh"); // only chart entities
 api.notify("#chart1:refresh"); // only chart1
 ```
@@ -93,7 +93,7 @@ In a web app an event usually concerns only the component that raised it, so pre
 `#<id>:<event>` and keep the event name bare — the scope already says which component it came
 from, so `#chart1:refresh` needs no `chart` in the event name. Broadcast unscoped only when you
 want other components listening; then the name has to describe the event on its own. See
-`skills/store.md` for the naming rules.
+[`skills/store/SKILL.md`](../store/SKILL.md) for the naming rules.
 
 ### Mounting
 
@@ -168,7 +168,7 @@ const types = {
 ### Compass
 
 ```javascript
-import { Compass } from "@inglorious/web/compass";
+import { Compass } from "@inglorious/web/sensors/compass";
 
 const types = { Compass };
 const entities = { compass: { type: "Compass" } };
@@ -227,12 +227,10 @@ const entities = {
 - `#<id>:validateAsync` - Async validation (payload: `{ validate }`)
 - `#<id>:submit` - Typically handled by your own `submit` handler (if you add one)
 
-# <<<<<<< Updated upstream
-
 ### Geolocation
 
 ```javascript
-import { Geolocation } from "@inglorious/web/geolocation";
+import { Geolocation } from "@inglorious/web/sensors/geolocation";
 
 const types = { Geolocation };
 const entities = { geolocation: { type: "Geolocation" } };
@@ -263,8 +261,6 @@ api.notify("geolocationRequest", {
 api.notify("geolocationWatch");
 api.notify("geolocationUnwatch");
 ```
-
-> > > > > > > Stashed changes
 
 ### Router
 
@@ -333,7 +329,7 @@ const page = {
         <p>Count: ${currentCount}</p>
 
         ${role === "admin"
-          ? html`<button @click=${() => api.notify("adminPage:action")}>
+          ? html`<button @click=${() => api.notify("AdminPage:panelOpen")}>
               Admin Panel
             </button>`
           : html`<span>Standard User</span>`}
@@ -343,18 +339,15 @@ const page = {
 };
 ```
 
-**Benefits:**
-
-- Simpler API: `api.select(value)` instead of `value(api.getEntities())`
-- Natural naming: Selectors can be named `value` instead of `selectValue`
-- Cleaner code: Less verbose than manually calling selectors with state
+`api.select(fn)` replaces `fn(api.getEntities())`, so a selector can be named `value`
+rather than `selectValue`.
 
 ### Derived state with `compute`
 
 Use `compute(fn, inputs)` when your derived value depends on one or more state selectors.
 
 ```javascript
-import { compute } from "@inglorious/store";
+import { compute } from "@inglorious/store/select";
 
 const fullName = compute(
   (firstName, lastName) => `${firstName} ${lastName}`,
@@ -463,14 +456,14 @@ import { unsafeHTML } from "@inglorious/web/directives/unsafe-html";
 import { when } from "@inglorious/web/directives/when";
 
 // built-in primitives
-import { Compass } from "@inglorious/web/compass";
+import { Compass } from "@inglorious/web/sensors/compass";
 import {
   Form,
   getFieldError,
   getFieldValue,
   isFieldTouched,
 } from "@inglorious/web/form";
-import { Geolocation } from "@inglorious/web/geolocation";
+import { Geolocation } from "@inglorious/web/sensors/geolocation";
 import { Router } from "@inglorious/web/router";
 
 // web extras

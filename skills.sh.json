@@ -52,6 +52,13 @@
       "skills": [
         "create-app"
       ]
+    },
+    {
+      "title": "Getting Started",
+      "description": "Entry point that routes a goal to the smallest relevant set of skills.",
+      "skills": [
+        "forge"
+      ]
     }
   ]
 }

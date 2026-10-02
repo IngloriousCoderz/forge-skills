@@ -27,14 +27,10 @@ A Redux-compatible, ECS-inspired state library that eliminates boilerplate while
 
 `@inglorious/store` is a standalone state library. Use it on its own, or in a React application
 just like Redux. `@inglorious/react-store` provides native bindings (`useEntity`, `useNotify`)
-if you'd rather not go through `react-redux`. It is also the backbone of the rest of the
-ecosystem:
+if you'd rather not go through `react-redux`.
 
-- `@inglorious/web` — UI rendering and DOM event handling
-- `@inglorious/engine` — 2D game loop with frame-based `update`
-- `@inglorious/server` — realtime server, store-backed
-- `@inglorious/ssx` — SSG/SSR for `@inglorious/web`, so it uses both web and store
-- `@inglorious/ui`, `@inglorious/charts` — component libraries built on web
+It is also the backbone of `@inglorious/web`, `@inglorious/engine` and `@inglorious/server`, so
+building on one of those gets you a store without asking for one.
 
 ## Basic Setup
 
@@ -106,10 +102,9 @@ their own action type.
 - **Don't scope to rescue a vague name.** `#player:shoot` looks tidy but silently limits the event to `Player` entities — exactly the listeners a broadcast event exists to reach. Name the subject and stay unscoped instead.
 - **Inner subjects still get named when scoped:** `#form1:fieldChange` is the field _inside_ the form that changed.
 
-The rule is the same wherever the store runs (see [Where the store runs](#where-the-store-runs));
-what differs is the default. `@inglorious/engine` broadcasts by default, so its events name the
+The rule is the same wherever the store runs; what differs is the default. `@inglorious/engine` broadcasts by default, so its events name the
 subject; `@inglorious/web` scopes to the emitting component, so its event names stay bare. Each
-package documents its own default — see `skills/engine.md` and `skills/web.md`.
+package documents its own default — see [`skills/engine/SKILL.md`](../engine/SKILL.md) and [`skills/web/SKILL.md`](../web/SKILL.md).
 
 - A single-word verb is fine when it's unambiguous for that entity: `increment`, `reset`, `click`.
 - Never notify a handler's own name — it re-enters every matching entity and never terminates; announce something else as its own event.
@@ -238,6 +233,13 @@ const store = createStore({ types, entities, systems });
 
 ## Behavior Composition
 
+A type may be an object, or an array of behaviors. Entries are applied **left to right** onto an
+empty object, so later entries see what earlier ones added:
+
+- **Object entry** — a mixin. Its properties are extended onto the type as-is.
+- **Function entry** — a decorator. It is called with the type composed *so far* and returns what
+  to extend onto it, so it can read, wrap or replace existing handlers.
+
 ```javascript
 const incrementable = {
   increment(entity) {
@@ -258,6 +260,9 @@ const types = {
 
 ### Decorator Pattern
 
+Because a decorator receives the accumulated type, it can wrap a handler that a later mixin adds
+by placing it last:
+
 ```javascript
 const withValidation = (type) => ({
   ...type,
@@ -271,6 +276,10 @@ const types = {
   Form: [withValidation],
 };
 ```
+
+`withValidation` sits after any mixin providing `submit`, so `type.submit` resolves to it. Order
+is the only thing that makes decorator vs. mixin work — putting the decorator first would wrap an
+empty type.
 
 ## Batched Mode
 
@@ -289,6 +298,9 @@ store.update(); // Process batch
 ## Derived State
 
 **Using `compute` (memoized selectors):**
+
+`compute` is exported from `@inglorious/store/select`, alongside the alias `createSelector`. It
+returns a selector you can either call with state yourself, or hand to `api.select()`.
 
 ```javascript
 import { compute } from "@inglorious/store/select";
@@ -333,6 +345,23 @@ const store = createStore({
   middlewares, // Optional: middleware array
 });
 ```
+
+Middlewares wrap dispatch as `(store) => (next) => (event) => ...` and return the result of
+`next(event)`. See `multiplayerMiddleware` in [`skills/server/SKILL.md`](../server/SKILL.md) for a worked example.
+
+### Store Instance Methods
+
+The store itself exposes the same event surface as a handler's `api`, plus state access:
+
+- `notify(type, payload)` - Trigger an event (preferred over `dispatch`)
+- `dispatch(event)` - Redux-style dispatch, `{ type, payload }`
+- `getState()` - Current entities map (read-only)
+- `setState(state)` - Replace the whole state map, bypassing events
+- `update()` - Process the queued events; only needed when `updateMode: "manual"`
+
+`setState` is the escape hatch for wholesale state replacement — merging a server's `stateInit`
+into an existing client store, for example. It does not run handlers, so it will not fire
+lifecycle events.
 
 ### Handler API (`api` parameter)
 
@@ -523,6 +552,27 @@ const { entity: copied } = trigger(
   api,
 );
 expect(copied.value).toBe(10);
+```
+
+`createMockApi` takes a state map (entities keyed by id) and returns a mock of the handler API:
+
+```typescript
+interface MockApi {
+  getEntities(): TState
+  getEntities(typeName: string): TEntity[]
+  getEntity(id: string): TEntity | undefined
+  select<TResult>(selector: (state: TState) => TResult): TResult
+  dispatch(event: Event): void
+  notify(type: string, payload?: any): void
+  getEvents(): Event[]
+}
+```
+
+`getEvents()` returns every event passed through, which is how you assert that a handler
+notified the right thing:
+
+```javascript
+expect(api.getEvents()).toEqual([{ type: "#counter2:valueIncrement" }]);
 ```
 
 ## TypeScript

@@ -5,8 +5,6 @@ description: High-performance chart engine designed for both config-driven and p
 
 # @inglorious/charts
 
-A high-performance chart engine designed for both config-driven and primitive-driven visualizations.
-
 ## Architecture Overview
 
 `@inglorious/charts` follows a unified engine principle. Instead of managing separate engines for each chart type, a single core handles visual rendering by analyzing either:

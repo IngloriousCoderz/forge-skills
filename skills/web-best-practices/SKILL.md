@@ -19,8 +19,6 @@ For a type named `Button`, create `types/button` with the following files:
 - `button.test.js` (optional): Vitest tests.
 - `index.js`: Public entry point that composes and exposes the type surface.
 
-This layout scales well as new types are added and keeps responsibilities clear by file.
-
 ## Component taxonomy (recommended)
 
 For medium/large libraries, group components by intent instead of keeping everything in one flat `components/` folder.
@@ -176,9 +174,7 @@ export const WiredPrimitive = {
 };
 ```
 
-Do not call `this.render()` from `render()`; always delegate to a named base renderer (for example `renderPrimitive()`) to avoid infinite recursion.
-
-Avoid defining `render()` as a monolithic implementation for composite primitives. Prefer a single, named base renderer that can be reused from both the default `render()` and user overrides.
+Do not call `this.render()` from `render()`; always delegate to a named base renderer (for example `renderPrimitive()`) to avoid infinite recursion. Keep that renderer reusable from both the default `render()` and user overrides.
 
 ### Stateful primitives
 
