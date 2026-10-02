@@ -14,6 +14,19 @@ Use this file as the routing entry point for the Inglorious Forge skill set. Loa
 3. Prefer package-specific guidance over generic assumptions.
 4. For multi-package tasks, combine only the relevant skill files.
 
+## Ecosystem Shape
+
+`@inglorious/store` is the backbone. Use it standalone or in a React application just like Redux,
+or let one of these own it:
+
+- `@inglorious/web` — UI rendering and DOM events, on top of the store
+- `@inglorious/engine` — 2D game loop, on top of the store
+- `@inglorious/server` — Node realtime server; creates and owns a store, replicating client events over WebSockets
+
+`@inglorious/ssx` is SSG/SSR for `@inglorious/web`, so it uses both. `@inglorious/ui` and
+`@inglorious/charts` are component libraries built on web. `@inglorious/react-store` provides
+native React bindings for the store. `@inglorious/utils` is standalone.
+
 ## Skills Map
 
 ### [@inglorious/utils](skills/utils/SKILL.md)
@@ -88,7 +101,7 @@ Use for static site generation and hydration workflows.
 
 ### [@inglorious/engine](skills/engine/SKILL.md)
 
-Use for functional 2D game loop architecture.
+Use for functional 2D game loop architecture on top of `@inglorious/store`.
 
 - Frame-based `update(entity, dt)` handlers
 - Entity pool middleware for high-frequency updates

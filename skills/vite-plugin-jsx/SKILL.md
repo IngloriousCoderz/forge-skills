@@ -35,7 +35,7 @@ function render(entity, api) {
       {entity.visible && <h2>{entity.title}</h2>}
 
       {entity.items.map((item) => (
-        <p key={item.id} onClick={() => api.notify("select", item)}>
+        <p key={item.id} onClick={() => api.notify("itemSelect", item)}>
           {item.name}
         </p>
       ))}
@@ -55,7 +55,7 @@ function render(entity, api) {
         entity.items,
         (item) => item.id,
         (item) =>
-          html`<p @click=${() => api.notify("select", item)}>${item.name}</p>`,
+          html`<p @click=${() => api.notify("itemSelect", item)}>${item.name}</p>`,
       )}
     </div>
   `;

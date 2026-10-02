@@ -32,9 +32,9 @@ If no path is provided, the server starts with an empty game config.
 
 ## How It Works
 
-- Creates a store from the game config.
+- Creates a store from the game config, or from an empty config if none is given.
 - Starts a fixed 60 Hz loop to process events and advance state.
-- Broadcasts client events to all connected clients.
+- Tracks connected clients and broadcasts events to them over WebSockets.
 - Sends `stateInit` to new clients on connect.
 
 ## File Layout
@@ -47,9 +47,9 @@ If no path is provided, the server starts with an empty game config.
 ## Data Flow
 
 1. Client connects → receives `stateInit`.
-2. Client sends an event `{ type, payload }`.
+2. Client notifies an event `{ type, payload }`, unless it's blacklisted.
 3. Server dispatches it into the store.
-4. Server broadcasts the same event to other clients.
+4. Server broadcasts the same event to the other connected clients.
 5. Game loop ticks at 60 FPS and calls `store.update()`.
 
 ## Notes

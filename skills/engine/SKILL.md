@@ -66,7 +66,9 @@ The engine has built-in single-word events:
 
 ### Custom Events
 
-Use multi-word names for custom events to avoid conflicts:
+Game events are broadcast, not scoped: when the player shoots, every enemy should ask "is it
+shooting me?" and the bullet pool should decrement its count. So the name is the only description
+a listener gets, and it must say who the event is about. Keep them unscoped and name the subject:
 
 ```javascript
 const types = {
@@ -91,11 +93,11 @@ Events are queued and processed once per frame:
 ```javascript
 const types = {
   Enemy: {
-    takeDamage(entity, damage) {
+    enemyDamage(entity, damage) {
       entity.health -= damage;
       if (entity.health <= 0) {
         // This event is queued, processed next frame
-        api.notify("enemyDestroyed", entity.id);
+        api.notify("enemyDestroy", entity.id);
       }
     },
   },
@@ -167,13 +169,13 @@ const movable = {
 };
 
 const collidable = {
-  checkCollision(entity, other) {
+  collisionCheck(entity, other) {
     // Collision detection logic
   },
 };
 
 const controllable = {
-  handleInput(entity, input) {
+  playerInput(entity, input) {
     if (input.key === "ArrowLeft") {
       entity.velocity.x = -100;
     }
@@ -220,7 +222,7 @@ const bulletPool = createPool({
 
 const types = {
   Player: {
-    shoot(entity) {
+    playerShoot(entity) {
       const bullet = bulletPool.acquire();
       bullet.x = entity.position.x;
       bullet.y = entity.position.y;
@@ -261,6 +263,8 @@ const newPosition = (position + velocity * dt) % worldSize;
 Global logic that runs after all entity handlers:
 
 ```javascript
+const collides = (a, b) => /* pure overlap test, not an event handler */;
+
 const systems = [
   {
     update(state, deltaTime) {
@@ -270,7 +274,7 @@ const systems = [
 
       players.forEach((player) => {
         enemies.forEach((enemy) => {
-          if (checkCollision(player, enemy)) {
+          if (collides(player, enemy)) {
             api.notify("playerHit", { playerId: player.id, enemyId: enemy.id });
           }
         });
@@ -367,11 +371,11 @@ const types = {
 ```javascript
 const types = {
   Enemy: {
-    takeDamage(entity, damage) {
+    enemyDamage(entity, damage) {
       entity.health -= damage;
       // Wrong - expects immediate processing
       if (entity.health <= 0) {
-        api.notify("enemyDestroyed", entity.id);
+        api.notify("enemyDestroy", entity.id);
         // This entity might still exist in other handlers this frame
       }
     },
@@ -384,14 +388,14 @@ const types = {
 ```javascript
 const types = {
   Enemy: {
-    takeDamage(entity, damage) {
+    enemyDamage(entity, damage) {
       entity.health -= damage;
       // Correct - event queued for next frame
       if (entity.health <= 0) {
-        api.notify("enemyDestroyed", entity.id);
+        api.notify("enemyDestroy", entity.id);
       }
     },
-    enemyDestroyed(entity) {
+    enemyDestroy(entity) {
       // This runs next frame, after health check
       api.notify("remove", { id: entity.id });
     },

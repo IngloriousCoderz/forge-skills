@@ -93,8 +93,8 @@ export const Counter = {
 
 ```vue
 <template>
-  <button @click="handleClick">Click</button>
-  <input @input="handleInput" />
+  <button @click="click">Click</button>
+  <input @input="inputChange" />
 </template>
 ```
 
@@ -142,7 +142,7 @@ const count = 0;
 const items = [];
 
 const increment = (entity) => entity.count++;
-const addItem = (entity, item) => entity.items.push(item);
+const itemAdd = (entity, item) => entity.items.push(item);
 </script>
 ```
 

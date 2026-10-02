@@ -23,6 +23,19 @@ A Redux-compatible, ECS-inspired state library that eliminates boilerplate while
 - ⚠️ Redux middlewares (Redux-Saga, Redux-Thunk) may require adaptation
 - ⚠️ Prefer `api.notify()` for event-driven updates (cleaner API)
 
+### Where the store runs
+
+`@inglorious/store` is a standalone state library. Use it on its own, or in a React application
+just like Redux. `@inglorious/react-store` provides native bindings (`useEntity`, `useNotify`)
+if you'd rather not go through `react-redux`. It is also the backbone of the rest of the
+ecosystem:
+
+- `@inglorious/web` — UI rendering and DOM event handling
+- `@inglorious/engine` — 2D game loop with frame-based `update`
+- `@inglorious/server` — realtime server, store-backed
+- `@inglorious/ssx` — SSG/SSR for `@inglorious/web`, so it uses both web and store
+- `@inglorious/ui`, `@inglorious/charts` — component libraries built on web
+
 ## Basic Setup
 
 ```javascript
@@ -50,13 +63,62 @@ Handlers are called with: `entity`, `payload`, `api` (you can omit unused parame
 ```javascript
 const types = {
   Tasks: {
-    addTask(entity, text, api) {
+    taskAdd(entity, text, api) {
       entity.items.push({ id: Date.now(), text });
-      api.notify("taskAdded", { count: entity.items.length });
+      api.notify("taskCountChange", { count: entity.items.length });
+    },
+  },
+
+  // Two unrelated types listening to the same fact
+  TaskBadge: {
+    taskCountChange(entity, { count }) {
+      entity.count = count;
+    },
+  },
+
+  Logger: {
+    taskCountChange(entity, { count }) {
+      console.log(`task count is now ${count}`);
     },
   },
 };
 ```
+
+```javascript
+api.notify("Tasks:taskAdd", "Buy milk"); // scoped — the target names the type
+api.notify("taskCountChange", { count }); // broadcast — the name must name the subject
+```
+
+### Naming: name handlers after the event
+
+**Why events and not commands.** A command-style name (`closeOverlays`) implies a known actor
+issuing a known instruction, so the only sensible responder is whatever code issued it. An
+event-style name (`overlaysClose`) names a single observable occurrence, and every type then
+decides independently whether and how to react — which is what `TaskBadge` and `Logger` are doing
+above. Neither knows `Tasks` exists, and adding a third listener never means editing `taskAdd`.
+This is the same reasoning behind Redux's rule that reducers react to actions without dispatching
+their own action type.
+
+**Match the name to the scope.** The scope is part of the description, so the two must agree:
+
+- **Broadcast unscoped** — the name is the *only* description, so it carries the subject: `playerShoot`, `enemyDestroy`, `itemsLoad`, `taskCountChange`.
+- **Scoped** (`Type:event`, `#id:event`) — the target already names the subject, so keep the name bare: `#form1:submit`, `Form:reset`, not `#form1:formSubmit`.
+- **Don't scope to rescue a vague name.** `#player:shoot` looks tidy but silently limits the event to `Player` entities — exactly the listeners a broadcast event exists to reach. Name the subject and stay unscoped instead.
+- **Inner subjects still get named when scoped:** `#form1:fieldChange` is the field _inside_ the form that changed.
+
+The rule is the same wherever the store runs (see [Where the store runs](#where-the-store-runs));
+what differs is the default. `@inglorious/engine` broadcasts by default, so its events name the
+subject; `@inglorious/web` scopes to the emitting component, so its event names stay bare. Each
+package documents its own default — see `skills/engine.md` and `skills/web.md`.
+
+- A single-word verb is fine when it's unambiguous for that entity: `increment`, `reset`, `click`.
+- Never notify a handler's own name — it re-enters every matching entity and never terminates; announce something else as its own event.
+- Keep one tense. Past tense (`taskAdded`) is defensible, but base verbs are the house style; pick one and stay on it.
+- Drop a `handle` prefix — it reads as "on handle click".
+
+**Exception — RTK migration.** `convertSlice()` preserves `caseReducers` names verbatim, so
+migrated slices keep their imperative RTK names (`addTodo`, `toggleTodo`, `fetchTodoPending`).
+Don't rename these: they have to match the RTK action types they are bridged from.
 
 ## Lifecycle Events
 
@@ -160,7 +222,7 @@ Global logic that runs after all entity handlers for the same event:
 ```javascript
 const systems = [
   {
-    taskCompleted(state, taskId) {
+    taskComplete(state, taskId) {
       const allTodos = Object.values(state)
         .filter((e) => e.type === "TodoList")
         .flatMap((e) => e.todos);
@@ -219,8 +281,8 @@ const store = createStore({
   updateMode: "manual",
 });
 
-store.notify("playerMoved", { x: 100, y: 50 });
-store.notify("enemyAttacked", { damage: 10 });
+store.notify("playerMove", { x: 100, y: 50 });
+store.notify("enemyAttack", { damage: 10 });
 store.update(); // Process batch
 ```
 
@@ -441,19 +503,26 @@ Notes:
 import { trigger, createMockApi } from "@inglorious/store/test";
 
 // Test handlers
-const { entity, events } = trigger({ value: 99 }, increment, { amount: 5 });
+const { entity, events } = trigger({ value: 99 }, increment, {
+  amount: 5,
+});
 expect(entity.value).toBe(104);
 
 // With mock API
+const valueCopy = (entity, { sourceId }, api) => {
+  entity.value = api.getEntity(sourceId).value;
+};
+
 const api = createMockApi({
   counter1: { type: "Counter", value: 10 },
 });
 const { entity: copied } = trigger(
   { id: "counter2", type: "Counter", value: 20 },
-  copyValue,
+  valueCopy,
   { sourceId: "counter1" },
   api,
 );
+expect(copied.value).toBe(10);
 ```
 
 ## TypeScript
@@ -462,7 +531,7 @@ const { entity: copied } = trigger(
 interface TodoListTypes {
   Form: {
     inputChange: (entity: FormEntity, value: string) => void;
-    formSubmit: (entity: FormEntity) => void;
+    submit: (entity: FormEntity) => void;
   };
 }
 
@@ -471,7 +540,7 @@ export const types: TodoListTypes = {
     inputChange(entity, value) {
       /* ... */
     },
-    formSubmit(entity) {
+    submit(entity) {
       /* ... */
     },
   },

@@ -89,6 +89,12 @@ api.notify("Chart:refresh"); // only chart entities
 api.notify("#chart1:refresh"); // only chart1
 ```
 
+In a web app an event usually concerns only the component that raised it, so prefer
+`#<id>:<event>` and keep the event name bare — the scope already says which component it came
+from, so `#chart1:refresh` needs no `chart` in the event name. Broadcast unscoped only when you
+want other components listening; then the name has to describe the event on its own. See
+`skills/store.md` for the naming rules.
+
 ### Mounting
 
 ```javascript
