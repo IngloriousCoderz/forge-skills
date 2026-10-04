@@ -22,6 +22,60 @@ Functional game engine built on entity-based state management. Uses the same ent
 - Frame-based `update` event with `deltaTime`
 - Renderer agnostic (Canvas2D, React, HTML)
 
+## Coordinates
+
+The world is **y-up**, and both vertical axes grow **upwards**.
+
+`position` is `[x, y, z]`. The origin sits on the floor, so `y = 0` is ground
+level and a bigger `y` is always a higher place in the world. Gravity subtracts
+from it, a jump adds to it.
+
+`z` is the depth axis, and it is y-up too — it is **not** screen-down. Renderers
+turn world coordinates into screen ones; `@inglorious/renderer-2d` projects
+
+```text
+canvasX = x
+canvasY = viewportHeight - y - z
+```
+
+which puts `(0, 0, 0)` on the bottom-left of the canvas and inverts both vertical
+axes. Nothing else in the engine knows about screen coordinates.
+
+In a 2D game, keep the play plane at `z = 0` and treat `y` as altitude. Using `z`
+as a second vertical axis works too, but it is easy to mix up, and the two are
+added together on screen.
+
+```javascript
+const WIDTH = 512;
+const HEIGHT = 288;
+const GROUND_HEIGHT = 16;
+
+const bird = {
+  type: "Bird",
+  // A hundred pixels above the floor, halfway across the screen.
+  position: v(WIDTH / 2, 100, 0),
+  // Height is the extent along `y`, depth the one along `z`.
+  size: v(38, 24, 0),
+  collisions: { hitbox: { shape: "rectangle", size: v(34, 20, 0) } },
+};
+
+// Falling loses height.
+entity.velocity[1] -= GRAVITY * deltaTime;
+entity.position[1] += entity.velocity[1] * deltaTime;
+
+// The floor is a band of altitude, not a line on the canvas.
+if (entity.position[1] < GROUND_HEIGHT) entity.position[1] = GROUND_HEIGHT;
+```
+
+Two things that catch people out, because they are not about the axes:
+
+- `size` is `[width, height, depth]` with `height` on `y` and `depth` on `z`. A
+  renderer that flattens both draws a shape `height + depth` tall, while
+  collision detection tests the axes separately.
+- Sprites are positioned by `image.anchor`, while collision shapes are always
+  **centred** on `position` (plus an optional `offset`). A sprite and its hitbox
+  only line up when the anchor matches, such as `[0.5, 0.5]` for a centred one.
+
 ## Basic Setup
 
 ```javascript
@@ -244,6 +298,11 @@ Pools are keyed by `type` and created on first use. `store.extras.getAllActivePo
 returns every live pooled entity, and in dev mode `store.extras.getEntityPoolsStats()` reports
 `{ active, inactive }` per type.
 
+Pooled entities live outside the store, so `api.getEntities()` does not list them. Use
+`api.findCollision()` instead of the bare `findCollision` helper: it merges the pool into the
+entities it searches, so a pooled body collides like any other. Call
+`api.notify("despawn", entity)` to recycle one — it works from inside its own `update`.
+
 ## IngloriousScript (Optional)
 
 IngloriousScript adds vector operators for intuitive 2D math. Requires Babel configuration.
@@ -261,8 +320,8 @@ const newPosition = mod(add(position, scale(velocity, dt)), worldSize);
 const newPosition = (position + velocity * dt) % worldSize;
 ```
 
-Note the two modules: `vectors.js` holds operations over *several* vectors (`add` sums them
-componentwise), `vector.js` holds operations on *one* (`scale`, `mod`). The same split appears
+Note the two modules: `vectors.js` holds operations over _several_ vectors (`add` sums them
+componentwise), `vector.js` holds operations on _one_ (`scale`, `mod`). The same split appears
 throughout `@inglorious/utils` — plural file when more than one thing is involved, singular when
 there is only one.
 
@@ -304,15 +363,9 @@ const engine = new Engine(renderer, { types, entities, systems });
 ```javascript
 const renderer = createRenderer(canvas);
 const game = {
-  types: {
-    /* entity behaviors */
-  },
-  entities: {
-    /* initial entities */
-  },
-  systems: [
-    /* optional: global handlers */
-  ],
+  types: {/* entity behaviors */},
+  entities: {/* initial entities */},
+  systems: [/* optional: global handlers */],
 };
 
 const engine = new Engine(renderer, game);
@@ -341,6 +394,8 @@ engine.start();
 - `notify(type, payload)` - Trigger events (queued)
 - `getTypes()` - Access type definitions
 - `getType(name)` - Access specific type
+- `findCollision(entity, entities?, group?)` - First entity colliding with the given one
+- `getAllActivePoolEntities()` - Every live pooled entity
 
 ## Rules & Constraints
 
@@ -413,4 +468,3 @@ const types = {
   },
 };
 ```
-
