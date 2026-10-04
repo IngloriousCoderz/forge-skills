@@ -72,9 +72,51 @@ Two things that catch people out, because they are not about the axes:
 - `size` is `[width, height, depth]` with `height` on `y` and `depth` on `z`. A
   renderer that flattens both draws a shape `height + depth` tall, while
   collision detection tests the axes separately.
-- Sprites are positioned by `image.anchor`, while collision shapes are always
-  **centred** on `position` (plus an optional `offset`). A sprite and its hitbox
-  only line up when the anchor matches, such as `[0.5, 0.5]` for a centred one.
+- An `anchor` picks the point of a shape that sits on its `position`, and it
+  places the sprite, the drawn shapes and the collision shapes together.
+
+### Anchors
+
+An `anchor` counts from the low end of every axis — left on `x`, bottom on `y`
+and `z` — so it reads the same way the world does. It defaults to `[0.5, 0.5]`:
+
+```text
+[0.5, 0.5]  centred          [0, 0]  bottom-left
+[1, 1]      top-right        [0, 1]  top-left
+```
+
+Anchors are world space, not screen space. Nothing about them depends on which
+way the renderer draws, so a shape anchored at `[0, 0]` stands on its position
+whether it is a platformer floor or the bottom of a top-down screen. A third
+coordinate may be given for the depth axis, and defaults to the middle.
+
+One anchor places everything about an entity, so a hitbox cannot drift away from
+what you can see. Write it on the entity rather than on `image`, which keeps one
+place to keep it in step:
+
+```javascript
+const player = {
+  type: "Player",
+  // Standing on the floor, described by its bottom-left corner.
+  position: v(100, 0, 0),
+  anchor: [0, 0],
+  size: v(16, 24, 0),
+  collisions: { hitbox: { shape: "rectangle" } },
+  image: { id: "player", imageSize: [16, 24] },
+};
+
+// A platform you land on, also described by its bottom-left corner.
+const ground = {
+  type: "Platform",
+  position: v(0, 0, 0),
+  anchor: [0, 0],
+  size: v(256, 16, 0),
+  collisions: { platform: { shape: "rectangle" } },
+};
+```
+
+A collision shape may pin itself differently from its entity with its own
+`anchor`, which is the one case where a hitbox is deliberately not on the sprite.
 
 ## Basic Setup
 
