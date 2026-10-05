@@ -159,6 +159,8 @@ The engine has built-in single-word events:
 - `update` - Fired every frame, carries `deltaTime`
 - `add` - Add new entity (triggers `create` lifecycle)
 - `remove` - Remove entity (triggers `destroy` lifecycle)
+- `pause` - Halt the world, see [Pausing](#pausing)
+- `resume` - Unhalt it
 
 ### Custom Events
 
@@ -226,6 +228,44 @@ const types = {
 - Always use `deltaTime` for time-based calculations
 - Never assume fixed frame rate
 - `deltaTime` is in seconds (typically 0.016 for 60fps)
+
+### Pausing
+
+`api.notify("pause")` stops the store handing out `update` events at all. Nothing that
+moves needs to know about it:
+
+```javascript
+fsm({
+  play: {
+    togglePause(entity, _, api) {
+      api.notify(entity.paused ? "resume" : "pause");
+    },
+  },
+});
+```
+
+The `game` behaviour keeps a readable `paused` flag on the game entity, which is what the
+handler above reads. Because `update` is simply never called while halted, a mover needs
+no check of its own — which is the point, since every mover having to ask whether it may
+move is what makes pausing expensive.
+
+Two things keep working while halted, and both are deliberate:
+
+- **Every other event.** The thing that takes the pause back off still gets its events.
+- **Entities setting `updatesWhilePaused`**, which is how an overlay or a pause menu
+  keeps drawing and clicking.
+
+```javascript
+const PauseMenu = [{ render: renderMenu }];
+
+// in entities
+pauseMenu: { type: "PauseMenu", updatesWhilePaused: true },
+```
+
+**Default is to stop.** An entity that must keep updating has to say so, so a forgotten
+flag pauses the gameplay rather than freezing the menu. `pause` and `resume` still
+dispatch to types that handle them, so one notification can halt the world and let the
+game record why.
 
 ## Entity Lifecycle
 
@@ -302,6 +342,62 @@ engine.start();
 
 **Note:** the two arguments are separate — `renderer` (from `createRenderer(canvas)`) drives
 drawing, and `game` is your config object with `types`, `entities` and optional `systems`.
+
+### Cropping a sprite sheet
+
+Use `crop` rather than setting the crop by hand. `renderImage` reads `sx`/`sy` off the
+**entity** and the grid off **`entity.image`**, and `sx`/`sy` are **tile indices, not
+pixels** — it multiplies them by `tileSize` before drawing. `crop` takes pixels, does the
+division, and keeps whatever the image already carried.
+
+```javascript
+import { crop } from "@inglorious/renderer-2d/image/crop.js";
+
+const Ball = [
+  { render: renderImage },
+  {
+    create(entity) {
+      crop(entity, "neko", {
+        x: 96,
+        y: 48,
+        width: 8,
+        height: 8,
+        tileSize: [32, 16],
+      });
+    },
+  },
+];
+```
+
+`width`/`height` default to the entity's own `size`, and `tileSize` defaults to the frame.
+A frame may be wider or smaller than a cell: the region read is the frame's own size, so a
+frame spanning two cells is read whole and one inset inside a cell does not bring its
+background along.
+
+For a sheet cut on a uniform grid with nothing inset, `renderSprite` addresses tiles by
+index and also animates; reach for `crop` when a frame breaks the grid.
+
+## Collision
+
+An entity with a `collisions` block is solid:
+
+```javascript
+brick: { type: "Brick", collisions: { hitbox: { shape: "rectangle" } } },
+```
+
+Or, for the shape almost everything solid wants, one word:
+
+```javascript
+brick: { type: "Brick", size: [32, 16, 0], solid: true },
+```
+
+`solid: true` means "collide with a rectangle the size of `size`". It is **asked for
+rather than assumed** from the presence of a `size`, because plenty of things have a size
+and are not in the way — a line of text, a frame counter, anything measured in pixels
+rather than in space. Assuming it would quietly turn all of those into walls.
+
+A declared `collisions` block still wins, so an entity can be solid and still have a hitbox
+smaller than itself, or shaped like a point or a circle.
 
 ## Entity Pooling
 
@@ -405,9 +501,15 @@ const engine = new Engine(renderer, { types, entities, systems });
 ```javascript
 const renderer = createRenderer(canvas);
 const game = {
-  types: {/* entity behaviors */},
-  entities: {/* initial entities */},
-  systems: [/* optional: global handlers */],
+  types: {
+    /* entity behaviors */
+  },
+  entities: {
+    /* initial entities */
+  },
+  systems: [
+    /* optional: global handlers */
+  ],
 };
 
 const engine = new Engine(renderer, game);

@@ -97,7 +97,7 @@ their own action type.
 
 **Match the name to the scope.** The scope is part of the description, so the two must agree:
 
-- **Broadcast unscoped** — the name is the *only* description, so it carries the subject: `playerShoot`, `enemyDestroy`, `itemsLoad`, `taskCountChange`.
+- **Broadcast unscoped** — the name is the _only_ description, so it carries the subject: `playerShoot`, `enemyDestroy`, `itemsLoad`, `taskCountChange`.
 - **Scoped** (`Type:event`, `#id:event`) — the target already names the subject, so keep the name bare: `#form1:submit`, `Form:reset`, not `#form1:formSubmit`.
 - **Don't scope to rescue a vague name.** `#player:shoot` looks tidy but silently limits the event to `Player` entities — exactly the listeners a broadcast event exists to reach. Name the subject and stay unscoped instead.
 - **Inner subjects still get named when scoped:** `#form1:fieldChange` is the field _inside_ the form that changed.
@@ -128,6 +128,56 @@ const types = {
     },
   },
 };
+```
+
+## Pausing the World
+
+`pause` halts the store: it stops handing out `update` events. `resume` starts it again.
+
+```javascript
+store.notify("pause");
+store.notify("update");
+store.update(); // nothing updated
+
+store.notify("resume");
+```
+
+Anything that moves by integrating a delta time stops without being told about it. Every
+other event still flows, which is what lets a pause menu take itself back off:
+
+```javascript
+pauseMenu.pause(entity, _, api) {
+  api.notify("resume");
+}
+```
+
+An entity opts out with `updatesWhilePaused`, which is for overlays and menus:
+
+```javascript
+const Overlay = [{ update(entity, dt) { entity.ticks++; } }];
+
+// in entities
+overlay: { type: "Overlay", updatesWhilePaused: true },
+```
+
+It belongs on the entity, not the type, so a type stays an index signature of handlers
+and stays callable from TypeScript.
+
+**Default is to stop.** Anything that keeps updating must say so, so a forgotten flag
+pauses the gameplay rather than freezing the menu.
+
+Unlike `add` and `remove`, `pause` and `resume` still dispatch to types that handle
+them, so one notification can halt the world and let the game record why.
+
+The store has no opinion about **who** is paused. `@inglorious/engine`'s `game()`
+behaviour keeps a readable `paused` flag on the game entity, so anything toggling a
+pause reads that flag rather than its own entity:
+
+```javascript
+press(entity, _, api) {
+  const game = api.getEntity("game"); // not `entity`
+  api.notify(game.paused ? "resume" : "pause");
+}
 ```
 
 ## Event Targeting
@@ -237,7 +287,7 @@ A type may be an object, or an array of behaviors. Entries are applied **left to
 empty object, so later entries see what earlier ones added:
 
 - **Object entry** — a mixin. Its properties are extended onto the type as-is.
-- **Function entry** — a decorator. It is called with the type composed *so far* and returns what
+- **Function entry** — a decorator. It is called with the type composed _so far_ and returns what
   to extend onto it, so it can read, wrap or replace existing handlers.
 
 ```javascript
@@ -384,6 +434,8 @@ lifecycle events.
 
 - `add` - Add entity (triggers `create`)
 - `remove` - Remove entity (triggers `destroy`)
+- `pause` - Halt the world, see [Pausing the World](#pausing-the-world)
+- `resume` - Unhalt it
 
 ## Migration from Redux Toolkit (RTK)
 
@@ -558,13 +610,13 @@ expect(copied.value).toBe(10);
 
 ```typescript
 interface MockApi {
-  getEntities(): TState
-  getEntities(typeName: string): TEntity[]
-  getEntity(id: string): TEntity | undefined
-  select<TResult>(selector: (state: TState) => TResult): TResult
-  dispatch(event: Event): void
-  notify(type: string, payload?: any): void
-  getEvents(): Event[]
+  getEntities(): TState;
+  getEntities(typeName: string): TEntity[];
+  getEntity(id: string): TEntity | undefined;
+  select<TResult>(selector: (state: TState) => TResult): TResult;
+  dispatch(event: Event): void;
+  notify(type: string, payload?: any): void;
+  getEvents(): Event[];
 }
 ```
 
@@ -642,4 +694,3 @@ const types = {
   },
 };
 ```
-
