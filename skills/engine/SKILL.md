@@ -283,6 +283,79 @@ flag pauses the gameplay rather than freezing the menu. `pause` and `resume` sti
 dispatch to types that handle them, so one notification can halt the world and let the
 game record why.
 
+### Screens that share a world
+
+`fsm` says when a machine moves. `scenes` says what each state is made of, and is the
+usual pair for a game that is a few screens over one world:
+
+```javascript
+import { fsm } from "@inglorious/engine/behaviors/fsm.js";
+import { scenes } from "@inglorious/engine/behaviors/scenes.js";
+
+const SCENES = {
+  title: () => [createTitleEntity(), createMenuEntity()],
+  serve: () => [...createPlayScene(), createServePromptEntity()],
+  play: () => [...createPlayScene(), createPausedEntity()],
+};
+
+const types = {
+  Game: [
+    scenes(SCENES),
+    fsm({
+      serve: {
+        press(entity) {
+          entity.state = "play";
+        },
+      },
+      play: {
+        togglePause(entity, _, api) {
+          api.notify(entity.paused ? "resume" : "pause");
+        },
+      },
+    }),
+  ],
+};
+
+const entities = { game: { type: "Game", state: "serve" } };
+```
+
+**Only the difference between two states is touched.** Anything they have in common stays
+standing as it is, which is what carries a paddle, a ball and a level from the serve into
+the play and back again without rebuilding them -- and so without losing where the paddle
+had slid to or which bricks were already knocked out. Rebuilding each state's world afresh
+is the mistake this exists to prevent, and it is silent: everything looks right until the
+paddle jumps back to the middle.
+
+A state is handed the entity asking for it, so anything worth making once -- a level, say,
+which is expensive and must not be rolled again when a life is lost -- can be held on the
+entity and left alone the second time round:
+
+```javascript
+serve: (entity) => {
+  entity.bricks ??= createLevel();
+
+  return [...createPlayScene(entity.bricks), createServePromptEntity()];
+},
+```
+
+### A mistyped type is an error
+
+The engine refuses a configuration whose entity names a type nothing declared, and says
+which type was nearly meant:
+
+```
+1 of the entities in this game name a type that is not declared.
+An undeclared type gives an entity no handlers at all, so everything sent to it is
+silently dropped.
+  audio has type "audio", which is not declared
+    did you mean "Audio"?
+```
+
+Nothing downstream reports this. An undeclared type augments into an empty type, so the
+entity stands there with none of the rendering, collision or handlers its type was meant to
+give it and every event sent to it goes nowhere. Type names are `PascalCase` by convention,
+and `type: "audio"` is not caught by anything else.
+
 ## Entity Lifecycle
 
 ```javascript
@@ -396,11 +469,11 @@ index and also animates; reach for `crop` when a frame breaks the grid.
 ### Mirroring a frame
 
 A frame list is a list of indices, and a mirrored frame is written as the frame's own
-number with a flag set in the top bit. `flipped` is that written down, so the mirroring is
-visible at the call site instead of encoded in it:
+number with a flag set in the top bit. `flippedHorizontally` and `flippedVertically` are
+that written down, so the mirroring is visible at the call site instead of encoded in it:
 
 ```javascript
-import { flipped } from "@inglorious/renderer-2d/image/flags.js";
+import { flippedHorizontally, flippedVertically } from "@inglorious/renderer-2d/image/flags.js";
 
 const entities = {
   cat: {
@@ -409,18 +482,79 @@ const entities = {
       image: { id: "neko", imageSize: [192, 192], tileSize: [32, 32] },
       frames: {
         right: [16, 17, 18],
-        left: [flipped(16), flipped(17), flipped(18)],
+        left: [flippedHorizontally(16), flippedHorizontally(17), flippedHorizontally(18)],
+        ceiling: [flippedVertically(4)],
       },
     },
   },
 };
 ```
 
-`renderSprite` and `renderTilemap` both read the flag back out, so a list can mix mirrored
-and plain frames freely. Writing the flag yourself (`0x80000000 + 16`) leaves a number
-outside the 32 bits the renderers take apart with bitwise operators; `flipped` coerces it,
-so the stored number is the one the readers expect. The two flags are exported from the same
-module for the rare case of taking a frame apart by hand.
+Both names say which way the frame is turned, because the usual case is a mirror on one
+axis and a function called just `flipped` leaves the reader to work out which. Mirroring
+both ways is the two composed: `flippedVertically(flippedHorizontally(16))`.
+
+`renderSprite` and `renderTilemap` both read the flags back out, so a list can mix mirrored
+and plain frames freely. Writing a flag yourself (`0x80000000 + 16`) leaves a number
+outside the 32 bits the renderers take apart with bitwise operators; both helpers coerce
+it, so the stored number is the one the readers expect. The flags themselves are exported
+from the same module for the rare case of taking a frame apart by hand.
+
+### Naming a frame by its number
+
+`crop` takes a frame in pixels. `cropQuad` takes a tile by its number on the sheet, which is
+what the sprite behaviour and the tilemap renderer work in. Tiles are read in order **down**
+the sheet, so the seventh tile of a sheet six across is the first of its second row:
+
+```javascript
+import { cropQuad } from "@inglorious/renderer-2d/image/crop-quad.js";
+
+cropQuad(entity, "breakout", 11, { tileSize: [32, 16], tilesAcross: 6 });
+```
+
+`tileSize` defaults to the entity's own size, and `tilesAcross` is worked out from the
+sheet's width unless the sheet is padded. Reach for this rather than `crop` when what you
+have is a number off the sheet -- a frame chosen by its colour and tier, say -- because
+turning a number that is already a tile into pixels only to divide it back down again is a
+round trip.
+
+### Where a line sits
+
+A text entity's position is the **top edge** of its line, which keeps the position and
+`lineHeight` in step with what is drawn whatever the font's own baseline turns out to be.
+`baseline` says which edge sits on the position instead, and takes the names the canvas
+gives -- `top`, `hanging`, `middle`, `alphabetic`, `bottom`:
+
+```javascript
+// The line starts at the position.
+{ render: renderText, value: "Score:", position: v(372, 238, 0), size: 8 }
+
+// The middle of the line is at the position, so nothing has to add half a line height by
+// hand at every place a centred line is wanted.
+{ render: renderText, value: "GAME OVER", position: v(216, 162, 0), size: 32, baseline: "middle" }
+```
+
+Two entities at the same position are only on the same line if they share a `baseline` as
+well. A top-anchored and a middle-anchored line at one point sit half a line height apart.
+
+### Anchors
+
+Sprites and shapes can be anchored by any of nine points, named in
+`@inglorious/engine/physics/anchor.js` rather than written as pairs of numbers:
+
+```javascript
+import { BOTTOM_LEFT, TOP_LEFT } from "@inglorious/engine/physics/anchor.js";
+
+// Drawn from its top left corner, which is where a sprite sheet's own coordinates point.
+{ type: "Ball", position: v(212, 40, 0), size: v(8, 8, 0), anchor: TOP_LEFT }
+
+// Sitting on the position, which is what a floor is.
+{ type: "Platform", position: v(0, 0, 0), size: v(64, 16, 0), anchor: BOTTOM_LEFT }
+```
+
+`TOP_LEFT`, `TOP_CENTER`, `TOP_RIGHT`, `LEFT`, `CENTER`, `RIGHT`, `BOTTOM_LEFT`,
+`BOTTOM_CENTER`, `BOTTOM_RIGHT`. Anchors count from the top on both vertical axes, so
+`BOTTOM_LEFT` is on the floor. `CENTER` is the default.
 
 ## Collision
 
