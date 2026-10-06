@@ -109,5 +109,5 @@ would flood the server and the broadcast back to every other client.
 - On close the middleware reconnects after `reconnectionDelay`; an error closes the socket, which triggers the same path.
 
 Events are serialized with `serialize`/`deserialize` from
-`@inglorious/utils/data-structures/object.js`, so payloads must be serializable.
+`@inglorious/utils/objects`, so payloads must be serializable.
 

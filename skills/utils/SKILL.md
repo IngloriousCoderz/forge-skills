@@ -25,10 +25,10 @@ the singular file; one that involves **several** lives in the plural:
 
 | Module                       | Holds           | Example                              |
 | ---------------------------- | --------------- | ------------------------------------ |
-| `math/vector.js`             | one vector      | `scale`, `mod`, `magnitude`, `clamp` |
+| `math/vectors.js`            | one vector      | `scale`, `mod`, `magnitude`, `clamp` |
 | `math/vectors.js`            | several vectors | `add` (sums them), `subtract`        |
 | `math/numbers.js`            | several scalars | `clamp`, `mod`                       |
-| `data-structures/object.js`  | one object      | `get`, `set`, `clone`, `produce`     |
+| `data-structures/objects.js` | one object      | `get`, `set`, `clone`, `produce`     |
 | `data-structures/objects.js` | several objects | `extend`, `merge`, `defaults`        |
 
 So `clamp` exists twice: `clamp(num, min, max)` in `numbers.js`, and `clamp(vector, min, max)` in
@@ -40,7 +40,7 @@ Use either subpath imports (preferred) or the namespace exports.
 
 ```javascript
 import { v } from "@inglorious/utils/v.js";
-import { pipe, compose } from "@inglorious/utils/functions/functions.js";
+import { pipe, compose } from "@inglorious/utils/functions";
 import {
   get,
   set,
@@ -48,8 +48,8 @@ import {
   produce,
   serialize,
   deserialize,
-} from "@inglorious/utils/data-structures/object.js";
-import { magnitude } from "@inglorious/utils/math/vector.js";
+} from "@inglorious/utils/objects";
+import { magnitude } from "@inglorious/utils/vectors";
 import { sum, ZERO_VECTOR } from "@inglorious/utils/math/vectors.js";
 import { findPath } from "@inglorious/utils/algorithms/path-finding.js";
 import { applyVelocity } from "@inglorious/utils/physics/velocity.js";
@@ -71,7 +71,7 @@ import {
 ### `pipe` and `compose`
 
 ```javascript
-import { pipe, compose } from "@inglorious/utils/functions/functions.js";
+import { pipe, compose } from "@inglorious/utils/functions";
 
 const add = (a) => (b) => a + b;
 const multiply = (a) => (b) => a * b;
@@ -86,7 +86,7 @@ rightToLeft(10); // 30
 ### `isFunction`
 
 ```javascript
-import { isFunction } from "@inglorious/utils/functions/function.js";
+import { isFunction } from "@inglorious/utils/functions";
 
 isFunction(() => {}); // true
 isFunction(123); // false
@@ -116,7 +116,7 @@ import {
   set,
   clone,
   produce,
-} from "@inglorious/utils/data-structures/object.js";
+} from "@inglorious/utils/objects";
 
 const obj = { a: { b: [{ c: 3 }] } };
 
@@ -139,7 +139,7 @@ middleware to send events over a WebSocket, so payloads must be serializable.
 import {
   serialize,
   deserialize,
-} from "@inglorious/utils/data-structures/object.js";
+} from "@inglorious/utils/objects";
 
 const wire = serialize({ type: "playerHit", payload: { x: 10 } });
 const event = deserialize(wire);
@@ -201,7 +201,7 @@ and anything that checks it will no longer recognise it. This matters for engine
 
 ```javascript
 import { v, ensureV } from "@inglorious/utils/v.js";
-import { magnitude, clamp } from "@inglorious/utils/math/vector.js";
+import { magnitude, clamp } from "@inglorious/utils/vectors";
 import { sum, subtract } from "@inglorious/utils/math/vectors.js";
 
 const position = v(10, 20);

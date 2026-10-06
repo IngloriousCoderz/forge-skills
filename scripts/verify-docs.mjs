@@ -41,7 +41,15 @@ const slug = (heading) =>
     .replace(/\s+/g, "-")
 
 /** Every name a module exports, including `export const { a, b } = x` forms. */
-function collectExports(src) {
+/**
+ * The names a module exports, plus everything it hands on with `export * from`.
+ *
+ * A barrel that only re-exports has no names of its own to find, so without following
+ * the re-export every import through one reads as importing something that does not
+ * exist -- and a checker that cries wolf about an import the packages themselves use is
+ * one worth switching off.
+ */
+function collectExports(src, resolved, seen = new Set()) {
   const names = new Set()
   const add = (raw) => {
     const t = raw.trim().replace(/^type\s+/, "")
@@ -58,6 +66,21 @@ function collectExports(src) {
     m[1].split(",").forEach(add)
   for (const m of src.matchAll(/\bexport\s+const\s*\{([^}]*)\}/g))
     m[1].split(",").forEach(add)
+
+  // A star re-export hands on everything the file it names exports, so those names are
+  // this module's exports too. Only relative paths are followed: there is nothing to
+  // resolve a bare specifier against without the package map.
+  const dir = resolved ? dirname(resolved) : null
+  for (const m of src.matchAll(/\bexport\s+\*\s+from\s+"(\.[^"]+)"/g)) {
+    if (!dir || seen.has(m[1])) continue
+    seen.add(m[1])
+
+    const target = resolve(dir, m[1])
+    if (!existsSync(target)) continue
+
+    for (const name of collectExports(read(target), target, seen)) names.add(name)
+  }
+
   return names
 }
 
@@ -197,7 +220,7 @@ function checkImports(pkgs) {
         fail(skill, `${m[2]} — ${error}`)
         continue
       }
-      const exported = collectExports(read(resolved))
+      const exported = collectExports(read(resolved), resolved)
       for (const name of wanted)
         if (!exported.has(name))
           fail(skill, `${m[2]} — "${name}" is not exported`)

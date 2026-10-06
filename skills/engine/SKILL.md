@@ -161,6 +161,22 @@ The engine has built-in single-word events:
 - `remove` - Remove entity (triggers `destroy` lifecycle)
 - `pause` - Halt the world, see [Pausing](#pausing)
 - `resume` - Unhalt it
+- `stateChange` - Sent by the `fsm` behaviour, carries `{ entityId, from, to }`
+
+`stateChange` is the one built-in event that names the entity it is about, because a state
+machine with more than one entity on the move needs to say which one moved. Anything that
+watches a machine without being it -- a scene builder deciding what a state is made of, say
+-- listens for it and checks `entityId`. That check is correct here and nowhere else:
+
+```javascript
+const scenes = () => ({
+  stateChange(entity, { entityId, to }, api) {
+    if (entityId !== entity.id) return;
+
+    buildScene(entity, to, api);
+  },
+});
+```
 
 ### Custom Events
 
@@ -377,6 +393,35 @@ background along.
 For a sheet cut on a uniform grid with nothing inset, `renderSprite` addresses tiles by
 index and also animates; reach for `crop` when a frame breaks the grid.
 
+### Mirroring a frame
+
+A frame list is a list of indices, and a mirrored frame is written as the frame's own
+number with a flag set in the top bit. `flipped` is that written down, so the mirroring is
+visible at the call site instead of encoded in it:
+
+```javascript
+import { flipped } from "@inglorious/renderer-2d/image/flags.js";
+
+const entities = {
+  cat: {
+    type: "Cat",
+    sprite: {
+      image: { id: "neko", imageSize: [192, 192], tileSize: [32, 32] },
+      frames: {
+        right: [16, 17, 18],
+        left: [flipped(16), flipped(17), flipped(18)],
+      },
+    },
+  },
+};
+```
+
+`renderSprite` and `renderTilemap` both read the flag back out, so a list can mix mirrored
+and plain frames freely. Writing the flag yourself (`0x80000000 + 16`) leaves a number
+outside the 32 bits the renderers take apart with bitwise operators; `flipped` coerces it,
+so the stored number is the one the readers expect. The two flags are exported from the same
+module for the rare case of taking a frame apart by hand.
+
 ## Collision
 
 An entity with a `collisions` block is solid:
@@ -450,7 +495,7 @@ IngloriousScript adds vector operators for intuitive 2D math. Requires Babel con
 ```javascript
 // Without IngloriousScript
 import { add } from "@inglorious/utils/math/vectors.js";
-import { scale, mod } from "@inglorious/utils/math/vector.js";
+import { scale, mod } from "@inglorious/utils/vectors";
 
 const newPosition = mod(add(position, scale(velocity, dt)), worldSize);
 
