@@ -200,6 +200,61 @@ const types = {
 };
 ```
 
+### A pass of events sees one consistent world
+
+Events are applied to a draft, and the draft only becomes the state once the whole pass
+has finished. `getState()` during a pass therefore returns the world as it was *before* the
+pass began -- deliberately, so that every event in the pass sees the same world rather than
+some changes landed and others not.
+
+The consequence is that **a handler cannot look at what an earlier handler in the same
+pass did.** So do not act on a change and then go and check for it: be *told* the change,
+and keep your own count.
+
+```javascript
+// Does not work. The state this reads is the world as it was *before* the pass, so the
+// brick that was just removed is still in it and the level never looks finished.
+remove(entity, id, api) {
+  entity.bricksLeft = api.getEntities("Brick").length
+}
+```
+
+```javascript
+// Works. Told what happened rather than looking for it, and counting on the entity -- the
+// level is given how many it rolled when it rolls them.
+remove(entity, id, api) {
+  if (api.getEntity(id)?.type !== "Brick") return
+
+  entity.bricksLeft -= 1
+
+  if (entity.bricksLeft === 0) entity.state = "victory"
+}
+```
+
+The check for what went is not the staleness talking: `getEntity` answers about the past,
+and an entity that was there a moment ago still is. That is what makes it possible to tell
+a brick leaving from a menu line being cleared away.
+
+Reading the state is not wrong, only late. It is the right thing for anything that wants
+the *past*.
+
+### What reaches an entity
+
+- **`create` and `destroy`** reach **only the entity they are about**. They read as a
+  constructor and a destructor, so a handler never has to begin by asking whether it is
+  the one being talked about.
+- **`add` and `remove`** are **broadcast**, carrying the entity joining or the id leaving.
+  They are how anything watching the world hears about it -- a level counting down the
+  bricks it rolled, an enemy tally, a wave about to be over. Not the counterpart to
+  `create` and `destroy`; the other half of the pair is simply not there.
+
+What a payload carries is a store-wide convention rather than an engine one, so it is
+written down there: [`skills/store/SKILL.md`](../store/SKILL.md) for payloads carrying the
+least that can be had.
+
+An entity hears its own arrival or departure if its type handles those, so a handler that
+only wants the rest of the world should say which ids it answers to.
+
 ### Event Queue
 
 Events are queued and processed once per frame:
@@ -282,6 +337,33 @@ pauseMenu: { type: "PauseMenu", updatesWhilePaused: true },
 flag pauses the gameplay rather than freezing the menu. `pause` and `resume` still
 dispatch to types that handle them, so one notification can halt the world and let the
 game record why.
+
+### Quitting
+
+`api.notify("quit")` ends the game. It needs no handler of its own, so a way out works from
+any state rather than from whichever screen happens to offer one -- which is what the
+original's four states each checking for Escape amounts to:
+
+```javascript
+const entities = {
+  game: {
+    type: "Game",
+    // Nothing is a handler here: the input action is named `quit` and the engine's own
+    // game behaviour is what answers it.
+  },
+};
+
+// in the input mapping
+{ Escape: "quit" }
+```
+
+The frame a quit is answered on still runs to its end, because a quit is given between
+frames rather than in the middle of one. After that the engine stops the loop and never
+updates the world again. It is not `pause`: quitting is not a halt you can take back, and
+the world is not merely still, it is finished.
+
+`quit` is blacklisted from multiplayer, since one player ending their game is not news for
+anyone else's.
 
 ### Screens that share a world
 
@@ -499,6 +581,58 @@ and plain frames freely. Writing a flag yourself (`0x80000000 + 16`) leaves a nu
 outside the 32 bits the renderers take apart with bitwise operators; both helpers coerce
 it, so the stored number is the one the readers expect. The flags themselves are exported
 from the same module for the rare case of taking a frame apart by hand.
+
+### Tinting an image
+
+An image is drawn in its own colours unless it is given a `tint`:
+
+```javascript
+{ render: renderImage, image: { id: "particle", imageSize: [8, 8] }, tint: "rgb(99, 155, 255)" }
+```
+
+It is called `tint` and not `color` on purpose. `color` is a field entities carry for
+their own reasons -- a brick's `color` is a *number* saying where it sits in the palette --
+and a number handed to the canvas as a fill style is ignored **without complaint**, which
+means every brick in a game renders black and nothing anywhere says why. `renderText` and
+`renderRectangle` do take `color`, because for those it is the colour of the ink.
+
+Only the colour is replaced: a soft-edged sprite keeps its softness and its empty
+corners, because the tint is composited rather than filled. Tinted frames are made once
+and kept, keyed by image, region and colour, so a particle on screen every frame is
+composited once rather than sixty times a second.
+
+### Particles
+
+`emitBurst` throws a burst of pooled entities that drift under an acceleration and fade
+out over their own lifetimes, then hand themselves back:
+
+```javascript
+import { emitBurst } from "@inglorious/engine/behaviors/particles.js";
+
+emitBurst(api, {
+  count: 64,
+  position: v(100, 100, 0),
+  spread: v(10, 10, 0),
+  size: v(8, 8, 0),
+  lifetime: [0.5, 1],
+  tint: "rgb(99, 155, 255)",
+  acceleration: [v(-15, -80, 0), v(15, 0, 0)],
+  layer: LAYER_PARTICLE,
+  image: { id: "particle", imageSize: [8, 8] },
+});
+```
+
+`acceleration` is a pair of corners and each particle's own is drawn from between them,
+which is what makes a burst look scattered rather than like a grid. `spread` is the
+half-extent of the box they are thrown in. **Acceleration is in this world's axes, so
+falling is negative on y** -- `v(0, -80, 0)` falls, `v(0, 80, 0)` rises.
+
+Each particle needs a type that draws it, usually `renderImage` or `renderRectangle`, and
+the `particle` behaviour beside it.
+
+Pooled entities are drawn in layer order with everything else, and are given events like
+any other entity, but they are not in `getState()` -- ask
+`store.extras.getAllActivePoolEntities()` to see them.
 
 ### Naming a frame by its number
 

@@ -130,6 +130,27 @@ const types = {
 };
 ```
 
+### Payload: the least that can be had
+
+A payload carries the minimum that is **available**, which is not the same as the minimum
+possible. Name the thing when it exists and can be looked up; carry the thing when it
+cannot.
+
+`remove` carries the id. Everything else about the entity can still be found by that id, so
+the rest would be redundant.
+
+`add` carries the entity itself. An observer of an arrival has nothing to look it up by --
+it does not exist yet -- so the entity is the floor, not a convenience.
+
+The asymmetry is the same one REST settled on: `removeUser(id)` against
+`updateUser(patchedUserWithId)`. Anything else follows from the rule rather than needing to
+be remembered case by case: a `move` carries the id and the delta, because both halves of
+the new position exist already.
+
+The same reasoning says what a payload should *not* carry: a whole entity where an id will
+do, a computed value the recipient can derive, or anything the recipient could have got
+from the store.
+
 ## Pausing the World
 
 `pause` halts the store: it stops handing out `update` events. `resume` starts it again.
