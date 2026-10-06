@@ -342,7 +342,7 @@ game record why.
 
 `api.notify("quit")` ends the game. It needs no handler of its own, so a way out works from
 any state rather than from whichever screen happens to offer one -- which is what the
-original's four states each checking for Escape amounts to:
+original's four states each checking for Escape amounts to:  
 
 ```javascript
 const entities = {
@@ -356,6 +356,34 @@ const entities = {
 // in the input mapping
 { Escape: "quit" }
 ```
+
+**A state can take the way out for itself.** A handler named on the type is the default --
+what every state would do -- and a state that names the same event replaces it rather than
+adding to it, so a screen can decide what leaving means:
+
+```javascript
+const Game = fsm({
+  // Most screens want Escape to mean out of the game, so they name nothing and the
+  // engine's own quit stands.
+  play: { ballLost(entity, _, api) { /* ... */ } },
+
+  // The high score table is left with Escape rather than quit by, and says so.
+  highScores: {
+    quit(entity, _, api) {
+      api.notify("soundPlay", "wallHit")
+
+      entity.state = "start"
+    },
+  },
+})
+
+// in the input mapping
+{ Escape: "quit" }
+```
+
+This is the original's arrangement rather than a convenience: it checks Escape in each of
+its states, and on the tables of scores it checks it to go *back*. A global quit with no
+way to take it would be a way out that some screens had stolen.
 
 The frame a quit is answered on still runs to its end, because a quit is given between
 frames rather than in the middle of one. After that the engine stops the loop and never
