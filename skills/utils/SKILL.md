@@ -28,8 +28,8 @@ the singular file; one that involves **several** lives in the plural:
 | `math/vectors.js`            | one vector      | `scale`, `mod`, `magnitude`, `clamp` |
 | `math/vectors.js`            | several vectors | `add` (sums them), `subtract`        |
 | `math/numbers.js`            | several scalars | `clamp`, `mod`                       |
-| `data-structures/objects.js` | one object      | `get`, `set`, `clone`, `produce`     |
-| `data-structures/objects.js` | several objects | `extend`, `merge`, `defaults`        |
+| `data-structures/object.js` | one object      | `get`, `set`, `clone`, `produce`     |
+| `data-structures/object.js` | several objects | `extend`, `merge`, `defaults`        |
 
 So `clamp` exists twice: `clamp(num, min, max)` in `numbers.js`, and `clamp(vector, min, max)` in
 `vector.js`, which delegates to the scalar one internally.
@@ -48,7 +48,7 @@ import {
   produce,
   serialize,
   deserialize,
-} from "@inglorious/utils/objects";
+} from "@inglorious/utils/object";
 import { magnitude } from "@inglorious/utils/vectors";
 import { sum, ZERO_VECTOR } from "@inglorious/utils/math/vectors.js";
 import { findPath } from "@inglorious/utils/algorithms/path-finding.js";
@@ -116,7 +116,7 @@ import {
   set,
   clone,
   produce,
-} from "@inglorious/utils/objects";
+} from "@inglorious/utils/object";
 
 const obj = { a: { b: [{ c: 3 }] } };
 
@@ -139,7 +139,7 @@ middleware to send events over a WebSocket, so payloads must be serializable.
 import {
   serialize,
   deserialize,
-} from "@inglorious/utils/objects";
+} from "@inglorious/utils/object";
 
 const wire = serialize({ type: "playerHit", payload: { x: 10 } });
 const event = deserialize(wire);
@@ -152,7 +152,7 @@ import {
   extend,
   merge,
   defaults,
-} from "@inglorious/utils/data-structures/objects.js";
+} from "@inglorious/utils/data-structures/object.js";
 
 const base = { a: { b: 1 }, list: [1] };
 const update = { a: { c: 2 }, list: [2] };
