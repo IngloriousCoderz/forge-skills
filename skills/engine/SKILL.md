@@ -655,39 +655,110 @@ engine.start();
 **Note:** the two arguments are separate — `renderer` (from `createRenderer(canvas)`) drives
 drawing, and `game` is your config object with `types`, `entities` and optional `systems`.
 
-### Cropping a sprite sheet
+### Declaring images and audio
 
-Use `crop` rather than setting the crop by hand. `renderImage` reads `sx`/`sy` off the
-**entity** and the grid off **`entity.image`**, and `sx`/`sy` are **tile indices, not
-pixels** — it multiplies them by `tileSize` before drawing. `crop` takes pixels, does the
-division, and keeps whatever the image already carried.
+Both are declared on the entity that holds them, and both are read once at startup, before
+anything is drawn or played:
 
 ```javascript
-import { crop } from "@inglorious/renderer-2d/image/crop.js";
+const entities = {
+  images: {
+    type: "Images",
+    images: {
+      background: { url: "/images/background.png" },
+      breakout: { url: "/images/breakout.png" },
+    },
+  },
 
+  audio: {
+    type: "Audio",
+    sounds: {
+      paddleHit: { url: "/sounds/paddle_hit.wav" },
+      music: { url: "/sounds/music.mp3", loop: true, volume: 0.25 },
+    },
+  },
+};
+```
+
+An image is then named by `image.id`, and a sound played by name — the name is the sound's
+address, so anything that hears `soundPlay` plays it without saying which file it is:
+
+```javascript
+api.notify("soundPlay", "paddleHit");
+api.notify("soundStop", "music");
+```
+
+**They are declared in the configuration, and not in the document.** That is worth knowing
+because it is not the only way to write it. An `<img>` in the page is found by the preload
+scanner before any of this code runs, which is genuinely better for *starting* a download,
+and one element is one decoded picture however many things ask for it. It is not usable as
+the way a game says what it has, for one reason: a game that is a **Storybook story has no
+document of its own** to put an `<img>` in, and that is where most examples live. The
+configuration is the one place a story, a game page and a headless run can all be served
+from.
+
+**Preloading is a separate question, and it does not need the engine.** A game with an
+`index.html` can warm the browser cache with the ordinary HTML vocabulary:
+
+```html
+<link rel="preload" as="image" href="/images/breakout.png" />
+```
+
+The fetch the engine then makes is a cache hit. That is the page's business and the
+renderer's is to resolve a name, so neither knows about the other.
+
+**An image can also load itself.** Without a `src` anywhere, nothing loads it and nothing
+warns; carrying one on the entity asks for it the first time it is drawn:
+
+```javascript
+{ id: "hero", type: "Hero", image: { id: "hero", src: "/images/hero.png" } }
+```
+
+**Audio has no such thing, and cannot.** A sound is a decoded `AudioBuffer`, and a decoded
+buffer is made from bytes fetched and handed to `decodeAudioData` — no element gives one up
+directly. An `<audio>` in the page would only supply the `src`. So an image and a sound are
+not loaded by the same mechanism underneath, and they are still declared the same way.
+
+### Cutting a frame out of a sheet
+
+A frame is said on `entity.image`, in the sheet's own pixels:
+
+| on `entity.image`                                            | what it says                                  |
+| ------------------------------------------------------------ | --------------------------------------------- |
+| `id`, `src`                                                   | which picture                                  |
+| `imageSize`                                                   | how big the whole sheet is                     |
+| `tileSize`                                                    | how big one cell of its grid is                |
+| `x`, `y`                                                      | where in the sheet this frame starts, **pixels** |
+| `frameSize`                                                   | how much of it this frame reads                |
+
+```javascript
 const Ball = [
   { render: renderImage },
   {
     create(entity) {
-      crop(entity, "neko", {
+      entity.image = {
+        id: "neko",
+        imageSize: [192, 256],
         x: 96,
         y: 48,
-        width: 8,
-        height: 8,
         tileSize: [32, 16],
-      });
+        frameSize: [8, 8],
+      };
     },
   },
 ];
 ```
 
-`width`/`height` default to the entity's own `size`, and `tileSize` defaults to the frame.
-A frame may be wider or smaller than a cell: the region read is the frame's own size, so a
-frame spanning two cells is read whole and one inset inside a cell does not bring its
-background along.
+`frameSize` is how much is read, and it is separate from `tileSize` because artwork is not
+always one piece per cell: a frame spanning two cells is read whole, and one sitting inside a
+cell with background around it does not bring its background along. `tileSize` defaults to
+the whole sheet, which is what an image that is not cut up wants.
 
-For a sheet cut on a uniform grid with nothing inset, `renderSprite` addresses tiles by
-index and also animates; reach for `crop` when a frame breaks the grid.
+**`imageSize` is the whole sheet and nothing overwrites it**, because it is what tells a
+sheet into how many cells it cuts — divide it by a cell width and you have the grid.
+
+For a sheet cut on a uniform grid, `renderSprite` addresses tiles by index and also
+animates; reach for a frame when it breaks the grid.
 
 ### Mirroring a frame
 
@@ -738,16 +809,22 @@ An image is drawn in its own colours unless it is given a `tint`:
 { render: renderImage, image: { id: "particle", imageSize: [8, 8] }, tint: "rgb(99, 155, 255)" }
 ```
 
-It is called `tint` and not `color` on purpose. `color` is a field entities carry for
-their own reasons -- a brick's `color` is a _number_ saying where it sits in the palette --
-and a number handed to the canvas as a fill style is ignored **without complaint**, which
-means every brick in a game renders black and nothing anywhere says why. `renderText` and
-`renderRectangle` do take `color`, because for those it is the colour of the ink.
+It is called `tint` and not `color` on purpose. `color` is a field entities carry for their
+own reasons -- often a number saying where an entity sits in a palette -- and a number
+handed to the canvas as a fill style is ignored **without complaint**, so the whole game
+renders black and nothing anywhere says why. `renderText` and `renderRectangle` do take
+`color`, because for those it is the colour of the ink.
 
-Only the colour is replaced: a soft-edged sprite keeps its softness and its empty
-corners, because the tint is composited rather than filled. Tinted frames are made once
-and kept, keyed by image, region and colour, so a particle on screen every frame is
-composited once rather than sixty times a second.
+**A tint is mixed in, not filled over.** The colour multiplies with the sprite, so a tint of
+white leaves it equal to itself and anything else darkens or colours it the way laying ink
+over it would; a soft-edged sprite keeps its softness, its own shading, and its empty
+corners.
+
+Tinted frames are made once and kept, keyed by the image and then by the region and the
+colour, so a particle on screen every frame is composited once rather than sixty times a
+second -- and two things drawing the same frame of the same picture share that one copy
+rather than making one each. The cache hangs off the image itself, so it does not outlive
+it.
 
 ### Particles
 
@@ -784,21 +861,33 @@ any other entity, but they are not in `getState()` -- ask
 
 ### Naming a frame by its number
 
-`crop` takes a frame in pixels. `cropQuad` takes a tile by its number on the sheet, which is
-what the sprite behaviour and the tilemap renderer work in. Tiles are read in order **down**
-the sheet, so the seventh tile of a sheet six across is the first of its second row:
+Sometimes what you have is a *number* off the sheet rather than a place on it — a brick
+that says which colour and which tier it is, say, and the sheet is laid out so that number
+is a tile. Tiles are read in order **down** the sheet, so the seventh tile of a sheet six
+across is the first of its second row.
+
+That is the same arithmetic as any grid, and it belongs to the game rather than to the
+renderer, because it is the game's sheet and the game's numbering:
 
 ```javascript
-import { cropQuad } from "@inglorious/renderer-2d/image/crop-quad.js";
+const BRICKS_ACROSS = 6;
 
-cropQuad(entity, "breakout", 11, { tileSize: [32, 16], tilesAcross: 6 });
+// A brick's own number, counted down the sheet.
+export const brickQuad = (hp) => (brickColourOf(hp) - 1) * 4 + brickTierOf(hp);
+
+// ...and the place that number is, which is what an image wants.
+export const brickFrame = (hp) => ({
+  x: (brickQuad(hp) % BRICKS_ACROSS) * BRICK_WIDTH,
+  y: Math.floor(brickQuad(hp) / BRICKS_ACROSS) * BRICK_HEIGHT,
+  frameSize: [BRICK_WIDTH, BRICK_HEIGHT],
+  tileSize: SHEET_TILE,
+});
 ```
 
-`tileSize` defaults to the entity's own size, and `tilesAcross` is worked out from the
-sheet's width unless the sheet is padded. Reach for this rather than `crop` when what you
-have is a number off the sheet -- a frame chosen by its colour and tier, say -- because
-turning a number that is already a tile into pixels only to divide it back down again is a
-round trip.
+So a frame by its number is a plain function returning a frame, and the entity spreads it
+onto its image like any other. It is worth saying out loud that this used to be a helper
+that cropped as it went, and that the division back down to a number was a round trip
+through a helper rather than arithmetic anyone needed done for it.
 
 ### Where a line sits
 
