@@ -399,8 +399,8 @@ anyone else's.
 usual pair for a game that is a few screens over one world:
 
 ```javascript
-import { fsm } from "@inglorious/engine/behaviors/fsm.js";
-import { scenes } from "@inglorious/engine/behaviors/scenes.js";
+import { fsm } from "@inglorious/engine/behaviors/state-machine/fsm.js";
+import { scenes } from "@inglorious/engine/behaviors/state-machine/scenes.js";
 
 const SCENES = {
   title: () => [createTitleEntity(), createMenuEntity()],
@@ -447,25 +447,97 @@ serve: (entity) => {
 },
 ```
 
-**A thing that stands on both sides but is not set up the same way is patched.** This is
-where a state's own keys come from, and it is why a mapping is part of what a state is made
-of rather than something set once for the whole game:
-
-```javascript
-const SCENES = {
-  menu: () => [keyboard(MENU_KEYS)],
-  play: () => [keyboard(PLAY_KEYS), ...createPlayScene()],
-};
-```
-
-One keyboard, not two. `scenes` compares the two configurations and patches what differs,
-so the keys mean one thing on the menu and another in play without either keyboard being
-made twice. A key the next state maps to nothing is taken off rather than left standing --
-see `patch` in the store skill.
+**A thing that stands on both sides but is not set up the same way is patched.** Both
+states put the same keyboard up with a different mapping, so it is neither added nor removed
+-- it is told. `scenes` compares the two configurations and patches what differs, and a key
+the next state maps to nothing is taken off rather than left standing -- see `patch` in the
+store skill.
 
 The comparison is `isDeepEqual`, and it is the reason a scene can be regenerated from
 scratch each time without everything being rebuilt. It is also why returning the *same*
 object for something unchanged makes it free: the walk stops at the reference check.
+
+**What a state answers to is `mappings`' job, not `scenes`'.** Patching a keyboard is one way
+to do it, and it is the long way round: it puts the mapping in a scene, walks it to work out
+what changed, and makes every device that reads a mapping agree by hand. `mappings` says the
+same thing directly, and it is the third of the usual three:
+
+```javascript
+import { fsm } from "@inglorious/engine/behaviors/state-machine/fsm.js";
+import { mappings } from "@inglorious/engine/behaviors/state-machine/mappings.js";
+import { scenes } from "@inglorious/engine/behaviors/state-machine/scenes.js";
+
+const types = {
+  Game: [
+    scenes(SCENES),
+    mappings({
+      menu: { ArrowUp: "moveItemUp", ArrowDown: "moveItemDown", Enter: "choose" },
+      play: { ArrowLeft: "moveLeft", Space: "fire" },
+      // Deaf on purpose: there is nothing to press here.
+      credits: {},
+    }),
+    fsm({
+      menu: { choose: (entity) => { entity.state = "play" } },
+      play: {},
+    }),
+  ],
+};
+
+const entities = { game: { type: "Game", state: "menu" } };
+```
+
+**Each state says its own, and a state with nothing mapped is deaf.** Falling back to the
+last mapping would make a forgotten state carry on answering, which is the mistake this is
+written against. Say `{}` and the state is deliberately deaf -- a menu with no keys is a
+statement, and a state someone forgot about should be conspicuous rather than quietly
+inheriting.
+
+**One table, every device.** The table names keys, axes and buttons together, because a
+button is mapped the way a key is:
+
+```javascript
+mappings({
+  play: {
+    ArrowLeft: "moveLeft",
+    ArrowRight: "moveRight",
+    Btn14: "moveLeft",
+    Btn15: "moveRight",
+    Axis0: "moveLeftRight",
+  },
+});
+```
+
+`mappings` announces `mappingChange` and each device answers it on itself -- the keyboard
+and the gamepad both set their own `mapping`. A handler changing an entity it was not given
+is a thing the store will not hold: `api.getEntity()` reads the world as it was *before* the
+pass, so a write through it does not survive. That is also why one table rather than one per
+device: there is no second copy to fall out of step with the first.
+
+**The opening state counts.** A machine is already in its first state when it is made, and
+`fsm` only announces moves, so `mappings` applies the first table on `create` as well as on
+every `stateChange`. Without that the game begins answering whatever mapping it was handed.
+
+**Composed behaviour replaces, it does not run in order.** A type has one `create` and one
+`stateChange`, and the last behaviour to name one wins -- so `mappings` is written as a
+decorator that hands on to whatever it displaced:
+
+```javascript
+return (type) => ({
+  create(entity, payload, api) {
+    type.create?.(entity, payload, api);
+
+    apply(entity.state, api);
+  },
+  stateChange(entity, event, api) {
+    type.stateChange?.(entity, event, api);
+
+    apply(event.to, api);
+  },
+});
+```
+
+Skipping the hand-on does not fail loudly. It takes `scenes` down with it and every screen
+in the game silently disappears, which is why it is worth knowing.
 
 ### A mistyped type is an error
 
