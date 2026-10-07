@@ -117,6 +117,16 @@ Don't rename these: they have to match the RTK action types they are bridged fro
 
 ## Lifecycle Events
 
+The four ways a thing can change in the world, which are the four the web settled on long
+ago for the same reason:
+
+| | |
+| --- | --- |
+| `add` | **POST** -- a new thing enters the world. |
+| `remove` | **DELETE** -- a thing leaves it. |
+| `patch` | **PATCH** -- some of a standing thing changes. |
+| `replace` | **PUT** -- all of it is said to be different. |
+
 ```javascript
 const types = {
   Logger: {
@@ -129,6 +139,45 @@ const types = {
   },
 };
 ```
+
+`create` and `destroy` reach only the thing they are about, so they read as a constructor
+and a destructor rather than as handlers that first check whether they are the one being
+talked about. `add` and `remove` are broadcast: something counting down what it put up
+needs to hear about each of them going.
+
+### Changing what is already there
+
+`patch` and `replace` cover what `add` and `remove` do not: changing a thing without taking
+it out of the world.
+
+```javascript
+// A patch touches only what it names. Anything else the thing already had survives.
+notify("patch", { id: "keyboard", mapping: { ArrowUp: "up" } });
+
+// A replace installs all of it, so anything it does not name is gone.
+notify("replace", { id: "counter", type: "Counter", value: 0 });
+```
+
+A field named as `undefined` is set to **nothing** in either, rather than being left
+alone -- which is how a key is taken off a mapping:
+
+```javascript
+notify("patch", { id: "keyboard", mapping: { ArrowUp: undefined } });
+```
+
+That is not the same as saying nothing about the field, which would leave whatever it was
+last time standing.
+
+Neither runs `create` or `destroy`: the thing never stopped standing, and something that
+was never removed cannot have been destroyed. Naming a different `type` in either moves it
+onto that type's handlers.
+
+The usual reason for either is a world whose rules change with its state -- one keyboard
+whose keys mean one thing on a menu and another in play. That is the whole argument for
+`patch`: a thing can be *told* something different without being torn down and rebuilt, so
+whatever the world has already done to it survives. See `scenes` in the engine skill, which
+is where a state's own keys get put up.
+
 
 ### Payload: the least that can be had
 

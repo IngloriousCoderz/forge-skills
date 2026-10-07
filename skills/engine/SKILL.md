@@ -430,23 +430,42 @@ const entities = { game: { type: "Game", state: "serve" } };
 ```
 
 **Only the difference between two states is touched.** Anything they have in common stays
-standing as it is, which is what carries a paddle, a ball and a level from the serve into
-the play and back again without rebuilding them -- and so without losing where the paddle
-had slid to or which bricks were already knocked out. Rebuilding each state's world afresh
-is the mistake this exists to prevent, and it is silent: everything looks right until the
-paddle jumps back to the middle.
+standing as it is, which is what carries whatever the two screens share from one into the
+next without rebuilding it -- and so without losing whatever the world has already done to
+it. Rebuilding each state's world afresh is the mistake this exists to prevent, and it is
+silent: everything looks right until a thing you moved snaps back to where it started.
 
-A state is handed the entity asking for it, so anything worth making once -- a level, say,
-which is expensive and must not be rolled again when a life is lost -- can be held on the
-entity and left alone the second time round:
+A state is handed the entity asking for it, so anything worth making once -- something
+expensive that must not be made again on a later attempt -- can be held on the entity and
+left alone the second time round:
 
 ```javascript
 serve: (entity) => {
-  entity.bricks ??= createLevel();
+  entity.world ??= createWorld();
 
-  return [...createPlayScene(entity.bricks), createServePromptEntity()];
+  return [...createPlayScene(entity.world), createServePromptEntity()];
 },
 ```
+
+**A thing that stands on both sides but is not set up the same way is patched.** This is
+where a state's own keys come from, and it is why a mapping is part of what a state is made
+of rather than something set once for the whole game:
+
+```javascript
+const SCENES = {
+  menu: () => [keyboard(MENU_KEYS)],
+  play: () => [keyboard(PLAY_KEYS), ...createPlayScene()],
+};
+```
+
+One keyboard, not two. `scenes` compares the two configurations and patches what differs,
+so the keys mean one thing on the menu and another in play without either keyboard being
+made twice. A key the next state maps to nothing is taken off rather than left standing --
+see `patch` in the store skill.
+
+The comparison is `isDeepEqual`, and it is the reason a scene can be regenerated from
+scratch each time without everything being rebuilt. It is also why returning the *same*
+object for something unchanged makes it free: the walk stops at the reference check.
 
 ### A mistyped type is an error
 
@@ -484,12 +503,18 @@ const types = {
     },
 
     destroy(entity) {
-      // Cleanup: remove from pools, cancel timers, etc.
-      console.log(`Bullet ${entity.id} destroyed`);
+      // Cleanup: remove from pools, cancel timers, let go of the document, etc.
+      console.log(`${entity.id} destroyed`);
     },
   },
 };
 ```
+
+`destroy` is worth more than tidying. An entity that is created and destroyed repeatedly --
+a screen's own, say -- leaves anything it took at `create` behind unless it lets go here.
+The engine's own `keyboard` and `audio` both take DOM listeners at `create` and give them
+up at `destroy` as well as at `stop`; before that was so, a keyboard destroyed with its
+screen left a second keyboard answering the same key.
 
 ## Behavior Composition
 
