@@ -18,21 +18,25 @@ npm install @inglorious/utils
   makes them mutable, so copy a shared vector instead of storing it where something writes to one.
 - Prefer subpath imports for tree-shaking and smaller bundles.
 
-### Singular vs plural modules
+### One file per thing
 
-File names follow what the function operates on. A function that affects **one** thing lives in
-the singular file; one that involves **several** lives in the plural:
+Every module is named after **the thing it is about**, singular, whatever the function
+happens to take:
 
-| Module                       | Holds           | Example                              |
-| ---------------------------- | --------------- | ------------------------------------ |
-| `math/vectors.js`            | one vector      | `scale`, `mod`, `magnitude`, `clamp` |
-| `math/vectors.js`            | several vectors | `add` (sums them), `subtract`        |
-| `math/numbers.js`            | several scalars | `clamp`, `mod`                       |
-| `data-structures/object.js` | one object      | `get`, `set`, `clone`, `produce`     |
-| `data-structures/object.js` | several objects | `extend`, `merge`, `defaults`        |
+| Module                      | Holds                  | Example                           |
+| --------------------------- | ---------------------- | --------------------------------- |
+| `math/vector.js`            | one vector, or several | `scale`, `mod`; `add`, `subtract` |
+| `math/number.js`            | one number, or several | `clamp`, `mod`, `snap`, `sum`     |
+| `data-structures/object.js` | one object, or several | `get`, `set`; `extend`, `merge`   |
+| `data-structures/array.js`  | one array, or several  | `remove`; `concat`                |
 
-So `clamp` exists twice: `clamp(num, min, max)` in `numbers.js`, and `clamp(vector, min, max)` in
-`vector.js`, which delegates to the scalar one internally.
+The name says what the module is _about_, not how many arguments it takes. `add` sums two
+vectors and `scale` multiplies one, and both live in `math/vector.js`, because both are
+operations on a vector. There is no plural file: a second one named after the same thing
+would be a second place to look for it.
+
+So `clamp` exists twice: `clamp(num, min, max)` in `number.js`, and `clamp(vector, min, max)`
+in `vector.js`, which delegates to the scalar one internally.
 
 ## Entry Points
 
@@ -40,7 +44,7 @@ Use either subpath imports (preferred) or the namespace exports.
 
 ```javascript
 import { v } from "@inglorious/utils/v.js";
-import { pipe, compose } from "@inglorious/utils/functions";
+import { pipe, compose } from "@inglorious/utils/function.js";
 import {
   get,
   set,
@@ -49,8 +53,7 @@ import {
   serialize,
   deserialize,
 } from "@inglorious/utils/object";
-import { magnitude } from "@inglorious/utils/vectors";
-import { sum, ZERO_VECTOR } from "@inglorious/utils/math/vectors.js";
+import { magnitude, sum, ZERO_VECTOR } from "@inglorious/utils/math/vector.js";
 import { findPath } from "@inglorious/utils/algorithms/path-finding.js";
 import { applyVelocity } from "@inglorious/utils/physics/velocity.js";
 ```
@@ -111,12 +114,7 @@ remove([1, 2, 3], 2); // [1, 3]
 ### Objects
 
 ```javascript
-import {
-  get,
-  set,
-  clone,
-  produce,
-} from "@inglorious/utils/object";
+import { get, set, clone, produce } from "@inglorious/utils/object.js";
 
 const obj = { a: { b: [{ c: 3 }] } };
 
@@ -136,10 +134,7 @@ const deepCopy = clone(next);
 middleware to send events over a WebSocket, so payloads must be serializable.
 
 ```javascript
-import {
-  serialize,
-  deserialize,
-} from "@inglorious/utils/object";
+import { serialize, deserialize } from "@inglorious/utils/object.js";
 
 const wire = serialize({ type: "playerHit", payload: { x: 10 } });
 const event = deserialize(wire);
@@ -183,7 +178,7 @@ const text = toString(board, [2, 3]);
 name the components you care about, or to build a vector up from scratch:
 
 ```javascript
-import { ZERO_VECTOR, UNIT_VECTOR } from "@inglorious/utils/math/vectors.js";
+import { ZERO_VECTOR, UNIT_VECTOR } from "@inglorious/utils/math/vector.js";
 import { v } from "@inglorious/utils/v.js";
 
 // Name the components you care about, e.g. for a game played on a single plane.
@@ -201,8 +196,7 @@ and anything that checks it will no longer recognise it. This matters for engine
 
 ```javascript
 import { v, ensureV } from "@inglorious/utils/v.js";
-import { magnitude, clamp } from "@inglorious/utils/vectors";
-import { sum, subtract } from "@inglorious/utils/math/vectors.js";
+import { clamp, magnitude, subtract, sum } from "@inglorious/utils/vector.js";
 
 const position = v(10, 20);
 const velocity = v(2, -1);
@@ -218,10 +212,10 @@ const arr = [0, 1].map((x) => x + 1);
 const asVector = ensureV(arr);
 ```
 
-### Numbers, RNG, Trigonometry
+### Number, RNG, Trigonometry
 
 ```javascript
-import { clamp, mod, snap } from "@inglorious/utils/math/numbers.js";
+import { clamp, mod, snap } from "@inglorious/utils/math/number.js";
 import { lerp } from "@inglorious/utils/math/linear-interpolation.js";
 import { random } from "@inglorious/utils/math/rng.js";
 import {

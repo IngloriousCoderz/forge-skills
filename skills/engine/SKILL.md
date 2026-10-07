@@ -203,12 +203,12 @@ const types = {
 ### A pass of events sees one consistent world
 
 Events are applied to a draft, and the draft only becomes the state once the whole pass
-has finished. `getState()` during a pass therefore returns the world as it was *before* the
+has finished. `getState()` during a pass therefore returns the world as it was _before_ the
 pass began -- deliberately, so that every event in the pass sees the same world rather than
 some changes landed and others not.
 
 The consequence is that **a handler cannot look at what an earlier handler in the same
-pass did.** So do not act on a change and then go and check for it: be *told* the change,
+pass did.** So do not act on a change and then go and check for it: be _told_ the change,
 and keep your own count.
 
 ```javascript
@@ -236,7 +236,7 @@ and an entity that was there a moment ago still is. That is what makes it possib
 a brick leaving from a menu line being cleared away.
 
 Reading the state is not wrong, only late. It is the right thing for anything that wants
-the *past*.
+the _past_.
 
 ### What reaches an entity
 
@@ -342,7 +342,7 @@ game record why.
 
 `api.notify("quit")` ends the game. It needs no handler of its own, so a way out works from
 any state rather than from whichever screen happens to offer one -- which is what the
-original's four states each checking for Escape amounts to:  
+original's four states each checking for Escape amounts to:
 
 ```javascript
 const entities = {
@@ -354,7 +354,9 @@ const entities = {
 };
 
 // in the input mapping
-{ Escape: "quit" }
+{
+  Escape: "quit";
+}
 ```
 
 **A state can take the way out for itself.** A handler named on the type is the default --
@@ -365,24 +367,30 @@ adding to it, so a screen can decide what leaving means:
 const Game = fsm({
   // Most screens want Escape to mean out of the game, so they name nothing and the
   // engine's own quit stands.
-  play: { ballLost(entity, _, api) { /* ... */ } },
+  play: {
+    ballLost(entity, _, api) {
+      /* ... */
+    },
+  },
 
   // The high score table is left with Escape rather than quit by, and says so.
   highScores: {
     quit(entity, _, api) {
-      api.notify("soundPlay", "wallHit")
+      api.notify("soundPlay", "wallHit");
 
-      entity.state = "start"
+      entity.state = "start";
     },
   },
-})
+});
 
 // in the input mapping
-{ Escape: "quit" }
+{
+  Escape: "quit";
+}
 ```
 
 This is the original's arrangement rather than a convenience: it checks Escape in each of
-its states, and on the tables of scores it checks it to go *back*. A global quit with no
+its states, and on the tables of scores it checks it to go _back_. A global quit with no
 way to take it would be a way out that some screens had stolen.
 
 The frame a quit is answered on still runs to its end, because a quit is given between
@@ -454,7 +462,7 @@ the next state maps to nothing is taken off rather than left standing -- see `pa
 store skill.
 
 The comparison is `isDeepEqual`, and it is the reason a scene can be regenerated from
-scratch each time without everything being rebuilt. It is also why returning the *same*
+scratch each time without everything being rebuilt. It is also why returning the _same_
 object for something unchanged makes it free: the walk stops at the reference check.
 
 **What a state answers to is `mappings`' job, not `scenes`'.** Patching a keyboard is one way
@@ -471,13 +479,21 @@ const types = {
   Game: [
     scenes(SCENES),
     mappings({
-      menu: { ArrowUp: "moveItemUp", ArrowDown: "moveItemDown", Enter: "choose" },
+      menu: {
+        ArrowUp: "moveItemUp",
+        ArrowDown: "moveItemDown",
+        Enter: "choose",
+      },
       play: { ArrowLeft: "moveLeft", Space: "fire" },
       // Deaf on purpose: there is nothing to press here.
       credits: {},
     }),
     fsm({
-      menu: { choose: (entity) => { entity.state = "play" } },
+      menu: {
+        choose: (entity) => {
+          entity.state = "play";
+        },
+      },
       play: {},
     }),
   ],
@@ -509,7 +525,7 @@ mappings({
 
 `mappings` announces `mappingChange` and each device answers it on itself -- the keyboard
 and the gamepad both set their own `mapping`. A handler changing an entity it was not given
-is a thing the store will not hold: `api.getEntity()` reads the world as it was *before* the
+is a thing the store will not hold: `api.getEntity()` reads the world as it was _before_ the
 pass, so a write through it does not survive. That is also why one table rather than one per
 device: there is no second copy to fall out of step with the first.
 
@@ -680,7 +696,10 @@ number with a flag set in the top bit. `flippedHorizontally` and `flippedVertica
 that written down, so the mirroring is visible at the call site instead of encoded in it:
 
 ```javascript
-import { flippedHorizontally, flippedVertically } from "@inglorious/renderer-2d/image/flags.js";
+import {
+  flippedHorizontally,
+  flippedVertically,
+} from "@inglorious/renderer-2d/image/flags.js";
 
 const entities = {
   cat: {
@@ -689,7 +708,11 @@ const entities = {
       image: { id: "neko", imageSize: [192, 192], tileSize: [32, 32] },
       frames: {
         right: [16, 17, 18],
-        left: [flippedHorizontally(16), flippedHorizontally(17), flippedHorizontally(18)],
+        left: [
+          flippedHorizontally(16),
+          flippedHorizontally(17),
+          flippedHorizontally(18),
+        ],
         ceiling: [flippedVertically(4)],
       },
     },
@@ -716,7 +739,7 @@ An image is drawn in its own colours unless it is given a `tint`:
 ```
 
 It is called `tint` and not `color` on purpose. `color` is a field entities carry for
-their own reasons -- a brick's `color` is a *number* saying where it sits in the palette --
+their own reasons -- a brick's `color` is a _number_ saying where it sits in the palette --
 and a number handed to the canvas as a fill style is ignored **without complaint**, which
 means every brick in a game renders black and nothing anywhere says why. `renderText` and
 `renderRectangle` do take `color`, because for those it is the colour of the ink.
@@ -887,8 +910,7 @@ IngloriousScript adds vector operators for intuitive 2D math. Requires Babel con
 
 ```javascript
 // Without IngloriousScript
-import { add } from "@inglorious/utils/math/vectors.js";
-import { scale, mod } from "@inglorious/utils/vectors";
+import { add, mod, scale } from "@inglorious/utils/math/vector.js";
 
 const newPosition = mod(add(position, scale(velocity, dt)), worldSize);
 
@@ -896,10 +918,9 @@ const newPosition = mod(add(position, scale(velocity, dt)), worldSize);
 const newPosition = (position + velocity * dt) % worldSize;
 ```
 
-Note the two modules: `vectors.js` holds operations over _several_ vectors (`add` sums them
-componentwise), `vector.js` holds operations on _one_ (`scale`, `mod`). The same split appears
-throughout `@inglorious/utils` — plural file when more than one thing is involved, singular when
-there is only one.
+Both come from the one module: `math/vector.js` holds operations over _one_ vector
+(`scale`, `mod`) and over _several_ (`add` sums them componentwise). A module is named after
+the thing it is about, not after how many it is handed — see the utils skill.
 
 ## Systems
 
