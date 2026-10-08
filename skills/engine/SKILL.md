@@ -90,6 +90,18 @@ way the renderer draws, so a shape anchored at `[0, 0]` stands on its position
 whether it is a platformer floor or the bottom of a top-down screen. A third
 coordinate may be given for the depth axis, and defaults to the middle.
 
+**Write the named ones, not the numbers.** `physics/anchor.js` exports all nine, and
+a bare `[0, 1]` is read as bottom-left by half the people who write it:
+
+```javascript
+import { BOTTOM_LEFT, TOP_LEFT } from "@inglorious/engine/physics/anchor.js";
+```
+
+Written as numbers they go wrong two ways: the pair is read the wrong way round, and
+the game then draws and collides differently -- a ball passes through a brick and
+nothing says why. And each game grows its own `TOP_EDGE = 1`, which is the same
+mistake in a different file. All nine are listed under [Anchors](#anchors).
+
 One anchor places everything about an entity, so a hitbox cannot drift away from
 what you can see. Write it on the entity rather than on `image`, which keeps one
 place to keep it in step:
@@ -99,7 +111,7 @@ const player = {
   type: "Player",
   // Standing on the floor, described by its bottom-left corner.
   position: v(100, 0, 0),
-  anchor: [0, 0],
+  anchor: BOTTOM_LEFT,
   size: v(16, 24, 0),
   collisions: { hitbox: { shape: "rectangle" } },
   image: { id: "player", imageSize: [16, 24] },
@@ -690,7 +702,7 @@ api.notify("soundStop", "music");
 
 **They are declared in the configuration, and not in the document.** That is worth knowing
 because it is not the only way to write it. An `<img>` in the page is found by the preload
-scanner before any of this code runs, which is genuinely better for *starting* a download,
+scanner before any of this code runs, which is genuinely better for _starting_ a download,
 and one element is one decoded picture however many things ask for it. It is not usable as
 the way a game says what it has, for one reason: a game that is a **Storybook story has no
 document of its own** to put an `<img>` in, and that is where most examples live. The
@@ -723,13 +735,13 @@ not loaded by the same mechanism underneath, and they are still declared the sam
 
 A frame is said on `entity.image`, in the sheet's own pixels:
 
-| on `entity.image`                                            | what it says                                  |
-| ------------------------------------------------------------ | --------------------------------------------- |
-| `id`, `src`                                                   | which picture                                  |
-| `imageSize`                                                   | how big the whole sheet is                     |
-| `tileSize`                                                    | how big one cell of its grid is                |
-| `x`, `y`                                                      | where in the sheet this frame starts, **pixels** |
-| `frameSize`                                                   | how much of it this frame reads                |
+| on `entity.image` | what it says                                     |
+| ----------------- | ------------------------------------------------ |
+| `id`, `src`       | which picture                                    |
+| `imageSize`       | how big the whole sheet is                       |
+| `tileSize`        | how big one cell of its grid is                  |
+| `x`, `y`          | where in the sheet this frame starts, **pixels** |
+| `frameSize`       | how much of it this frame reads                  |
 
 ```javascript
 const Ball = [
@@ -861,7 +873,7 @@ any other entity, but they are not in `getState()` -- ask
 
 ### Naming a frame by its number
 
-Sometimes what you have is a *number* off the sheet rather than a place on it — a brick
+Sometimes what you have is a _number_ off the sheet rather than a place on it — a brick
 that says which colour and which tier it is, say, and the sheet is laid out so that number
 is a tile. Tiles are read in order **down** the sheet, so the seventh tile of a sheet six
 across is the first of its second row.
