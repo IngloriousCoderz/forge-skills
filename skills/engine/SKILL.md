@@ -1054,6 +1054,89 @@ const systems = [
 const engine = new Engine(renderer, { types, entities, systems });
 ```
 
+## Testing a Game
+
+`@inglorious/engine/test` drives a game against its own store: no canvas, no browser, no
+loop.
+
+```javascript
+// test/game.test.js
+import { createGame } from "@inglorious/engine/test";
+import { beforeEach, describe, test } from "vitest";
+
+import gameConfig from "../src/game.ijs";
+
+describe("Breakout", () => {
+  let game;
+
+  beforeEach(() => {
+    game = createGame(gameConfig);
+  });
+
+  test("begins the serve on a third press", () => {
+    // given
+    game.step(4);
+    game.press("Enter");
+    game.press("Enter");
+
+    // when
+    game.press("Enter");
+
+    // then
+    check(game.entity("game").state === "play", "and a third answers it");
+  });
+});
+```
+
+### What the game under test gives you
+
+|                                      |                                                                            |
+| ------------------------------------ | -------------------------------------------------------------------------- |
+| `entity(id)`                         | one entity, by the name the game knows it by                               |
+| `state()`                            | the lot, for keys and `Object.keys`                                        |
+| `pooled(type?)`                      | pooled entities in play -- they are drawn from a pool, so not in the state |
+| `check(condition, description)`      | assert, in a failure that says what it was about                           |
+| `playedSounds`                       | the sounds reached for, in order                                           |
+| `notify(event, ...args)`             | the one way anything is said to it                                         |
+| `step(frames)`                       | run frames                                                                 |
+| `advance(seconds)`                   | run for a length of time                                                   |
+| `press(code)` / `hold(code, frames)` | tap a key / hold it down                                                   |
+
+`store.getEntity(id)` is the same read as `api.getEntity`, for the code outside a handler.
+
+### Rules
+
+- **One game per test.** Make it in `beforeEach`; state nothing in a test carries forward. A
+  test that inherits from the one before it can only be run in one order.
+- **Say the preconditions in `given`, the action in `when`, the claim in `then`.** A test that
+  is 300 lines of arranged state is 300 lines nobody can change safely.
+- **Use `advance(seconds)`, never `step(seconds * 60)`.** The step is not a sixtieth of a
+  second, so converting by hand asks for slightly too few frames, and that shows up as a
+  test that passes most of the time.
+- **Never reach for `engine._store`.** It is private, and its `extras` are the engine's own.
+  `notify`, `entity` and `pooled` are the doors.
+
+### A game with a move of its own
+
+`createGame` takes additions, so a game's own move is added rather than the harness edited:
+
+```javascript
+game = createGame(gameConfig, {
+  // Breakout: the ball falling off the bottom costs a life.
+  dropTheBall() {
+    this.entity("ball").position[1] = 0;
+
+    return this.step(1);
+  },
+});
+```
+
+### One trap
+
+- **Dev mode freezes what the store publishes.** Right for a game in a browser, wrong for a
+  test that has to put a ball where a brick is. `createGame` turns it off, so a test must not
+  need to.
+
 ## API Reference
 
 ### `new Engine(renderer, game)`
