@@ -1115,6 +1115,57 @@ describe("Breakout", () => {
   test that passes most of the time.
 - **Never reach for `engine._store`.** It is private, and its `extras` are the engine's own.
   `notify`, `entity` and `pooled` are the doors.
+- **Assert the rule, not a sample of it.** Checking that two lines you happened to look at
+  are white will pass while every other line is black. Check the shape:
+  `whiteLines(state).length === 0`.
+- **Never write `expect(condition, "about it")` on its own.** It asserts nothing -- a
+  message is the second argument to something that already fails. `expect` is fine on its
+  own; the two-argument form without `.toBe(true)` is not.
+- **Break a test on purpose before trusting it.** If flipping the condition does not turn it
+  red, it is not testing. A runner left over from an older version of a file has shadowed
+  the real one here, and several hundred checks reported themselves to the console while the
+  suite stayed green.
+
+### Testing a renderer
+
+A renderer takes `(entity, ctx)`, so testing one means handing it a canvas that records
+rather than draws. `@inglorious/renderer-2d/test/canvas` is one:
+
+```javascript
+import { callsTo, createContext } from "@inglorious/renderer-2d/test/canvas.js"
+
+const { calls, ctx } = createContext()
+
+renderCircle({ radius: 10 }, ctx)
+
+const [, x, y, radius] = callsTo(calls, "arc")[0]
+```
+
+It tracks the transform stack, so `at()` asks where a point actually landed once every
+translate and scale is applied -- which is how a position that is off by the flip is caught.
+
+Three things about it that are easy to get wrong:
+
+- **A recorded call keeps the call's name in the first slot.** `["arc", x, y, radius, from,
+  to]` -- skipping a slot reads the radius as the start angle, and the test fails in a way
+  that looks like the renderer.
+- **`calls.box` is the last rectangle or image drawn, not all of them.** For something that
+  draws a row of tiles it gives you one tile, which reads like a bug in the renderer. Ask the
+  recorded `translate` and `fillRect` arguments instead and work the arithmetic out yourself.
+- **Check that a default is reachable.** `const [width = 100] = size` defaults an element of
+  `size`, not `size`, so a button with no size threw instead of drawing at the hundred by
+  fifty the same line appears to promise. The default has to be on the destructuring of
+  `size` as well, and a test for the default is what proves it is.
+- **Test the examples in the docs, not only the ones in the games.** `renderHitmask` is used
+  by `docs/engine/src/collision/tilemap.js` and by no game at all, so a green suite over the
+  games says nothing about it. Search `docs/` before calling something unused.
+- **A world offset of nothing comes out as `-0`,** because it is computed as `-y - z`. The
+  canvas draws it in the same place, but `toEqual(0)` does not believe that, so assert
+  offsets with `toBeCloseTo`.
+
+A renderer is worth testing for its arithmetic -- where a position lands, which way an axis
+goes -- rather than for the sequence of calls, which is an implementation detail that a
+reasonable rewrite will change.
 
 ### A game with a move of its own
 
