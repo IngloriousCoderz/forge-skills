@@ -28,6 +28,7 @@ This repo contains focused skill/reference files that help an agent work with th
 - [`skills/charts/SKILL.md`](skills/charts/SKILL.md) - SVG charting primitives
 - [`skills/ssx/SKILL.md`](skills/ssx/SKILL.md) - Static site generation and hydration
 - [`skills/engine/SKILL.md`](skills/engine/SKILL.md) - Functional 2D game engine
+- [`skills/engine-best-practices/SKILL.md`](skills/engine-best-practices/SKILL.md) - Engine testing conventions
 - [`skills/ui/SKILL.md`](skills/ui/SKILL.md) - Design system components and theming
 - [`skills/ui-best-practices/SKILL.md`](skills/ui-best-practices/SKILL.md) - UI primitive conventions
 - [`skills/vite-plugin-jsx/SKILL.md`](skills/vite-plugin-jsx/SKILL.md) - JSX transform for `@inglorious/web`

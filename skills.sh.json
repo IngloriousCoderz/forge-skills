@@ -43,6 +43,7 @@
       "description": "2D game loop architecture and game project scaffolding.",
       "skills": [
         "engine",
+        "engine-best-practices",
         "create-game"
       ]
     },

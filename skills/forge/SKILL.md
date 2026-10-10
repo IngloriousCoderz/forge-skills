@@ -107,6 +107,7 @@ Use for functional 2D game loop architecture on top of `@inglorious/store`.
 - Frame-based `update(entity, dt)` handlers
 - Entity pool middleware for high-frequency updates
 - Optional IngloriousScript vector operators via Babel
+- Testing games and renderers: [`skills/engine-best-practices/SKILL.md`](../engine-best-practices/SKILL.md)
 
 ## Tooling & Integration
 
