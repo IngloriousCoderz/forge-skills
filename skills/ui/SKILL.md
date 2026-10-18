@@ -200,6 +200,27 @@ const entities = {
 | `header`    | `TemplateResult` | -       | Custom header    |
 | `footer`    | `TemplateResult` | -       | Footer content   |
 
+### Icon
+
+Icons come from any [Iconify](https://icon-sets.iconify.design/) set, drawn as inline SVG: no icon font, and only imported icons are bundled.
+
+```javascript
+import { Icon } from "@inglorious/ui/icon";
+import arrowBack from "@iconify-icons/material-symbols/arrow-back";
+import settingsOutline from "@iconify-icons/material-symbols/settings-outline";
+import user from "@iconify-icons/fa7-solid/user";
+
+Icon.render({ icon: settingsOutline, size: "lg" });
+Icon.render({ icon: arrowBack, direction: api.getEntity("i18n").dir }); // mirrored in RTL
+Icon.render({ icon: user, label: "Account" }); // meaningful on its own
+Icon.render({ children: "★" }); // a glyph instead
+```
+
+- Install the set in the app (`@iconify-icons/material-symbols`, `@iconify-icons/fa7-solid` / `fa7-regular` / `fa7-brands`, `@iconify-icons/lucide`, …).
+- The variant is in the name: Material Symbols' plain name is filled, `-outline` outlined, plus `-rounded` / `-sharp`.
+- Icon data (`{ width, height, body }`) is plain data, fine in entities and option lists.
+- Decorative unless `label` is set. There is no `MaterialIcon` and no icon font to load.
+
 ## Theming
 
 ### Available Themes
