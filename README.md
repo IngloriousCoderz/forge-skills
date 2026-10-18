@@ -26,6 +26,7 @@ This repo contains focused skill/reference files that help an agent work with th
 - [`skills/web/SKILL.md`](skills/web/SKILL.md) - lit-html based web framework patterns
 - [`skills/web-best-practices/SKILL.md`](skills/web-best-practices/SKILL.md) - UI type and primitive conventions for `@inglorious/web`
 - [`skills/charts/SKILL.md`](skills/charts/SKILL.md) - SVG charting primitives
+- [`skills/i18n/SKILL.md`](skills/i18n/SKILL.md) - Internationalization: translations, plurals, formatting and markup in translations
 - [`skills/ssx/SKILL.md`](skills/ssx/SKILL.md) - Static site generation and hydration
 - [`skills/engine/SKILL.md`](skills/engine/SKILL.md) - Functional 2D game engine
 - [`skills/engine-best-practices/SKILL.md`](skills/engine-best-practices/SKILL.md) - Engine testing conventions

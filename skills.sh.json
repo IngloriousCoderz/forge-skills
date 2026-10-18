@@ -11,7 +11,8 @@
         "vite-plugin-jsx",
         "vite-plugin-vue",
         "ui",
-        "ui-best-practices"
+        "ui-best-practices",
+        "i18n"
       ]
     },
     {

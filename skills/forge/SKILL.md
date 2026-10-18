@@ -24,7 +24,8 @@ or let one of these own it:
 - `@inglorious/server` — Node realtime server; creates and owns a store, replicating client events over WebSockets
 
 `@inglorious/ssx` is SSG/SSR for `@inglorious/web`, so it uses both. `@inglorious/ui` and
-`@inglorious/charts` are component libraries built on web. `@inglorious/react-store` provides
+`@inglorious/charts` are component libraries built on web. `@inglorious/i18n` translates web apps,
+with the active locale held in a store entity. `@inglorious/react-store` provides
 native React bindings for the store. `@inglorious/utils` is standalone. See
 [`skills/store/SKILL.md`](../store/SKILL.md) for the store's own event and naming rules.
 
@@ -89,6 +90,15 @@ Use for design system components and theming.
 - Themeable with Inglorious, Material, and Bootstrap themes
 - Light and dark mode variants
 - UI primitive conventions: [`skills/ui-best-practices/SKILL.md`](../ui-best-practices/SKILL.md)
+
+### [@inglorious/i18n](../i18n/SKILL.md)
+
+Use for translating web apps.
+
+- `createI18n` over i18next, with the locale in an `I18n` entity
+- Device-language detection and a remembered choice
+- `t` for strings, plurals and formatting; `trans` for markup in translations
+- Labels in data and state that follow the active language
 
 ### [@inglorious/ssx](../ssx/SKILL.md)
 
