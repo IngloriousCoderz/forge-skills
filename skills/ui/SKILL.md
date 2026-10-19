@@ -106,6 +106,8 @@ const entities = {
 
 `IconButton`, `ButtonGroup` and `Fab` are built on `Button` and share its `color`, including `"default"`.
 
+The default color is neutral, unless the theme gives it its own tokens (`--iw-button-default-color`, `-bg`, `-bg-hover`, `-bg-active`, `-border`, `-text`). The Material theme makes it primary, as Material UI does, so set `color` only to depart from it.
+
 ### Other components worth knowing
 
 - **Progress**: `variant` is `"linear"` or `"circular"`; both take `color`. Without a `value` it is indeterminate.
@@ -241,7 +243,7 @@ Icon.render({ children: "★" }); // a glyph instead
 | Theme        | Description                                                      |
 | ------------ | ---------------------------------------------------------------- |
 | `inglorious` | Neon/videogame aesthetic (default dark)                          |
-| `material`   | Material Design inspired: capitalized labels on buttons and tabs |
+| `material`   | Material UI inspired: primary default buttons, capitalized medium-weight labels on buttons and tabs, grey default chips |
 | `bootstrap`  | Bootstrap inspired                                               |
 
 ### Theme Variants
@@ -285,16 +287,21 @@ Icon.render({ children: "★" }); // a glyph instead
 
 ### Label Tokens
 
-Buttons (and everything built on them) and tabs read two tokens for their labels. They default to `none` and `normal`; the Material theme sets labels in capitals:
+Buttons (and everything built on them) and tabs read three tokens for their labels. They default to `none`, `normal` and the normal font weight; the Material theme sets them as Material UI does:
 
 ```css
 .iw-theme-material {
   --iw-label-text-transform: uppercase;
-  --iw-label-letter-spacing: 0.06em;
+  --iw-label-letter-spacing: 0.02857em;
+  --iw-label-font-weight: var(--iw-font-weight-medium);
 }
 ```
 
 Override them on a theme class, or on any ancestor, to change it. Bottom-navigation labels, menu items and accordion headers do not read them.
+
+### Chip Token
+
+A default `Chip`'s background is `--iw-chip-bg`, falling back to `--iw-color-bg-secondary`. The Material theme sets it to a tint of the text color, so chips show on white cards and tables.
 
 ### Component Tokens
 
