@@ -57,48 +57,61 @@ import "@inglorious/ui/input.css";
 import { Button } from "@inglorious/ui/button";
 
 // Stateless: direct render
-Button.render(
-  {
-    label: "Click me",
-    variant: "primary",
-    size: "lg",
-  },
-  api,
-);
+Button.render({
+  children: "Click me",
+  color: "primary",
+  size: "lg",
+  onClick: () => api.notify("save"),
+});
 
-// Stateful: define type with handler
+// Bound to an entity: a type wraps the render and passes the callbacks,
+// since functions never go in the entity
 const types = {
-  Button: {
-    ...Button,
-    click(entity, payload, api) {
-      console.log(`${entity.id} clicked!`);
+  SubmitButton: {
+    render(entity, api) {
+      return Button.render({
+        ...entity,
+        onClick: () => api.notify(`#${entity.id}:click`),
+      });
+    },
+    click(entity) {
+      entity.isPressed = !entity.isPressed;
     },
   },
 };
 
 const entities = {
   submitBtn: {
-    type: "Button",
-    label: "Submit",
-    variant: "default",
+    type: "SubmitButton",
+    children: "Submit",
+    color: "primary",
   },
 };
-
-// In render: api.render("submitBtn")
 ```
 
 **Button Properties:**
 
-| Property    | Type                                                                                | Default     | Description       |
-| ----------- | ----------------------------------------------------------------------------------- | ----------- | ----------------- |
-| `label`     | `string`                                                                            | -           | Button text       |
-| `variant`   | `"default"` \| `"outline"` \| `"ghost"`                                             | `"default"` | Visual style      |
-| `color`     | `"primary"` \| `"secondary"` \| `"success"` \| `"warning"` \| `"error"` \| `"info"` | `"primary"` | Color variant     |
-| `size`      | `"sm"` \| `"md"` \| `"lg"`                                                          | `"md"`      | Size              |
-| `disabled`  | `boolean`                                                                           | `false`     | Disabled state    |
-| `fullWidth` | `boolean`                                                                           | `false`     | Full width        |
-| `icon`      | `string`                                                                            | -           | Icon before label |
-| `iconAfter` | `string`                                                                            | -           | Icon after label  |
+| Property      | Type                                                                                               | Default       | Description             |
+| ------------- | -------------------------------------------------------------------------------------------------- | ------------- | ----------------------- |
+| `children`    | `TemplateResult` \| `string` \| `number`                                                           | -             | Button content          |
+| `variant`     | `"default"` \| `"outline"` \| `"ghost"`                                                            | `"default"`   | Visual style            |
+| `color`       | `"default"` \| `"primary"` \| `"secondary"` \| `"success"` \| `"warning"` \| `"error"` \| `"info"` | `"default"`   | Color variant           |
+| `size`        | `"sm"` \| `"md"` \| `"lg"`                                                                         | `"md"`        | Size                    |
+| `shape`       | `"rectangle"` \| `"pill"` \| `"round"` \| `"square"`                                               | `"rectangle"` | Shape                   |
+| `isDisabled`  | `boolean`                                                                                          | `false`       | Disabled state          |
+| `isPressed`   | `boolean`                                                                                          | `false`       | Pressed state           |
+| `isFullWidth` | `boolean`                                                                                          | `false`       | Full width              |
+| `buttonType`  | `"button"` \| `"submit"` \| `"reset"` \| `"menu"`                                                  | `"button"`    | The `<button>`'s `type` |
+| `onClick`     | `() => void`                                                                                       | -             | Click callback          |
+
+`IconButton`, `ButtonGroup` and `Fab` are built on `Button` and share its `color`, including `"default"`.
+
+### Other components worth knowing
+
+- **Progress**: `variant` is `"linear"` or `"circular"`; both take `color`. Without a `value` it is indeterminate.
+- **Tabs**: `value` picks the selected tab and defaults to the first; `value: null` selects none.
+- **Table**: wide tables scroll horizontally by default. `isWrapping` wraps cell content to fit the container instead.
+- **Tooltip**: `onClick` is optional.
 
 ### Input
 
@@ -225,11 +238,11 @@ Icon.render({ children: "★" }); // a glyph instead
 
 ### Available Themes
 
-| Theme        | Description                             |
-| ------------ | --------------------------------------- |
-| `inglorious` | Neon/videogame aesthetic (default dark) |
-| `material`   | Material Design inspired                |
-| `bootstrap`  | Bootstrap inspired                      |
+| Theme        | Description                                                      |
+| ------------ | ---------------------------------------------------------------- |
+| `inglorious` | Neon/videogame aesthetic (default dark)                          |
+| `material`   | Material Design inspired: capitalized labels on buttons and tabs |
+| `bootstrap`  | Bootstrap inspired                                               |
 
 ### Theme Variants
 
@@ -269,6 +282,19 @@ Icon.render({ children: "★" }); // a glyph instead
   /* ... */
 }
 ```
+
+### Label Tokens
+
+Buttons (and everything built on them) and tabs read two tokens for their labels. They default to `none` and `normal`; the Material theme sets labels in capitals:
+
+```css
+.iw-theme-material {
+  --iw-label-text-transform: uppercase;
+  --iw-label-letter-spacing: 0.06em;
+}
+```
+
+Override them on a theme class, or on any ancestor, to change it. Bottom-navigation labels, menu items and accordion headers do not read them.
 
 ### Component Tokens
 
@@ -487,4 +513,3 @@ import "@inglorious/ui/button.css";
 import "@inglorious/ui/input.css";
 import "@inglorious/ui/card.css";
 ```
-
