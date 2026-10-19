@@ -85,6 +85,8 @@ TypeScript 7 has no JavaScript API, which typescript-eslint and the Capacitor CL
 
 Linting a TypeScript app needs `@inglorious/eslint-config` 1.1.3 or later: 1.1.2 declares `./typescript` but does not ship it.
 
+A generated TypeScript app types itself in `types/index.d.ts`: `AppEntity`, `AppState`, `AppApi`, a `type` alias per type listing its events and payloads (`MessageType`), and the `AppType<TEntity>` shorthand. Each type is written `export const Message: MessageType = { ... }`, and the store takes `types: { Message, ... }` with no cast. Add an entity by declaring its interface, adding it to `AppEntity` and `AppState`, and declaring its type alias the same way (see the store skill's TypeScript section).
+
 ## After Creation
 
 ```bash

@@ -699,30 +699,52 @@ expect(api.getEvents()).toEqual([{ type: "#counter2:valueIncrement" }]);
 
 ## TypeScript
 
+Describe the entities and the state, declare each type's events and payloads with a `type` alias, and write the type against it. Handler parameters are inferred and `createStore` checks each type against its entities. Never cast `types`.
+
 ```typescript
-interface TodoListTypes {
-  Form: {
-    inputChange: (entity: FormEntity, value: string) => void;
-    submit: (entity: FormEntity) => void;
-  };
+import type { Api, BaseEntity, EntitiesState, EntityType } from "@inglorious/store";
+
+interface FormEntity extends BaseEntity {
+  type: "Form";
+  value: string;
 }
 
-export const types: TodoListTypes = {
-  Form: {
-    inputChange(entity, value) {
-      /* ... */
-    },
-    submit(entity) {
-      /* ... */
-    },
+type AppEntity = FormEntity; // a union of all the entities
+
+interface AppState extends EntitiesState<AppEntity> {
+  form: FormEntity;
+}
+
+type AppApi = Api<AppEntity, AppState>; // from @inglorious/web in a web app: the same type, with render
+
+// The events and their payloads: `type`, never `interface`, which does not fit `types`
+type FormType = {
+  inputChange: (entity: FormEntity, value: string) => void;
+  submit: (entity: FormEntity, payload: void, api: AppApi) => void;
+};
+
+export const Form: FormType = {
+  inputChange(entity, value) {
+    entity.value = value;
+  },
+  submit(entity, _payload, api) {
+    api.notify("formSubmitted", api.getEntity("form")?.value);
   },
 };
 
-const store = createStore<TodoListEntity, TodoListState>({
-  types: types as unknown as TypesConfig<TodoListEntity>,
-  entities,
+const store = createStore<AppEntity, AppState>({
+  types: { Form },
+  entities: { form: { type: "Form", value: "" } },
 });
 ```
+
+- The alias is the default: a misspelled or missing handler is an error, and so is a wrong payload, in `Form.inputChange(form, 42)` or `trigger(form, Form.inputChange, 42)`.
+- Shorthand, less rigorous: `export const Form = { ... } satisfies EntityType<FormEntity, AppApi>` (create-app exports it as `AppType<FormEntity>`). It infers the entity and the api but accepts any handler name, and payloads are `any` unless annotated. Never annotate with it (`const Form: AppType<FormEntity>`): that hides the type's members.
+- `BaseEntity` holds only `type`, `id` and `updatesWhilePaused`: declare every other field, and a typo is an error.
+- Handlers and `render` receive the entity with `id: string`; leave `id` out of the initial entities.
+- An entity drawn by a library type extends its entity interface: `interface AppRouterEntity extends RouterEntity { type: "Router" }`, `interface SalesEntity extends ChartEntity { type: "Sales" }`. Never `Omit<RouterEntity, "id">`.
+- A type name no entity has, such as a page, takes any type. Behavior arrays type too: `Live: [Chart, withRealtime]`.
+- Selectors infer: `compute((tasks, filter) => ..., [selectTasks, selectFilter])` needs no type arguments.
 
 ## Common Pitfalls
 
