@@ -329,6 +329,8 @@ const types = {
 - `run` receives `(payload, api)` — **not** `entity`
 - All handlers receive `api` as the last parameter
 - `start` is optional
+- Wrap the result in `optimistic(handleAsync(...), patch)` from `@inglorious/store/optimistic` for optimistic updates: `patch` is an object or `(entity, payload, api) => patch`, applied on start and rolled back on error
+- In TypeScript, see `AsyncEvents` in the TypeScript section
 
 ## Systems
 
@@ -740,6 +742,7 @@ const store = createStore<AppEntity, AppState>({
 
 - The alias is the default: a misspelled or missing handler is an error, and so is a wrong payload, in `Form.inputChange(form, 42)` or `trigger(form, Form.inputChange, 42)`.
 - Shorthand, less rigorous: `export const Form = { ... } satisfies EntityType<FormEntity, AppApi>` (create-app exports it as `AppType<FormEntity>`). It infers the entity and the api but accepts any handler name, and payloads are `any` unless annotated. Never annotate with it (`const Form: AppType<FormEntity>`): that hides the type's members.
+- `handleAsync` names and types its events. In an alias, list them with `AsyncEvents<"fetch", UserEntity, Payload, Result, AppApi>` (from `@inglorious/store/async`): `type UserType = { rename: ... } & AsyncEvents<...>`, then spread `...handleAsync("fetch", { run: async (id: string) => ..., success(entity: UserEntity, name: string) { ... } })`. With `satisfies EntityType<TodoListEntity, AppApi>`, the handlers get the entity and the api, and `success` gets what `run` returns. `optimistic` keeps the names and types and always adds `fetchStart`. Prefer inference over explicit type arguments (`handleAsync<E, P, R>(...)`), which make the event names plain strings.
 - `BaseEntity` holds only `type`, `id` and `updatesWhilePaused`: declare every other field, and a typo is an error.
 - Handlers and `render` receive the entity with `id: string`; leave `id` out of the initial entities.
 - An entity drawn by a library type extends its entity interface: `interface AppRouterEntity extends RouterEntity { type: "Router" }`, `interface SalesEntity extends ChartEntity { type: "Sales" }`. Never `Omit<RouterEntity, "id">`.
