@@ -686,7 +686,7 @@ const entities = {
   audio: {
     type: "Audio",
     sounds: {
-      paddleHit: { url: "/sounds/paddle_hit.wav" },
+      paddleHit: { url: "/sounds/paddle-hit.wav" },
       music: { url: "/sounds/music.mp3", loop: true, volume: 0.25 },
     },
   },
