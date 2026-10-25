@@ -15,8 +15,9 @@ npm install @inglorious/ui
 
 **Architecture:**
 
-- Components are plain objects with a `render(entity, api)` method
-- Two invocation patterns: direct render or via `api.render()`
+- Components are props-first: `Button.render(props)` returns markup, and interactions are callbacks (`onClick`, `onChange`) passed as props
+- To bind a component to an entity, a type wraps its `render(entity, api)`, spreads the entity into props and turns callbacks into `api.notify()` calls
+- Composite components are objects with overridable sub-renderers (`renderCell`, `renderHeader`, ...), so customizing one step is an object spread
 - All styling via CSS custom properties (tokens)
 - Multiple themes with light/dark variants
 
@@ -24,21 +25,24 @@ npm install @inglorious/ui
 
 - Components are stateless - state lives in entities via `@inglorious/store`
 - Entities are pure data - no functions, just values
-- Templates always dispatch events via `api.notify()`
+- Components never call `api.notify()` themselves; the type that wraps them does
 - Handler logic lives in type definitions, not entities
-- Import CSS tokens and themes before component styles
+- Import the base styles and a theme before component styles
 - UI primitive conventions: [`skills/ui-best-practices/SKILL.md`](../ui-best-practices/SKILL.md)
 
 ## Basic Setup
 
-### Import Tokens and Theme
+### Import Base Styles and Theme
 
 ```javascript
-import "@inglorious/ui/tokens"; // CSS custom properties
-import "@inglorious/ui/themes/inglorious"; // or material, bootstrap
-import "@inglorious/ui/button.css";
+import "@inglorious/ui/base.css"; // reset + tokens + safe-area insets
+import "@inglorious/ui/themes/inglorious.css"; // or material.css, bootstrap.css
+import "@inglorious/ui/button.css"; // one stylesheet per component...
 import "@inglorious/ui/input.css";
+// ...or everything at once: import "@inglorious/ui/all.css";
 ```
+
+Every component has a matching `@inglorious/ui/<component>.css`, and each category has one too (`controls.css`, `data-display.css`, `feedback.css`, `layout.css`, `navigation.css`, `surfaces.css`). `tokens.css` alone is available, but `base.css` already includes it.
 
 ### Apply Theme Class
 
@@ -112,7 +116,23 @@ The default color is neutral, unless the theme gives it its own tokens (`--iw-bu
 
 - **Progress**: `variant` is `"linear"` or `"circular"`; both take `color`. Without a `value` it is indeterminate.
 - **Tabs**: `value` picks the selected tab and defaults to the first; `value: null` selects none.
-- **Table**: wide tables scroll horizontally by default. `isWrapping` wraps cell content to fit the container instead.
+- **Table**: wide tables scroll horizontally by default. `isWrapping` wraps cell content to fit the container instead. Columns take `id`, `label` and `align`; rows are plain objects keyed by column id. To format or replace cells, override a step:
+
+  ```javascript
+  const MoneyTable = {
+    ...Table,
+    renderCell(props, payload) {
+      const { column, row } = payload;
+      if (!column.isMoney) return Table.renderCell(props, payload);
+
+      return Table.renderCell(props, {
+        ...payload,
+        row: { ...row, [column.id]: formatMoney(row[column.id]) },
+      });
+    },
+  };
+  ```
+
 - **Tooltip**: `onClick` is optional.
 
 ### Input
@@ -121,21 +141,24 @@ The default color is neutral, unless the theme gives it its own tokens (`--iw-bu
 import { Input } from "@inglorious/ui/input";
 
 // Stateless
-Input.render(
-  {
-    label: "Email",
-    type: "email",
-    placeholder: "you@example.com",
-    hint: "We'll never share your email",
-  },
-  api,
-);
+Input.render({
+  label: "Email",
+  inputType: "email",
+  placeholder: "you@example.com",
+  hint: "We'll never share your email",
+  onChange: (value) => api.notify("#signup:emailChange", value),
+});
 
-// Stateful with validation
+// Bound to an entity, with validation
 const types = {
-  Input: {
-    ...Input,
-    change(entity, value, api) {
+  EmailInput: {
+    render(entity, api) {
+      return Input.render({
+        ...entity,
+        onChange: (value) => api.notify(`#${entity.id}:change`, value),
+      });
+    },
+    change(entity, value) {
       entity.value = value;
       entity.error = value.includes("@") ? null : "Invalid email";
     },
@@ -144,8 +167,9 @@ const types = {
 
 const entities = {
   emailInput: {
-    type: "Input",
+    type: "EmailInput",
     label: "Email",
+    inputType: "email",
     value: "",
     error: null,
   },
@@ -154,19 +178,38 @@ const entities = {
 
 **Input Properties:**
 
-| Property      | Type                                                        | Default  | Description       |
-| ------------- | ----------------------------------------------------------- | -------- | ----------------- |
-| `label`       | `string`                                                    | -        | Label text        |
-| `type`        | `"text"` \| `"email"` \| `"password"` \| `"number"` \| etc. | `"text"` | Input type        |
-| `value`       | `string`                                                    | `""`     | Current value     |
-| `placeholder` | `string`                                                    | -        | Placeholder text  |
-| `hint`        | `string`                                                    | -        | Helper text       |
-| `error`       | `string`                                                    | -        | Error message     |
-| `size`        | `"sm"` \| `"md"` \| `"lg"`                                  | `"md"`   | Size              |
-| `disabled`    | `boolean`                                                   | `false`  | Disabled state    |
-| `required`    | `boolean`                                                   | `false`  | Required field    |
-| `icon`        | `string`                                                    | -        | Icon before input |
-| `iconAfter`   | `string`                                                    | -        | Icon after input  |
+| Property      | Type                                                                | Default  | Description                            |
+| ------------- | ------------------------------------------------------------------- | -------- | -------------------------------------- |
+| `id`          | `string`                                                            | -        | Ties the label and message to the input; see [Form Controls](#form-controls-labels-ids-and-messages) |
+| `name`        | `string`                                                            | -        | Form field name; used as id if no `id` |
+| `label`       | `string`                                                            | -        | Label text                             |
+| `inputType`   | `"text"` \| `"email"` \| `"password"` \| `"number"` \| `"date"` \| etc. | `"text"` | The `<input>`'s `type`             |
+| `value`       | `string`                                                            | `""`     | Current value                          |
+| `placeholder` | `string`                                                            | -        | Placeholder text                       |
+| `hint`        | `string`                                                            | -        | Helper text                            |
+| `error`       | `string`                                                            | -        | Error message; sets `aria-invalid`     |
+| `size`        | `"sm"` \| `"md"` \| `"lg"`                                          | `"md"`   | Size                                   |
+| `isDisabled`  | `boolean`                                                           | `false`  | Disabled state                         |
+| `isReadOnly`  | `boolean`                                                           | `false`  | Read-only state                        |
+| `isRequired`  | `boolean`                                                           | `false`  | Required field                         |
+| `isFullWidth` | `boolean`                                                           | `false`  | Full width                             |
+| `icon`        | `string`                                                            | -        | Icon before input                      |
+| `iconAfter`   | `string`                                                            | -        | Icon after input                       |
+| `onChange`    | `(value: string) => void`                                           | -        | Called on every keystroke              |
+
+`type` is reserved for the entity's type, which is why the input's own type is `inputType`.
+
+### Form Controls: Labels, Ids and Messages
+
+Every form control works without an `id`, but an `id` gets you more:
+
+- **Checkbox, Switch, RadioGroup** wrap their input in its label, so clicking the label always works, with or without an `id`.
+- **Input, Select, Textarea, Slider, FileUpload, Combobox** put the label beside the control. With an `id` (or a `name`, for all but Combobox) the label is tied to the control: clicking it focuses the control. Without one, the control takes a plain-text label as its `aria-label`, so it is still announced, but clicking the label does nothing.
+- With an `id`, the hint or error gets the id `<id>-message` and the control points at it with `aria-describedby`.
+- `aria-invalid` is always stated, `"true"` or `"false"`, rather than left out.
+- **RadioGroup** needs a `name` or an `id`. Radios are grouped by their shared name, falling back to the `id`; each option gets the id `<name-or-id>-<index>`.
+
+A control bound to an entity (`...entity` in the props) always has the entity's id, so this matters mostly for stateless renders.
 
 ### Card
 
@@ -174,46 +217,57 @@ const entities = {
 import { Card } from "@inglorious/ui/card";
 
 // Basic card
-Card.render(
-  {
-    title: "Card Title",
-    subtitle: "Card description",
-  },
-  api,
-);
+Card.render({
+  title: "Card Title",
+  subtitle: "Card description",
+  children: html`<p>Body content</p>`,
+  footer: Button.render({ children: "Open" }),
+});
 
-// Interactive card
+// Interactive card bound to an entity
 const types = {
-  Card: {
-    ...Card,
+  ProductCard: {
+    render(entity, api) {
+      return Card.render({
+        ...entity,
+        isHoverable: true,
+        isClickable: true,
+        onClick: () => api.notify(`#${entity.id}:click`),
+      });
+    },
     click(entity, payload, api) {
-      api.notify("#router:navigate", "/products/123");
+      api.notify("#router:navigate", `/products/${entity.productId}`);
     },
   },
 };
 
 const entities = {
   productCard: {
-    type: "Card",
+    type: "ProductCard",
+    productId: 123,
     title: "Product Name",
     subtitle: "$99.99",
-    hoverable: true,
-    clickable: true,
   },
 };
 ```
 
 **Card Properties:**
 
-| Property    | Type             | Default | Description      |
-| ----------- | ---------------- | ------- | ---------------- |
-| `title`     | `string`         | -       | Card title       |
-| `subtitle`  | `string`         | -       | Card subtitle    |
-| `hoverable` | `boolean`        | `false` | Hover effects    |
-| `clickable` | `boolean`        | `false` | Clickable cursor |
-| `fullWidth` | `boolean`        | `false` | Full width       |
-| `header`    | `TemplateResult` | -       | Custom header    |
-| `footer`    | `TemplateResult` | -       | Footer content   |
+| Property                                       | Type                                     | Default     | Description                                                      |
+| ---------------------------------------------- | ---------------------------------------- | ----------- | ---------------------------------------------------------------- |
+| `title`                                        | `TemplateResult` \| `string` \| `number` | -           | Card title                                                       |
+| `subtitle`                                     | `TemplateResult` \| `string` \| `number` | -           | Card subtitle                                                    |
+| `header`                                       | `TemplateResult` \| `string` \| `number` | -           | Custom header, in place of title and subtitle                    |
+| `children` / `body`                            | `TemplateResult` \| `string` \| `number` | -           | Body content                                                     |
+| `footer`                                       | `TemplateResult` \| `string` \| `number` | -           | Footer content                                                   |
+| `headerPadding`, `bodyPadding`, `footerPadding` | `"none"` \| `"sm"` \| `"md"` \| `"lg"` \| `"xl"` | -   | Section padding                                                  |
+| `element`                                      | `"article"` \| `"section"` \| `"div"` \| ... | `"article"` | Root element                                                  |
+| `isHoverable`                                  | `boolean`                                | `false`     | Hover effects                                                    |
+| `isClickable`                                  | `boolean`                                | `false`     | Clickable cursor                                                 |
+| `isFullWidth`                                  | `boolean`                                | `false`     | Full width                                                       |
+| `onClick`                                      | `() => void`                             | -           | Click callback                                                   |
+
+`Card` is a composite: override `renderHeader`, `renderBody` or `renderFooter` with an object spread to change one section.
 
 ### Icon
 
@@ -347,7 +401,7 @@ src/components/my-component/
 
 ### Best Practices
 
-1. **template.js** - Contains only the `render` function that returns a TemplateResult
+1. **template.js** - Contains only the `render(props)` function that returns a TemplateResult
 2. **style.css** - Uses CSS custom properties for theming (`--iw-*` tokens)
 3. **index.js** - Exports only the `render` function (or render + handlers/helpers)
 4. **handlers.js** - Optional. Only needed if the type has default event behavior
@@ -356,47 +410,51 @@ src/components/my-component/
 ### template.js
 
 ```javascript
-/** @typedef {import('../../../types/my-component').MyComponentEntity} MyComponentEntity */
-/** @typedef {import('@inglorious/web').Api} Api */
+/** @typedef {import('../../../types/my-component').MyComponentProps} MyComponentProps */
 /** @typedef {import('@inglorious/web').TemplateResult} TemplateResult */
 
-import { html } from "@inglorious/web";
+import { html, nothing } from "@inglorious/web";
 import { classMap } from "@inglorious/web/directives/class-map";
 
-export function render(entity, api) {
-  const { title, variant = "default" } = entity;
+/**
+ * @param {MyComponentProps} props
+ * @returns {TemplateResult}
+ */
+export function render(props) {
+  const { id, title, variant = "default", onClick } = props;
 
   const classes = {
     "iw-my-component": true,
-    [`iw-my-component--${variant}`]: variant !== "default",
+    [`iw-my-component-${variant}`]: variant !== "default",
   };
 
   return html`
-    <div
-      class=${classMap(classes)}
-      @click=${() => api.notify(`#${entity.id}:click`)}
-    >
+    <div id=${id || nothing} class=${classMap(classes)} @click=${onClick}>
       ${title}
     </div>
   `;
 }
 ```
 
+Bind an optional attribute to `nothing` when it has no value, so it is left off. An empty `id=""` is invalid HTML, and an empty `for=""` on a label points at nothing, which breaks even a label that wraps its input.
+
 ### style.css
 
-Use CSS custom properties for all theming:
+Use CSS custom properties for all theming, flat `iw-` class names, and nest everything under the root class:
 
 ```css
 .iw-my-component {
   padding: var(--iw-space-2) var(--iw-space-4);
   background-color: var(--iw-color-primary);
   border-radius: var(--iw-radius-md);
-}
 
-.iw-my-component--variant {
-  background-color: var(--iw-color-secondary);
+  &.iw-my-component-secondary {
+    background-color: var(--iw-color-secondary);
+  }
 }
 ```
+
+Give child elements their own class (`iw-my-component-input`) rather than reusing the root's. A child that also matches the root rule picks up the root's custom properties too, which silently overrides whatever a modifier set on the root.
 
 ### index.js
 
@@ -433,47 +491,56 @@ Use `@inglorious/web/test` for testing:
 
 ```javascript
 import { describe, it, expect } from "vitest";
-import { createMockApi, render } from "@inglorious/web/test";
+import { render } from "@inglorious/web/test";
 import { render as renderTemplate } from "./template.js";
 
 describe("MyComponent", () => {
   describe("render", () => {
     it("renders with title", () => {
-      const entity = { id: "test", title: "Hello" };
-      const api = createMockApi({ [entity.id]: entity });
       const container = document.createElement("div");
 
-      render(renderTemplate(entity, api), container);
+      render(renderTemplate({ title: "Hello" }), container);
 
       expect(container.textContent).toContain("Hello");
+    });
+
+    it("leaves off an id it was not given", () => {
+      const container = document.createElement("div");
+
+      render(renderTemplate({ title: "Hello" }), container);
+
+      const div = container.querySelector(".iw-my-component");
+      expect(div.hasAttribute("id")).toBe(false);
     });
   });
 
   describe("click handler", () => {
-    it("dispatches click event", () => {
-      const entity = { id: "test", title: "Click me" };
-      const api = createMockApi({ [entity.id]: entity });
+    it("calls onClick", () => {
+      let clicked = false;
       const container = document.createElement("div");
 
-      render(renderTemplate(entity, api), container);
+      render(
+        renderTemplate({ title: "Click me", onClick: () => (clicked = true) }),
+        container,
+      );
+      container.querySelector(".iw-my-component").click();
 
-      const div = container.querySelector(".iw-my-component");
-      div.click();
-
-      expect(api.getEvents()).toEqual([
-        { type: "#test:click", payload: undefined },
-      ]);
+      expect(clicked).toBe(true);
     });
   });
 });
 ```
+
+jsdom only runs a label's click-through to its control when the label is in the document, so append the container to `document.body` before testing it (and remove it afterwards).
+
+To test the store wiring of a type that wraps the component, render the type with `createMockApi` from `@inglorious/web/test` and assert on `api.getEvents()`.
 
 ### \*.stories.js
 
 Use `@inglorious/web/test` for Storybook stories:
 
 ```javascript
-import { createMockApi, render } from "@inglorious/web/test";
+import { render } from "@inglorious/web/test";
 import { render as renderTemplate } from "./template.js";
 
 export default {
@@ -490,9 +557,7 @@ export default {
 
 const Template = (args) => {
   const container = document.createElement("div");
-  const entity = { id: "story-component", ...args };
-  const api = createMockApi({ [entity.id]: entity });
-  render(renderTemplate(entity, api), container);
+  render(renderTemplate(args), container);
   return container;
 };
 
@@ -512,10 +577,11 @@ import { Input } from "@inglorious/ui/input";
 import { Card } from "@inglorious/ui/card";
 
 // CSS (import in your app)
-import "@inglorious/ui/tokens";
-import "@inglorious/ui/themes/inglorious";
-import "@inglorious/ui/themes/material";
-import "@inglorious/ui/themes/bootstrap";
+import "@inglorious/ui/base.css";
+import "@inglorious/ui/themes/inglorious.css";
+import "@inglorious/ui/themes/material.css";
+import "@inglorious/ui/themes/bootstrap.css";
+import "@inglorious/ui/all.css"; // every component
 import "@inglorious/ui/button.css";
 import "@inglorious/ui/input.css";
 import "@inglorious/ui/card.css";

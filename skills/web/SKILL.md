@@ -444,7 +444,9 @@ import { compute, createSelector } from "@inglorious/store/select";
 export { createMockApi, trigger } from "@inglorious/store/test";
 
 // web
-import { mount, html, svg } from "@inglorious/web";
+import { mount, html, nothing, svg } from "@inglorious/web";
+// `nothing` leaves an attribute off: id=${id || nothing} renders no id at all
+// rather than an invalid id=""
 
 // web directives
 import { choose } from "@inglorious/web/directives/choose";
