@@ -57,9 +57,10 @@
     },
     {
       "title": "Getting Started",
-      "description": "Entry point that routes a goal to the smallest relevant set of skills.",
+      "description": "Entry point that routes a goal to the smallest relevant set of skills, and the code style every project follows.",
       "skills": [
-        "forge"
+        "forge",
+        "forge-best-practices"
       ]
     }
   ]

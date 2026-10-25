@@ -13,6 +13,7 @@ Use this file as the routing entry point for the Inglorious Forge skill set. Loa
 2. Select the minimum number of files from `skills/` needed to answer or implement the request.
 3. Prefer package-specific guidance over generic assumptions.
 4. For multi-package tasks, combine only the relevant skill files.
+5. When writing, moving or reviewing code, also load [`skills/forge-best-practices/SKILL.md`](../forge-best-practices/SKILL.md): kebab-case paths, named numbers, and the newspaper metaphor apply to every package.
 
 ## Ecosystem Shape
 

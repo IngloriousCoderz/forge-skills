@@ -19,6 +19,7 @@ This repo contains focused skill/reference files that help an agent work with th
 ## Included Skills
 
 - [`skills/forge/SKILL.md`](skills/forge/SKILL.md) - Entry point that routes a goal to the smallest relevant set of skills
+- [`skills/forge-best-practices/SKILL.md`](skills/forge-best-practices/SKILL.md) - Code style: kebab-case paths, named numbers, the newspaper metaphor
 - [`skills/utils/SKILL.md`](skills/utils/SKILL.md) - Utility functions and algorithms
 - [`skills/store/SKILL.md`](skills/store/SKILL.md) - Entity-based state management
 - [`skills/server/SKILL.md`](skills/server/SKILL.md) - Realtime WebSocket server patterns and client middleware
