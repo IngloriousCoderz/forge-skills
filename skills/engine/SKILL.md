@@ -173,7 +173,7 @@ The engine has built-in single-word events:
 - `remove` - Remove entity (triggers `destroy` lifecycle)
 - `pause` - Halt the world, see [Pausing](#pausing)
 - `resume` - Unhalt it
-- `stateChange` - Sent by the `fsm` behaviour, carries `{ entityId, from, to }`
+- `stateChange` - Sent by the `fsm` behaviour (from `@inglorious/store/fsm`), carries `{ entityId, from, to }`
 
 `stateChange` is the one built-in event that names the entity it is about, because a state
 machine with more than one entity on the move needs to say which one moved. Anything that
@@ -416,11 +416,12 @@ anyone else's.
 ### Screens that share a world
 
 `fsm` says when a machine moves. `scenes` says what each state is made of, and is the
-usual pair for a game that is a few screens over one world:
+usual pair for a game that is a few screens over one world. Neither knows anything about
+games, so both live in the store (see the store skill); only `mappings` is the engine's:
 
 ```javascript
-import { fsm } from "@inglorious/engine/behaviors/state-machine/fsm.js";
-import { scenes } from "@inglorious/engine/behaviors/state-machine/scenes.js";
+import { fsm } from "@inglorious/store/fsm";
+import { scenes } from "@inglorious/store/scenes";
 
 const SCENES = {
   title: () => [createTitleEntity(), createMenuEntity()],
@@ -483,9 +484,9 @@ what changed, and makes every device that reads a mapping agree by hand. `mappin
 same thing directly, and it is the third of the usual three:
 
 ```javascript
-import { fsm } from "@inglorious/engine/behaviors/state-machine/fsm.js";
-import { mappings } from "@inglorious/engine/behaviors/state-machine/mappings.js";
-import { scenes } from "@inglorious/engine/behaviors/state-machine/scenes.js";
+import { mappings } from "@inglorious/engine/behaviors/input/mappings.js";
+import { fsm } from "@inglorious/store/fsm";
+import { scenes } from "@inglorious/store/scenes";
 
 const types = {
   Game: [

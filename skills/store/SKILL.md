@@ -403,6 +403,109 @@ const types = {
 is the only thing that makes decorator vs. mixin work — putting the decorator first would wrap an
 empty type.
 
+A later entry naming the same event **replaces** the earlier handler; it does not run after it.
+A decorator that wants both must call `type.<event>?.(...)` itself, with all three arguments.
+
+## State Machines
+
+`fsm()` turns a type into a finite state machine in the manner of the OOP State pattern: each
+state names the events it answers, and the entity's `state` field says which state is in charge.
+Reach for it when the same event must mean different things depending on a mode — request or
+connection status, wizards, editors that are viewing/editing/saving, players, game screens —
+instead of `if (entity.status === ...)` in every handler.
+
+```javascript
+import { fsm } from "@inglorious/store/fsm";
+
+const types = {
+  Door: [
+    {
+      // The default: what every state does unless it says otherwise
+      knock(entity) {
+        entity.knocks++;
+      },
+    },
+    fsm({
+      closed: {
+        open(entity) {
+          entity.state = "open";
+        },
+        lock(entity) {
+          entity.state = "locked";
+        },
+      },
+      open: {
+        close(entity) {
+          entity.state = "closed";
+        },
+      },
+      locked: {
+        knock(entity, _, api) {
+          api.notify("bark"); // replaces the default while locked
+        },
+        unlock(entity) {
+          entity.state = "closed";
+        },
+      },
+    }),
+  ],
+};
+
+const entities = { door: { type: "Door", state: "closed", knocks: 0 } };
+```
+
+**Rules:**
+
+- `fsm()` is a decorator: put it **after** the behaviors whose handlers it falls back to.
+- A state's handler replaces the type's handler for the same event. An event neither the current
+  state nor the type answers is ignored.
+- Move by assigning `entity.state`. An entity with no `state` starts in `"default"`.
+- The field is called `state` on purpose. The store is about entities; `getState()` exists only
+  for Redux compatibility, so there is no clash worth renaming around.
+- When the state actually changes, `fsm` broadcasts `stateChange` with `{ entityId, from, to }`.
+  It is broadcast, so a listener checks `entityId` — the one built-in event where that check is
+  right.
+- In TypeScript, declaring `state: "closed" | "open" | "locked"` on the entity checks state names
+  in both the states object and the assignments; entity and api are inferred inside a typed
+  store's `types`. Outside one, pass them: `fsm<DoorEntity, AppApi>({...})`. The payload type is
+  `StateChangePayload` from `@inglorious/store/fsm`.
+
+### Scenes
+
+`scenes()` pairs with `fsm()`: the machine says when it moves, `scenes()` says which entities stand
+in each state. On `create` and on its own `stateChange` it compares the new state's entities with
+the old ones **by `id`**: it `add`s what is new, `remove`s what is gone, and `patch`es what both
+have but configure differently, so shared entities survive the move untouched.
+
+```javascript
+import { fsm } from "@inglorious/store/fsm";
+import { scenes } from "@inglorious/store/scenes";
+
+const types = {
+  Wizard: [
+    scenes({
+      account: () => [{ id: "accountForm", type: "AccountForm" }],
+      billing: (wizard) => [
+        { id: "billingForm", type: "BillingForm", plan: wizard.plan },
+      ],
+    }),
+    fsm({
+      account: {
+        next(entity) {
+          entity.state = "billing";
+        },
+      },
+    }),
+  ],
+};
+```
+
+Each state is a function of the entity running the machine; that entity keeps what is up in
+`scene`. The name is game vocabulary on purpose (like the multiplayer middleware), but it
+is general: in web apps use it for page-scoped entities (created on entering a page, destroyed on
+leaving, so `create`/`destroy` can manage subscriptions), wizard steps, and auth or edit modes. The engine adds `mappings()` (in `@inglorious/engine/behaviors/input/mappings.js`) for
+per-state input — see the engine skill.
+
 ## Batched Mode
 
 ```javascript
@@ -508,6 +611,7 @@ lifecycle events.
 - `remove` - Remove entity (triggers `destroy`)
 - `pause` - Halt the world, see [Pausing the World](#pausing-the-world)
 - `resume` - Unhalt it
+- `stateChange` - Broadcast by `fsm()` when an entity moves, carries `{ entityId, from, to }` — see [State Machines](#state-machines)
 
 ## Migration from Redux Toolkit (RTK)
 

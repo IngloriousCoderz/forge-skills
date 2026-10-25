@@ -45,6 +45,7 @@ Use for utility functions and algorithmic helpers.
 Use for entity-based state management.
 
 - Event-driven handlers and deterministic event queues
+- Behaviors: async (`handleAsync`, `optimistic`) and state machines (`fsm`, `scenes`)
 - Middleware and testing utilities
 - Redux-compatible API and DevTools integration
 - Multiplayer-friendly patterns
