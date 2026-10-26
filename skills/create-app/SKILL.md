@@ -54,7 +54,7 @@ For the JavaScript and TypeScript Vite templates, the CLI then asks about the ap
 | Animate page transitions? | `--transitions` / `--no-transitions`                 | View transitions between pages (with routing and Inglorious UI)                                       |
 | Which icon packs?         | `--icons=material,fontawesome,lucide` / `--no-icons` | Iconify icon sets, drawn by Inglorious UI's `Icon` (with Inglorious UI)                               |
 | Translate the app?        | `--i18n` / `--no-i18n`, `--languages=en,it`          | `@inglorious/i18n`, a catalogue per language and a language picker; the first language is the default |
-| Enable PWA support?       | `--pwa` / `--no-pwa`                                 | `vite-plugin-pwa`, a manifest, icons and service worker registration                                  |
+| Enable PWA support?       | `--pwa` / `--no-pwa`                                 | `vite-plugin-pwa`, a manifest, icons, and a service worker that keeps installed apps on the latest version |
 
 The app is generated in the syntax you chose: lit-html, JSX or Vue. Every question answered on the command line is skipped, so answering them all creates a project without any prompt. Prefer this over piping keystrokes into the prompts:
 

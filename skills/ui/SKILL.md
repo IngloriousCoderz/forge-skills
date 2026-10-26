@@ -133,6 +133,7 @@ The default color is neutral, unless the theme gives it its own tokens (`--iw-bu
   };
   ```
 
+- **Snackbar**: `position` is `"bottom-left"` (default), `"bottom-center"`, `"bottom-right"`, `"top-left"`, `"top-center"` or `"top-right"`; it stays clear of the system bars. Without `onClose` there is no close button. To keep a bottom snackbar above a bar the app keeps at the bottom (a `BottomNavigation`), set `--iw-snackbar-offset-bottom` to the bar's height on an ancestor while the bar shows.
 - **Tooltip**: `onClick` is optional.
 
 ### Input

@@ -262,6 +262,38 @@ api.notify("geolocationWatch");
 api.notify("geolocationUnwatch");
 ```
 
+### PWA Updates
+
+```javascript
+import { isNative } from "@inglorious/web/mobile";
+import { PwaUpdate, watchPwaUpdate } from "@inglorious/web/pwa";
+import { registerSW } from "virtual:pwa-register";
+
+const types = { PwaUpdate };
+const entities = { pwaUpdate: { type: "PwaUpdate" } };
+
+if (!isNative()) {
+  registerSW({
+    onRegisteredSW(url, registration) {
+      if (registration) watchPwaUpdate(registration, store);
+    },
+  });
+}
+```
+
+`watchPwaUpdate` keeps an installed PWA on its latest version, with the worker `vite-plugin-pwa` generates under `registerType: "prompt"` and `injectRegister: false`. Updates are not optional: it checks hourly and on every return to the foreground, and applies a downloaded version with a reload at launch and on each trip to or from the background. The store argument is optional: without it updates are applied silently. The third argument takes `{ id, checkEveryMs }`, and it returns a function that stops watching.
+
+**Entity state:**
+
+- `isUpdateReady` — a version landed mid-session and waits for the next reload
+
+**Events:**
+
+- `pwaUpdateReady` — sent by `watchPwaUpdate` when a version lands mid-session
+- `pwaUpdateApply` — move over now, reloading the page (an "Update now" button)
+
+`applyPwaUpdate(registration?)` does the same outside the store.
+
 ### Router
 
 ```javascript
@@ -466,6 +498,11 @@ import {
   isFieldTouched,
 } from "@inglorious/web/form";
 import { Geolocation } from "@inglorious/web/sensors/geolocation";
+import {
+  applyPwaUpdate,
+  PwaUpdate,
+  watchPwaUpdate,
+} from "@inglorious/web/pwa";
 import { Router } from "@inglorious/web/router";
 
 // web extras
