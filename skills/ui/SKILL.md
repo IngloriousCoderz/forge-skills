@@ -95,18 +95,23 @@ const entities = {
 
 **Button Properties:**
 
-| Property      | Type                                                                                               | Default       | Description             |
-| ------------- | -------------------------------------------------------------------------------------------------- | ------------- | ----------------------- |
-| `children`    | `TemplateResult` \| `string` \| `number`                                                           | -             | Button content          |
-| `variant`     | `"default"` \| `"outline"` \| `"ghost"`                                                            | `"default"`   | Visual style            |
-| `color`       | `"default"` \| `"primary"` \| `"secondary"` \| `"success"` \| `"warning"` \| `"error"` \| `"info"` | `"default"`   | Color variant           |
-| `size`        | `"sm"` \| `"md"` \| `"lg"`                                                                         | `"md"`        | Size                    |
-| `shape`       | `"rectangle"` \| `"pill"` \| `"round"` \| `"square"`                                               | `"rectangle"` | Shape                   |
-| `isDisabled`  | `boolean`                                                                                          | `false`       | Disabled state          |
-| `isPressed`   | `boolean`                                                                                          | `false`       | Pressed state           |
-| `isFullWidth` | `boolean`                                                                                          | `false`       | Full width              |
-| `buttonType`  | `"button"` \| `"submit"` \| `"reset"` \| `"menu"`                                                  | `"button"`    | The `<button>`'s `type` |
-| `onClick`     | `() => void`                                                                                       | -             | Click callback          |
+| Property       | Type                                                                                               | Default       | Description             |
+| -------------- | -------------------------------------------------------------------------------------------------- | ------------- | ----------------------- |
+| `children`     | `TemplateResult` \| `string` \| `number`                                                           | -             | Button content          |
+| `variant`      | `"default"` \| `"outline"` \| `"ghost"`                                                            | `"default"`   | Visual style            |
+| `color`        | `"default"` \| `"primary"` \| `"secondary"` \| `"success"` \| `"warning"` \| `"error"` \| `"info"` | `"default"`   | Color variant           |
+| `size`         | `"sm"` \| `"md"` \| `"lg"`                                                                         | `"md"`        | Size                    |
+| `shape`        | `"rectangle"` \| `"pill"` \| `"round"` \| `"square"`                                               | `"rectangle"` | Shape                   |
+| `isDisabled`   | `boolean`                                                                                          | `false`       | Disabled state          |
+| `isPressed`    | `boolean`                                                                                          | `false`       | Pressed state           |
+| `isFullWidth`  | `boolean`                                                                                          | `false`       | Full width              |
+| `buttonType`   | `"button"` \| `"submit"` \| `"reset"` \| `"menu"`                                                  | `"button"`    | The `<button>`'s `type` |
+| `onClick`      | `(event: MouseEvent) => void`                                                                      | -             | Click callback          |
+| `onFileSelect` | `(files: FileList) => void`                                                                        | -             | Makes it a file picker  |
+| `accept`       | `string`                                                                                           | -             | Picker's file types     |
+| `isMultiple`   | `boolean`                                                                                          | `false`       | Picker takes many files |
+
+With `onFileSelect`, the button opens a file picker on click (after `onClick`) and calls `onFileSelect` with the chosen files. Use it instead of laying an invisible `<input type="file">` over a button.
 
 `IconButton`, `ButtonGroup` and `Fab` are built on `Button` and share its `color`, including `"default"`.
 
@@ -179,24 +184,24 @@ const entities = {
 
 **Input Properties:**
 
-| Property      | Type                                                                | Default  | Description                            |
-| ------------- | ------------------------------------------------------------------- | -------- | -------------------------------------- |
-| `id`          | `string`                                                            | -        | Ties the label and message to the input; see [Form Controls](#form-controls-labels-ids-and-messages) |
-| `name`        | `string`                                                            | -        | Form field name; used as id if no `id` |
-| `label`       | `string`                                                            | -        | Label text                             |
-| `inputType`   | `"text"` \| `"email"` \| `"password"` \| `"number"` \| `"date"` \| etc. | `"text"` | The `<input>`'s `type`             |
-| `value`       | `string`                                                            | `""`     | Current value                          |
-| `placeholder` | `string`                                                            | -        | Placeholder text                       |
-| `hint`        | `string`                                                            | -        | Helper text                            |
-| `error`       | `string`                                                            | -        | Error message; sets `aria-invalid`     |
-| `size`        | `"sm"` \| `"md"` \| `"lg"`                                          | `"md"`   | Size                                   |
-| `isDisabled`  | `boolean`                                                           | `false`  | Disabled state                         |
-| `isReadOnly`  | `boolean`                                                           | `false`  | Read-only state                        |
-| `isRequired`  | `boolean`                                                           | `false`  | Required field                         |
-| `isFullWidth` | `boolean`                                                           | `false`  | Full width                             |
-| `icon`        | `string`                                                            | -        | Icon before input                      |
-| `iconAfter`   | `string`                                                            | -        | Icon after input                       |
-| `onChange`    | `(value: string) => void`                                           | -        | Called on every keystroke              |
+| Property      | Type                                                                    | Default  | Description                                                                                          |
+| ------------- | ----------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
+| `id`          | `string`                                                                | -        | Ties the label and message to the input; see [Form Controls](#form-controls-labels-ids-and-messages) |
+| `name`        | `string`                                                                | -        | Form field name; used as id if no `id`                                                               |
+| `label`       | `string`                                                                | -        | Label text                                                                                           |
+| `inputType`   | `"text"` \| `"email"` \| `"password"` \| `"number"` \| `"date"` \| etc. | `"text"` | The `<input>`'s `type`                                                                               |
+| `value`       | `string`                                                                | `""`     | Current value                                                                                        |
+| `placeholder` | `string`                                                                | -        | Placeholder text                                                                                     |
+| `hint`        | `string`                                                                | -        | Helper text                                                                                          |
+| `error`       | `string`                                                                | -        | Error message; sets `aria-invalid`                                                                   |
+| `size`        | `"sm"` \| `"md"` \| `"lg"`                                              | `"md"`   | Size                                                                                                 |
+| `isDisabled`  | `boolean`                                                               | `false`  | Disabled state                                                                                       |
+| `isReadOnly`  | `boolean`                                                               | `false`  | Read-only state                                                                                      |
+| `isRequired`  | `boolean`                                                               | `false`  | Required field                                                                                       |
+| `isFullWidth` | `boolean`                                                               | `false`  | Full width                                                                                           |
+| `icon`        | `string`                                                                | -        | Icon before input                                                                                    |
+| `iconAfter`   | `string`                                                                | -        | Icon after input                                                                                     |
+| `onChange`    | `(value: string) => void`                                               | -        | Called on every keystroke                                                                            |
 
 `type` is reserved for the entity's type, which is why the input's own type is `inputType`.
 
@@ -254,19 +259,19 @@ const entities = {
 
 **Card Properties:**
 
-| Property                                       | Type                                     | Default     | Description                                                      |
-| ---------------------------------------------- | ---------------------------------------- | ----------- | ---------------------------------------------------------------- |
-| `title`                                        | `TemplateResult` \| `string` \| `number` | -           | Card title                                                       |
-| `subtitle`                                     | `TemplateResult` \| `string` \| `number` | -           | Card subtitle                                                    |
-| `header`                                       | `TemplateResult` \| `string` \| `number` | -           | Custom header, in place of title and subtitle                    |
-| `children` / `body`                            | `TemplateResult` \| `string` \| `number` | -           | Body content                                                     |
-| `footer`                                       | `TemplateResult` \| `string` \| `number` | -           | Footer content                                                   |
-| `headerPadding`, `bodyPadding`, `footerPadding` | `"none"` \| `"sm"` \| `"md"` \| `"lg"` \| `"xl"` | -   | Section padding                                                  |
-| `element`                                      | `"article"` \| `"section"` \| `"div"` \| ... | `"article"` | Root element                                                  |
-| `isHoverable`                                  | `boolean`                                | `false`     | Hover effects                                                    |
-| `isClickable`                                  | `boolean`                                | `false`     | Clickable cursor                                                 |
-| `isFullWidth`                                  | `boolean`                                | `false`     | Full width                                                       |
-| `onClick`                                      | `() => void`                             | -           | Click callback                                                   |
+| Property                                        | Type                                             | Default     | Description                                   |
+| ----------------------------------------------- | ------------------------------------------------ | ----------- | --------------------------------------------- |
+| `title`                                         | `TemplateResult` \| `string` \| `number`         | -           | Card title                                    |
+| `subtitle`                                      | `TemplateResult` \| `string` \| `number`         | -           | Card subtitle                                 |
+| `header`                                        | `TemplateResult` \| `string` \| `number`         | -           | Custom header, in place of title and subtitle |
+| `children` / `body`                             | `TemplateResult` \| `string` \| `number`         | -           | Body content                                  |
+| `footer`                                        | `TemplateResult` \| `string` \| `number`         | -           | Footer content                                |
+| `headerPadding`, `bodyPadding`, `footerPadding` | `"none"` \| `"sm"` \| `"md"` \| `"lg"` \| `"xl"` | -           | Section padding                               |
+| `element`                                       | `"article"` \| `"section"` \| `"div"` \| ...     | `"article"` | Root element                                  |
+| `isHoverable`                                   | `boolean`                                        | `false`     | Hover effects                                 |
+| `isClickable`                                   | `boolean`                                        | `false`     | Clickable cursor                              |
+| `isFullWidth`                                   | `boolean`                                        | `false`     | Full width                                    |
+| `onClick`                                       | `() => void`                                     | -           | Click callback                                |
 
 `Card` is a composite: override `renderHeader`, `renderBody` or `renderFooter` with an object spread to change one section.
 
@@ -295,11 +300,11 @@ Icon.render({ children: "★" }); // a glyph instead
 
 ### Available Themes
 
-| Theme        | Description                                                      |
-| ------------ | ---------------------------------------------------------------- |
-| `inglorious` | Neon/videogame aesthetic (default dark)                          |
+| Theme        | Description                                                                                                             |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `inglorious` | Neon/videogame aesthetic (default dark)                                                                                 |
 | `material`   | Material UI inspired: primary default buttons, capitalized medium-weight labels on buttons and tabs, grey default chips |
-| `bootstrap`  | Bootstrap inspired                                               |
+| `bootstrap`  | Bootstrap inspired                                                                                                      |
 
 ### Theme Variants
 
