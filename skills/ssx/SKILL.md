@@ -230,6 +230,32 @@ Features:
 - LaTeX math via `katex`
 - Mermaid diagrams (requires client-side mermaid)
 
+## JSX and Vue Pages
+
+Pages can use JSX or Vue-like templates instead of lit-html: add the plugin to `vite.plugins` in `site.config.js`, and SSX applies it both to build-time rendering and to the hydrated client.
+
+```js
+import { jsx } from "@inglorious/vite-plugin-jsx";
+
+export default {
+  vite: {
+    plugins: [jsx()],
+  },
+};
+```
+
+- **JSX** ([`skills/vite-plugin-jsx/SKILL.md`](../vite-plugin-jsx/SKILL.md)): pages are `.jsx`/`.tsx` files, exporting their type and `metadata` as usual.
+- **Vue** ([`skills/vite-plugin-vue/SKILL.md`](../vite-plugin-vue/SKILL.md)): a `.vue` file exports only its type, and SSX does not route `.vue` files. Each page is a `.js`/`.ts` module re-exporting the type from its `.vue` file, next to its `metadata`:
+
+```js
+// src/pages/about.js
+export { About } from "./about.vue";
+
+export const metadata = { title: "About" };
+```
+
+In TypeScript, put `// @ts-expect-error - Handled by @inglorious/vite-plugin-vue` above the re-export.
+
 ## Image Optimization
 
 SSX integrates `vite-plugin-image-optimizer` with `sharp`/`svgo` to compress static images at build time.
