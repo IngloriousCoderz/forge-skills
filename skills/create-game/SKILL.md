@@ -25,6 +25,8 @@ pnpm create @inglorious/game
 
 You’ll be prompted for the project name and template.
 
+Every template except `minimal` then asks whether to add agent skills. Saying yes runs the [skills CLI](https://skills.sh) in the new project. It asks which coding agents to install for, and installs the [Inglorious Forge skills](https://github.com/IngloriousCoderz/forge-skills) for games: `forge`, `forge-best-practices`, `store`, `utils`, `engine` and `engine-best-practices`. If the install fails, the CLI prints the command to retry it.
+
 ## Templates
 
 - `minimal` — plain HTML/CSS/JS, no bundler
