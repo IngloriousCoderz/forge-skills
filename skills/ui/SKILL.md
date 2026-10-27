@@ -143,6 +143,7 @@ The default color is neutral, unless the theme gives it its own tokens (`--iw-bu
 - **Slider**: a `[low, high]` value draws a range with two thumbs, and `onChange` gets the pair back; `hasMarks` draws a tick per step.
 - **Checkbox**, **Switch** and each **RadioGroup** option take a `description`, shown under the label.
 - **Chip** takes an `icon`, shown before the label, and with `isSelected` becomes a toggle button (`aria-pressed`) for picking options. **RadioGroup** and **Checkbox** take `variant: "card"`, drawing each option as a card outlined while checked, and a `media` (an icon or image) shown above the label. **Alert** has a `"neutral"` severity. **Button** has an `"xs"` size. **Dialog** takes a `size` (`"sm"`, `"md"`, `"lg"`). **Divider** takes `isDecorative`. **Flex** gaps include `"xs"` and `"2xl"`.
+- **DataGrid**: a column with `isEditable` gets an editor per cell (text, number or date by `type`, a checkbox for booleans, a drop-down with `options`). Edits stay in `edits`, apart from `rows`, via `cellChange`; the footer counts them and resets (`editsReset`) or saves them into `rows` (`editsSave`). Rendered from props, it takes `onCellChange`, `onEditsReset`, `onEditsSave`; `getEditCount` and `getEditedRows` read the edits. **Input** takes an `ariaLabel` for a field with no visible label.
 
 ### Input
 
