@@ -1,6 +1,6 @@
 ---
 name: ssx
-description: Static site generation and hydration workflows for Inglorious Web with SSX.
+description: Static site generation, server-side rendering on request and hydration for Inglorious Web with SSX.
 ---
 
 # @inglorious/ssx - Complete Reference
@@ -13,12 +13,12 @@ npm install @inglorious/ssx @inglorious/web
 
 ## Core Concepts
 
-Static Site Xecution (SSX) builds pre-rendered HTML for @inglorious/web apps, then hydrates on the client with lit-html.
+Static Site Xecution (SSX) renders @inglorious/web apps to HTML on the server, at build time or on each request, then hydrates on the client with lit-html.
 
 **Architecture:**
 
 - File-based routing from `src/pages/`
-- Server-side rendering at build time
+- Server-side rendering at build time (static pages) or on request (pages that export `ssr`)
 - Client-side hydration via @inglorious/web
 - Entity-based state (same model as @inglorious/web)
 
@@ -89,7 +89,7 @@ export const metadata = (entity) => ({
 
 ### `load(entity, page)`
 
-Optional. Runs at build time for SSR data loading.
+Optional. Runs on the server before the page renders: at build time for a static page, on every request for one that exports `ssr`.
 
 ```javascript
 export async function load(entity, page) {
@@ -98,19 +98,19 @@ export async function load(entity, page) {
 }
 ```
 
-SSX is primarily a static site generator. Pages without `export const ssr = true` are rendered during `ssx build` and written as static HTML files in `dist/`.
-
-If you need request-time rendering for a specific page, mark it explicitly with `export const ssr = true`:
+Pages are static by default: `ssx build` renders them once and writes them to `dist/`. A page that needs fresh data on every visit exports `ssr`, and is rendered on each request instead, with its `load` run for that request:
 
 ```javascript
-export const ssr = true
+export const ssr = true;
 
-export async function load(entity, page) {
-  entity.user = await getCurrentUser(page.request)
+export async function load(entity) {
+  entity.stock = await getStockLevels();
 }
 ```
 
-SSR pages are skipped during the static build and instead rendered on demand by the dev server or by `ssx ssr`.
+Each request gets a store of its own. `load` receives the entity and the page: `page.params`, `page.locale`, and `page.request`, a Web Fetch API `Request` to read headers and cookies from. A dynamic route that exports `ssr` needs no `staticPaths()`: any path its pattern matches is rendered, with `page.params` from the URL.
+
+`ssx build` skips pages that export `ssr`, and `ssx serve` only serves what the build wrote, so a site with such pages runs on `ssx ssr`, which renders every page on request (static ones too) and serves the API routes. `ssx dev` renders every page on request as well.
 
 For dynamic routes, use `page.params`:
 
@@ -294,18 +294,17 @@ Options:
 npm run preview
 ```
 
-Serves `dist/` using `serve`.
+Serves `dist/` using `serve`. `ssx serve` does the same and also serves `src/api/`. Neither renders pages that export `ssr`.
 
 ### SSR Runtime
 
 ```bash
-npm run ssr
+npx ssx ssr
 ```
 
-Starts a dedicated SSR runtime server that renders pages marked with `export const ssr = true` on demand. Same options as `dev`.
+Starts the server for a site with pages that export `ssr`: it renders every page on request from the sources, through Vite, with no build step, and serves the API routes and assets. Options: `-c, --config`, `-r, --root`, `-p, --port`. Programmatically: `import { ssr } from "@inglorious/ssx/ssr"`.
 
 ## Rules & Constraints
 
-1. **Dynamic routes require `staticPaths()`.**
+1. **Static dynamic routes require `staticPaths()`**; ones that export `ssr` do not.
 2. **Entity state works the same as `@inglorious/web`.**
-
