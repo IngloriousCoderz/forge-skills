@@ -142,7 +142,7 @@ The default color is neutral, unless the theme gives it its own tokens (`--iw-bu
 - **Tooltip**: `onClick` is optional.
 - **Slider**: a `[low, high]` value draws a range with two thumbs, and `onChange` gets the pair back; `hasMarks` draws a tick per step.
 - **Checkbox**, **Switch** and each **RadioGroup** option take a `description`, shown under the label.
-- **Chip** takes an `icon`, shown before the label. **Alert** has a `"neutral"` severity. **Button** has an `"xs"` size. **Dialog** takes a `size` (`"sm"`, `"md"`, `"lg"`). **Divider** takes `isDecorative`. **Flex** gaps include `"xs"` and `"2xl"`.
+- **Chip** takes an `icon`, shown before the label, and with `isSelected` becomes a toggle button (`aria-pressed`) for picking options. **RadioGroup** and **Checkbox** take `variant: "card"`, drawing each option as a card outlined while checked, and a `media` (an icon or image) shown above the label. **Alert** has a `"neutral"` severity. **Button** has an `"xs"` size. **Dialog** takes a `size` (`"sm"`, `"md"`, `"lg"`). **Divider** takes `isDecorative`. **Flex** gaps include `"xs"` and `"2xl"`.
 
 ### Input
 
