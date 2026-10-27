@@ -140,6 +140,9 @@ The default color is neutral, unless the theme gives it its own tokens (`--iw-bu
 
 - **Snackbar**: `position` is `"bottom-left"` (default), `"bottom-center"`, `"bottom-right"`, `"top-left"`, `"top-center"` or `"top-right"`; it stays clear of the system bars. Without `onClose` there is no close button. To keep a bottom snackbar above a bar the app keeps at the bottom (a `BottomNavigation`), set `--iw-snackbar-offset-bottom` to the bar's height on an ancestor while the bar shows.
 - **Tooltip**: `onClick` is optional.
+- **Slider**: a `[low, high]` value draws a range with two thumbs, and `onChange` gets the pair back; `hasMarks` draws a tick per step.
+- **Checkbox**, **Switch** and each **RadioGroup** option take a `description`, shown under the label.
+- **Chip** takes an `icon`, shown before the label. **Alert** has a `"neutral"` severity. **Button** has an `"xs"` size. **Dialog** takes a `size` (`"sm"`, `"md"`, `"lg"`). **Divider** takes `isDecorative`. **Flex** gaps include `"xs"` and `"2xl"`.
 
 ### Input
 
@@ -259,19 +262,20 @@ const entities = {
 
 **Card Properties:**
 
-| Property                                        | Type                                             | Default     | Description                                   |
-| ----------------------------------------------- | ------------------------------------------------ | ----------- | --------------------------------------------- |
-| `title`                                         | `TemplateResult` \| `string` \| `number`         | -           | Card title                                    |
-| `subtitle`                                      | `TemplateResult` \| `string` \| `number`         | -           | Card subtitle                                 |
-| `header`                                        | `TemplateResult` \| `string` \| `number`         | -           | Custom header, in place of title and subtitle |
-| `children` / `body`                             | `TemplateResult` \| `string` \| `number`         | -           | Body content                                  |
-| `footer`                                        | `TemplateResult` \| `string` \| `number`         | -           | Footer content                                |
-| `headerPadding`, `bodyPadding`, `footerPadding` | `"none"` \| `"sm"` \| `"md"` \| `"lg"` \| `"xl"` | -           | Section padding                               |
-| `element`                                       | `"article"` \| `"section"` \| `"div"` \| ...     | `"article"` | Root element                                  |
-| `isHoverable`                                   | `boolean`                                        | `false`     | Hover effects                                 |
-| `isClickable`                                   | `boolean`                                        | `false`     | Clickable cursor                              |
-| `isFullWidth`                                   | `boolean`                                        | `false`     | Full width                                    |
-| `onClick`                                       | `() => void`                                     | -           | Click callback                                |
+| Property                                        | Type                                             | Default       | Description                                   |
+| ----------------------------------------------- | ------------------------------------------------ | ------------- | --------------------------------------------- |
+| `title`                                         | `TemplateResult` \| `string` \| `number`         | -             | Card title                                    |
+| `subtitle`                                      | `TemplateResult` \| `string` \| `number`         | -             | Card subtitle                                 |
+| `header`                                        | `TemplateResult` \| `string` \| `number`         | -             | Custom header, in place of title and subtitle |
+| `children` / `body`                             | `TemplateResult` \| `string` \| `number`         | -             | Body content                                  |
+| `footer`                                        | `TemplateResult` \| `string` \| `number`         | -             | Footer content                                |
+| `headerPadding`, `bodyPadding`, `footerPadding` | `"none"` \| `"sm"` \| `"md"` \| `"lg"` \| `"xl"` | -             | Section padding                               |
+| `element`                                       | `"article"` \| `"section"` \| `"div"` \| ...     | `"article"`   | Root element                                  |
+| `variant`                                       | `\"default\"` \| `\"sunk\"` \| `\"clear\"`       | `\"default\"` | Raised surface, set into the page, or none    |
+| `isHoverable`                                   | `boolean`                                        | `false`       | Hover effects                                 |
+| `isClickable`                                   | `boolean`                                        | `false`       | Clickable cursor                              |
+| `isFullWidth`                                   | `boolean`                                        | `false`       | Full width                                    |
+| `onClick`                                       | `() => void`                                     | -             | Click callback                                |
 
 `Card` is a composite: override `renderHeader`, `renderBody` or `renderFooter` with an object spread to change one section.
 

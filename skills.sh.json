@@ -12,7 +12,8 @@
         "vite-plugin-vue",
         "ui",
         "ui-best-practices",
-        "i18n"
+        "i18n",
+        "openui"
       ]
     },
     {

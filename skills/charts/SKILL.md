@@ -150,10 +150,10 @@ api.notify("#temperature:streamPush", { time: "12:00", value: 21.5 });
 
 - `CartesianGrid()`
 - `Tooltip()`: takes a `formatter(value, name)` for the value; a pie slice keeps its percentage after it
-- `XAxis()`, `YAxis()`: both take a `tickFormatter`; `XAxis` shows as many labels as fit by default, or every `interval + 1`th
-- `Line()`
-- `Area()`
-- `Bar()`
+- `XAxis()`, `YAxis()`: both take a `tickFormatter` and a `label`, a title beside the axis; `XAxis` shows as many labels as fit by default, or every `interval + 1`th
+- `Line()`: `curve` is `"linear"` (default), `"natural"`, `"monotone"` or `"step"`
+- `Area()`: `curve` as `Line`'s; areas with the same `stackId` stack
+- `Bar()`: bars with the same `stackId` stack in one place per category
 - `Dots()`
 - `Tooltip()`
 - `Legend()`
@@ -161,7 +161,9 @@ api.notify("#temperature:streamPush", { time: "12:00", value: 21.5 });
 
 ### Polar
 
-- `Pie()`: `hasLabel` turns labels on
+- `Pie()`: `hasLabel` turns labels on; `startAngle` and `endAngle`, in degrees clockwise from twelve o'clock, draw part of a circle (`-90` to `90` is the top half)
+
+In config mode the same go on the entity: `isStacked: true` for areas and bars, `curve`, `xAxisLabel`, `yAxisLabel`, `startAngle`, `endAngle`.
 
 ## Naming Conventions
 

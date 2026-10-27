@@ -9,7 +9,7 @@ Use this file as the routing entry point for the Inglorious Forge skill set. Loa
 
 ## Workflow
 
-1. Identify the user goal (state management, web UI, realtime sync, game loop, scaffolding, charts, or tooling).
+1. Identify the user goal (state management, web UI, generative UI, realtime sync, game loop, scaffolding, charts, or tooling).
 2. Select the minimum number of files from `skills/` needed to answer or implement the request.
 3. Prefer package-specific guidance over generic assumptions.
 4. For multi-package tasks, combine only the relevant skill files.
@@ -26,7 +26,8 @@ or let one of these own it:
 
 `@inglorious/ssx` is SSG/SSR for `@inglorious/web`, so it uses both. `@inglorious/ui` and
 `@inglorious/charts` are component libraries built on web. `@inglorious/i18n` translates web apps,
-with the active locale held in a store entity. `@inglorious/react-store` provides
+with the active locale held in a store entity. `@inglorious/openui` renders a model's OpenUI Lang
+answers with Inglorious UI, each answer a store entity. `@inglorious/react-store` provides
 native React bindings for the store. `@inglorious/utils` is standalone. See
 [`skills/store/SKILL.md`](../store/SKILL.md) for the store's own event and naming rules.
 
@@ -101,6 +102,14 @@ Use for translating web apps.
 - Device-language detection and a remembered choice
 - `t` for strings, plurals and formatting; `trans` for markup in translations
 - Labels in data and state that follow the active language
+
+### [@inglorious/openui](../openui/SKILL.md)
+
+Use for generative UI: interfaces a model writes per request.
+
+- `createOpenUI` over OpenUI's core, with each answer in an entity, streamed by events
+- `uiLibrary` of Inglorious UI components, charts, and forms with validation
+- `Query`/`Mutation` calling the app's own tools, results in the entity
 
 ### [@inglorious/ssx](../ssx/SKILL.md)
 
