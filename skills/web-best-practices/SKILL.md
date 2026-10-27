@@ -276,6 +276,7 @@ This ensures theme switching actually changes component tokens.
 - Prefer `render(props)` for simple primitives.
 - Treat event handlers such as `onChange`, `onClick`, and `onToggle` as normal props.
 - Add concise JSDoc typedef imports for props and payload types when useful.
+- Render conditionally with `when(condition, () => html`...`, () => html`...`)` from `@inglorious/web/directives/when`, rather than `condition ? html`...` : nothing` or `condition && html`...``. Attribute values are the exception: `attr=${condition ? value : nothing}` keeps `nothing`, which removes the attribute.
 - Extract sub-renderers (`renderHeader`, `renderBody`, `renderFooter`, `renderItem`, etc.) when template complexity grows.
 - If sub-renderers exist, export an object with methods so consumers can override them.
 

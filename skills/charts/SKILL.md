@@ -156,14 +156,14 @@ api.notify("#temperature:streamPush", { time: "12:00", value: 21.5 });
 - `Bar()`: bars with the same `stackId` stack in one place per category
 - `Dots()`
 - `Tooltip()`
-- `Legend()`
+- `Legend()`: one item per series, or per slice in a pie
 - `Brush()`: needs the chart's entity
 
 ### Polar
 
 - `Pie()`: `hasLabel` turns labels on; `startAngle` and `endAngle`, in degrees clockwise from twelve o'clock, draw part of a circle (`-90` to `90` is the top half)
 
-In config mode the same go on the entity: `isStacked: true` for areas and bars, `curve`, `xAxisLabel`, `yAxisLabel`, `startAngle`, `endAngle`.
+In config mode the same go on the entity: `isStacked: true` for areas and bars, `curve`, `xAxisLabel`, `yAxisLabel`, `startAngle`, `endAngle`. A pie or donut with `hasLegend: true` lists its slices above it and leaves them unlabelled, unless `hasLabel: true`.
 
 ## Naming Conventions
 

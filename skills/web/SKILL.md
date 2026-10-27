@@ -360,11 +360,13 @@ const page = {
       <div>
         <p>Count: ${currentCount}</p>
 
-        ${role === "admin"
-          ? html`<button @click=${() => api.notify("AdminPage:panelOpen")}>
-              Admin Panel
-            </button>`
-          : html`<span>Standard User</span>`}
+        ${when(
+          role === "admin",
+          () => html`<button @click=${() => api.notify("AdminPage:panelOpen")}>
+            Admin Panel
+          </button>`,
+          () => html`<span>Standard User</span>`,
+        )}
       </div>
     `;
   },
