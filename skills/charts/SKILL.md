@@ -40,6 +40,11 @@ import {
   Legend,
   Line,
   Pie,
+  PolarAngleAxis,
+  PolarGrid,
+  Radar,
+  RadialBar,
+  Scatter,
   streamSlide,
   Tooltip,
   XAxis,
@@ -156,14 +161,21 @@ api.notify("#temperature:streamPush", { time: "12:00", value: 21.5 });
 - `Bar()`: bars with the same `stackId` stack in one place per category
 - `Dots()`
 - `Tooltip()`
-- `Legend()`: one item per series, or per slice in a pie
+- `Legend()`: one item per series, or per slice in a pie or radial chart; it wraps onto more rows when they do not fit on one
+- `Scatter()`: one series of a scatter chart by its `dataKey`, the series' name; both axes are numbers, and a point's `z` sets its size
 - `Brush()`: needs the chart's entity
 
 ### Polar
 
 - `Pie()`: `hasLabel` turns labels on; `startAngle` and `endAngle`, in degrees clockwise from twelve o'clock, draw part of a circle (`-90` to `90` is the top half)
+- `PolarGrid()`, `PolarAngleAxis()`, `Radar()`: a radar chart's rings and spokes, its categories' names, and one shape per series (`dataKey`); its data are rows, as a bar chart's
+- `RadialBar()`: a ring per row, filled as far round as its value is of the largest; three quarters round by default, the names (`hasLabel`) in the open quarter; its data are slices, as a pie's
 
-In config mode the same go on the entity: `isStacked: true` for areas and bars, `curve`, `xAxisLabel`, `yAxisLabel`, `startAngle`, `endAngle`. A pie or donut with `hasLegend: true` lists its slices above it and leaves them unlabelled, unless `hasLabel: true`.
+Horizontal bars: `orientation: "horizontal"` on the chart runs the bars sideways, the categories down the left (`YAxis` names them) and the values along the bottom (`XAxis`).
+
+Scatter data are series of points: `data: [{ name: "Cars", points: [{ x: 1200, y: 15, z: 3 }] }]`.
+
+In config mode the same go on the entity: `isStacked: true` for areas and bars, `orientation`, `curve`, `xAxisLabel`, `yAxisLabel`, `startAngle`, `endAngle`. The `type` picks the chart, as `"Scatter"`, `"Radar"` or `"Radial"` do. A pie or donut with `hasLegend: true` lists its slices above it and leaves them unlabelled, unless `hasLabel: true`.
 
 ## Naming Conventions
 
