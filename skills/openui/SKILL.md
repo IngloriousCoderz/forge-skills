@@ -76,16 +76,19 @@ api.notify("#answer:responseChange", savedText); // a whole answer at once
 Buttons run action plans. `@Set`/`@Reset` become `valueChange`/`valuesReset` on the entity; `@Run` fetches a query or runs a mutation (later steps wait, and stop if it fails). The rest is announced **unscoped** as `openuiAction`, for the type that talks to the model:
 
 ```javascript
-const Chat = {
+// Inglorious UI's Chat, with the app's behaviour: Chat: [Chat, withAssistant]
+const withAssistant = (type) => ({
   openuiAction(chat, event, api) {
     // event: { id, type, params, humanFriendlyMessage, formName, formState }
     if (event.type === "continue_conversation")
-      api.notify("#chat:messageSend", event.humanFriendlyMessage);
+      api.notify(`#${chat.id}:messageSend`, event.humanFriendlyMessage);
     if (event.type === "open_url")
       window.open(event.params.url, "_blank", "noopener");
   },
-};
+});
 ```
+
+In a chat, use Inglorious UI's `Chat`: a message `{ entity: answerId }` renders the answer. Wrap `messageSend` to add the answer (`messageAdd`, `replyStart`), stream into it, then notify `replyEnd` or `replyFail`.
 
 A button without an action sends its label back. A form sends only its own fields in `formState`.
 
