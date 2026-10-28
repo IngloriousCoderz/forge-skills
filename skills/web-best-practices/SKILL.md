@@ -262,8 +262,8 @@ Example pattern:
 ## Theme conventions
 
 - Put primitive tokens in `tokens/index.css` (global).
-- Scope semantic/component tokens to theme classes (`.iw-theme-inglorious`, `.iw-theme-material`, `.iw-theme-bootstrap`) instead of `:root`.
-- Scope mode overrides to combined classes (for example `.iw-theme-material.iw-theme-dark`).
+- Scope semantic/component tokens to theme classes (`.iw-theme-inglorious`, `.iw-theme-material-ui`, `.iw-theme-material-3`, `.iw-theme-bootstrap`, `.iw-theme-ios-18`, `.iw-theme-ios-26`) instead of `:root`.
+- Scope mode overrides to combined classes (for example `.iw-theme-material-3.iw-theme-dark`).
 - In Storybook, import all theme styles and switch the body/root class via globals toolbar.
 
 This ensures theme switching actually changes component tokens.

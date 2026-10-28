@@ -36,7 +36,7 @@ npm install @inglorious/ui
 
 ```javascript
 import "@inglorious/ui/base.css"; // reset + tokens + safe-area insets
-import "@inglorious/ui/themes/inglorious.css"; // or material.css, bootstrap.css
+import "@inglorious/ui/themes/inglorious.css"; // or material-ui.css, material-3.css, bootstrap.css, ios-18.css, ios-26.css
 import "@inglorious/ui/button.css"; // one stylesheet per component...
 import "@inglorious/ui/input.css";
 // ...or everything at once: import "@inglorious/ui/all.css";
@@ -48,7 +48,7 @@ Every component has a matching `@inglorious/ui/<component>.css`, and each catego
 
 ```html
 <body class="iw-theme-inglorious">
-  <!-- or iw-theme-material, iw-theme-bootstrap -->
+  <!-- or iw-theme-material-ui, iw-theme-material-3, iw-theme-bootstrap, iw-theme-ios-18, iw-theme-ios-26 -->
   <!-- add iw-theme-dark or iw-theme-light for variant -->
 </body>
 ```
@@ -115,7 +115,7 @@ With `onFileSelect`, the button opens a file picker on click (after `onClick`) a
 
 `IconButton`, `ButtonGroup` and `Fab` are built on `Button` and share its `color`, including `"default"`.
 
-The default color is neutral, unless the theme gives it its own tokens (`--iw-button-default-color`, `-bg`, `-bg-hover`, `-bg-active`, `-border`, `-text`). The Material theme makes it primary, as Material UI does, so set `color` only to depart from it.
+The default color is neutral, unless the theme gives it its own tokens (`--iw-button-default-color`, `-bg`, `-bg-hover`, `-bg-active`, `-border`, `-text`). The Material UI theme makes it primary, as Material UI does, the Material 3 theme a filled tonal button, the iOS 18 theme a gray button and the iOS 26 theme a glass one, so set `color` only to depart from it.
 
 ### Other components worth knowing
 
@@ -306,11 +306,14 @@ Icon.render({ children: "★" }); // a glyph instead
 
 ### Available Themes
 
-| Theme        | Description                                                                                                             |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| `inglorious` | Neon/videogame aesthetic (default dark)                                                                                 |
-| `material`   | Material UI inspired: primary default buttons, capitalized medium-weight labels on buttons and tabs, grey default chips |
-| `bootstrap`  | Bootstrap inspired                                                                                                      |
+| Theme         | Description                                                                                                                   |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `inglorious`  | Neon/videogame aesthetic (default dark)                                                                                       |
+| `material-ui` | Material UI inspired: Roboto, 4px corners, raised buttons with capitalized labels, outlined text fields, filled chips         |
+| `material-3`  | Material Design 3 inspired: the baseline purple scheme, pill buttons, tonal surfaces, filled text fields, outlined chips      |
+| `bootstrap`   | Bootstrap inspired                                                                                                            |
+| `ios-18`      | Flat iOS (7 to 18) inspired: grouped cards on grey, the green switch, segmented-control tabs, alerts with text-button actions |
+| `ios-26`      | Liquid Glass inspired: glass bars, menus, dialogs and a floating tab bar, capsule buttons and switch, larger corners          |
 
 ### Theme Variants
 
@@ -319,8 +322,8 @@ Icon.render({ children: "★" }); // a glyph instead
 <body class="iw-theme-inglorious">
   <!-- Inglorious light variant -->
   <body class="iw-theme-inglorious iw-theme-light">
-    <!-- Material dark variant -->
-    <body class="iw-theme-material iw-theme-dark"></body>
+    <!-- Material 3 dark variant -->
+    <body class="iw-theme-material-3 iw-theme-dark"></body>
   </body>
 </body>
 ```
@@ -353,10 +356,10 @@ Icon.render({ children: "★" }); // a glyph instead
 
 ### Label Tokens
 
-Buttons (and everything built on them) and tabs read three tokens for their labels. They default to `none`, `normal` and the normal font weight; the Material theme sets them as Material UI does:
+Buttons (and everything built on them) and tabs read three tokens for their labels. They default to `none`, `normal` and the normal font weight; the Material UI theme sets them as Material UI does:
 
 ```css
-.iw-theme-material {
+.iw-theme-material-ui {
   --iw-label-text-transform: uppercase;
   --iw-label-letter-spacing: 0.02857em;
   --iw-label-font-weight: var(--iw-font-weight-medium);
@@ -367,7 +370,7 @@ Override them on a theme class, or on any ancestor, to change it. Bottom-navigat
 
 ### Chip Token
 
-A default `Chip`'s background is `--iw-chip-bg`, falling back to `--iw-color-bg-secondary`. The Material theme sets it to a tint of the text color, so chips show on white cards and tables.
+A default `Chip`'s background is `--iw-chip-bg`, falling back to `--iw-color-bg-secondary`. The Material UI theme sets it to a tint of the text color, so chips show on white cards and tables; the Material 3 theme makes it transparent, as its chips are outlined.
 
 ### Component Tokens
 
@@ -591,8 +594,11 @@ import { Card } from "@inglorious/ui/card";
 // CSS (import in your app)
 import "@inglorious/ui/base.css";
 import "@inglorious/ui/themes/inglorious.css";
-import "@inglorious/ui/themes/material.css";
+import "@inglorious/ui/themes/material-ui.css";
+import "@inglorious/ui/themes/material-3.css";
 import "@inglorious/ui/themes/bootstrap.css";
+import "@inglorious/ui/themes/ios-18.css";
+import "@inglorious/ui/themes/ios-26.css";
 import "@inglorious/ui/all.css"; // every component
 import "@inglorious/ui/button.css";
 import "@inglorious/ui/input.css";

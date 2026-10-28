@@ -90,7 +90,7 @@ Use for design system components and theming.
 
 - Render-function components (button, input, card, etc.)
 - CSS tokens for colors, spacing, radii, typography
-- Themeable with Inglorious, Material, and Bootstrap themes
+- Themeable with Inglorious, Material UI, Material 3, Bootstrap, iOS 18, and iOS 26 themes
 - Light and dark mode variants
 - UI primitive conventions: [`skills/ui-best-practices/SKILL.md`](../ui-best-practices/SKILL.md)
 
