@@ -571,8 +571,23 @@ const store = createStore({
 });
 ```
 
-Middlewares wrap dispatch as `(store) => (next) => (event) => ...` and return the result of
-`next(event)`. See `multiplayerMiddleware` in [`skills/server/SKILL.md`](../server/SKILL.md) for a worked example.
+Middlewares take the store and return it, changed or wrapped: `(store) => store`. One that only
+cares about events replaces `store.dispatch` with a function that calls the previous one and
+returns its result; `notify` goes through `dispatch`, so it sees every event. The first middleware
+wraps all the others, so events pass through them in the order listed. Middlewares with options are
+factories, such as `multiplayerMiddleware(config)` (see [`skills/server/SKILL.md`](../server/SKILL.md))
+and `withTransitions({ routes })` from `@inglorious/ui/view-transitions`.
+
+```javascript
+const logger = (store) => {
+  const next = store.dispatch;
+  store.dispatch = (event) => {
+    console.log(event.type);
+    return next(event);
+  };
+  return store;
+};
+```
 
 ### Store Instance Methods
 

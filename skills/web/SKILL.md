@@ -321,6 +321,8 @@ api.notify("#router:navigate", "/users/456");
 api.notify("#router:navigate", { to: "/users/456", replace: true });
 ```
 
+With the `Router` type, `mount` announces each navigation to screen readers and moves focus to the top of the new page, with nothing to set up. Links that only change part of the page (tabs, filters) keep focus with `data-is-focus-kept`, or `state: { isFocusKept: true }` from code. Pass `getPageName` to `mount` when the title is known only after data loads; `hasAccessibleNavigation: false` turns it off.
+
 ### Route Guards
 
 ```javascript
