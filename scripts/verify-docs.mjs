@@ -23,8 +23,6 @@ const SOURCE = sourceArg ? resolve(sourceArg) : null
 const problems = []
 const fail = (where, msg) => problems.push({ where, msg })
 
-// ---------------------------------------------------------------- helpers ---
-
 const skillFiles = () =>
   readdirSync(SKILLS)
     .filter((d) => existsSync(join(SKILLS, d, "SKILL.md")))
@@ -54,7 +52,6 @@ function collectExports(src, resolved, seen = new Set()) {
   const add = (raw) => {
     const t = raw.trim().replace(/^type\s+/, "")
     if (!t) return
-    // `a as b` exports `b`; plain `a` exports `a`
     const m = t.match(/\bas\s+([\w$]+)$/)
     names.add(m ? m[1] : t)
   }
@@ -67,9 +64,6 @@ function collectExports(src, resolved, seen = new Set()) {
   for (const m of src.matchAll(/\bexport\s+const\s*\{([^}]*)\}/g))
     m[1].split(",").forEach(add)
 
-  // A star re-export hands on everything the file it names exports, so those names are
-  // this module's exports too. Only relative paths are followed: there is nothing to
-  // resolve a bare specifier against without the package map.
   const dir = resolved ? dirname(resolved) : null
   for (const m of src.matchAll(/\bexport\s+\*\s+from\s+"(\.[^"]+)"/g)) {
     if (!dir || seen.has(m[1])) continue
@@ -84,19 +78,15 @@ function collectExports(src, resolved, seen = new Set()) {
   return names
 }
 
-// ------------------------------------------------- internal consistency ----
-
 function checkInternal() {
   const files = skillFiles()
   const dirs = files.map((f) => f.skill)
 
-  // frontmatter name matches its directory
   for (const { skill, file } of files) {
     const name = read(file).match(/^name:\s*(\S+)/m)?.[1]
     if (name !== skill) fail(`${skill}`, `frontmatter name is "${name}", expected "${skill}"`)
   }
 
-  // skills.sh.json covers every skill, and nothing extra
   const shPath = join(ROOT, "skills.sh.json")
   if (existsSync(shPath)) {
     const grouped = new Set(
@@ -108,7 +98,6 @@ function checkInternal() {
       if (!dirs.includes(d)) fail("skills.sh.json", `"${d}" is listed but has no skills/${d}/SKILL.md`)
   }
 
-  // README lists every skill
   const readme = join(ROOT, "README.md")
   if (existsSync(readme)) {
     const listed = new Set(
@@ -118,7 +107,6 @@ function checkInternal() {
       if (!listed.has(d)) fail("README.md", `skills/${d}/SKILL.md is not listed`)
   }
 
-  // relative markdown links resolve; backticked skills/… paths exist
   for (const { skill, file } of [...files, { skill: "README.md", file: readme }]) {
     if (!existsSync(file)) continue
     const base = dirname(file)
@@ -133,7 +121,6 @@ function checkInternal() {
       if (!existsSync(join(ROOT, m[1])))
         fail(skill, `path does not exist -> ${m[1]}`)
     }
-    // in-page anchors must match a real heading in the same file
     const anchors = new Set(
       [...text.matchAll(/^#{1,6} (.+)$/gm)].map((m) => slug(m[1])),
     )
@@ -143,14 +130,11 @@ function checkInternal() {
     }
   }
 
-  // no leftover merge markers
   for (const { skill, file } of files) {
     if (/^<{7} |^>{7} |^> > > > /m.test(read(file)))
       fail(skill, "contains a merge/conflict marker")
   }
 }
-
-// ------------------------------------------------- imports vs. real source --
 
 function loadPackages() {
   const dir = join(SOURCE, "packages")
@@ -185,7 +169,6 @@ function resolveSpecifier(spec, pkgs) {
   } else if (Object.keys(pkg.exports).length === 0) {
     target = pkg.main ? "./" + pkg.main.replace(/^\.\//, "") : "./src/index.js"
   } else {
-    // longest matching wildcard, e.g. "./*" or "./math/*.js"
     let best
     for (const [key, value] of Object.entries(pkg.exports)) {
       if (!key.includes("*")) continue
@@ -227,8 +210,6 @@ function checkImports(pkgs) {
     }
   }
 }
-
-// ------------------------------------------------------------------ main ----
 
 checkInternal()
 
