@@ -294,6 +294,40 @@ if (!isNative()) {
 
 `applyPwaUpdate(registration?)` does the same outside the store.
 
+### Push
+
+```javascript
+import { createPushPrompt } from "@inglorious/web/push";
+
+const prompt = createPushPrompt({ adapter });
+const types = {
+  PushPrompt: {
+    ...prompt,
+    ...renderers, // renders the prompt while entity.isOpen
+    sessionStart: prompt.pushStart,
+    sessionEnd: prompt.pushStop,
+  },
+};
+```
+
+`createPushPrompt({ adapter, declineKey, onTap })` returns the type that asks a device for pushes and keeps it registered. It asks in the app's own words before the system's dialog, because a refusal there may be for good, and remembers a "not now" on the device.
+
+**Adapter** (everything vendor-specific): `isSupported()`, `permission()` and `request()` resolving to `"granted" | "denied" | "prompt"`, `register()` storing the device's token for the signed-in user, and optional `onTap(listener)` for pushes the system showed. In a browser, `request` must call `Notification.requestPermission()` before awaiting anything. Unregistering is the app's, at sign-out, before the session ends.
+
+**Entity state:**
+
+- `isOpen` — the app's prompt is showing
+- `isActive` — between `pushStart` and `pushStop`
+
+**Events:**
+
+- `pushStart` — at sign-in: registers if granted, else opens the prompt
+- `pushStop` — at sign-out: closes the prompt
+- `pushAsk` — the prompt's yes, notified from the tap itself
+- `pushDecline` — the prompt's no, kept under `declineKey` in localStorage
+
+A tapped push's URL opens with `#router:navigate` unless `onTap(url, api)` says otherwise.
+
 ### Router
 
 ```javascript
@@ -364,9 +398,10 @@ const page = {
 
         ${when(
           role === "admin",
-          () => html`<button @click=${() => api.notify("AdminPage:panelOpen")}>
-            Admin Panel
-          </button>`,
+          () =>
+            html`<button @click=${() => api.notify("AdminPage:panelOpen")}>
+              Admin Panel
+            </button>`,
           () => html`<span>Standard User</span>`,
         )}
       </div>
@@ -502,11 +537,7 @@ import {
   isFieldTouched,
 } from "@inglorious/web/form";
 import { Geolocation } from "@inglorious/web/sensors/geolocation";
-import {
-  applyPwaUpdate,
-  PwaUpdate,
-  watchPwaUpdate,
-} from "@inglorious/web/pwa";
+import { applyPwaUpdate, PwaUpdate, watchPwaUpdate } from "@inglorious/web/pwa";
 import { Router } from "@inglorious/web/router";
 
 // web extras
@@ -575,4 +606,3 @@ const types = {
   },
 };
 ```
-
