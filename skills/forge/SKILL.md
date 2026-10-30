@@ -119,6 +119,14 @@ Use for apps on Supabase, and for any screen that shows data other people change
 - Entities reload when a table they read changes, with no per-row matching
 - One channel per table, joined after the saved session is restored
 
+### [@inglorious/firebase](../firebase/SKILL.md)
+
+Use for push notifications and analytics, in a PWA and its Capacitor apps.
+
+- `firebasePush`: Firebase Cloud Messaging for `createPushPrompt`, one token per device
+- `firebaseAnalytics`: Google Analytics for Firebase for `createAnalytics`, consent first
+- One API on web, Android and iOS, with no gtag snippet
+
 ### [@inglorious/ssx](../ssx/SKILL.md)
 
 Use for static site generation and hydration workflows.

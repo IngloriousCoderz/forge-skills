@@ -294,6 +294,35 @@ if (!isNative()) {
 
 `applyPwaUpdate(registration?)` does the same outside the store.
 
+### Analytics
+
+```javascript
+import { createAnalytics } from "@inglorious/web/analytics";
+
+const types = { Analytics: [createAnalytics({ adapter }), renderers] }; // renders the consent prompt while entity.isAsking
+const entities = { analytics: { type: "Analytics" } };
+
+api.notify("#analytics:analyticsTrack", {
+  name: "sign_up",
+  params: { method: "email" },
+});
+```
+
+`createAnalytics({ adapter, consentKey })` returns the type that measures how an app is used, only after the user agrees. Nothing reaches the adapter before consent. Once granted, each router `routeChange` is a page view.
+
+**Adapter:** `setConsent(isGranted)`, `pageView({ route, path })` and `event(name, params)`. Failures never reach the app.
+
+**Entity state:**
+
+- `consent` — `"granted"`, `"denied"` or `null` (not asked yet), kept in localStorage
+- `isAsking` — the app's consent prompt is showing
+
+**Events:**
+
+- `analyticsConsent` — the prompt's answer, `true` or `false`; a yes measures the current page first
+- `analyticsAsk` — brings the prompt back (a settings page)
+- `analyticsTrack` — `{ name, params }`, ignored without consent
+
 ### Push
 
 ```javascript

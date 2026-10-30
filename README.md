@@ -30,6 +30,7 @@ This repo contains focused skill/reference files that help an agent work with th
 - [`skills/i18n/SKILL.md`](skills/i18n/SKILL.md) - Internationalization: translations, plurals, formatting and markup in translations
 - [`skills/openui/SKILL.md`](skills/openui/SKILL.md) - Generative UI: model answers in OpenUI Lang rendered with Inglorious UI
 - [`skills/supabase/SKILL.md`](skills/supabase/SKILL.md) - Supabase: live entities that reload on Realtime changes
+- [`skills/firebase/SKILL.md`](skills/firebase/SKILL.md) - Firebase: push notifications and analytics, in the browser and in Capacitor apps
 - [`skills/ssx/SKILL.md`](skills/ssx/SKILL.md) - Static site generation and hydration
 - [`skills/engine/SKILL.md`](skills/engine/SKILL.md) - Functional 2D game engine
 - [`skills/engine-best-practices/SKILL.md`](skills/engine-best-practices/SKILL.md) - Engine testing conventions

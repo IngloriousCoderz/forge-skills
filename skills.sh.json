@@ -19,7 +19,14 @@
     {
       "title": "Data & State",
       "description": "Entity-based application state, stores, and server integration.",
-      "skills": ["store", "react-store", "server", "utils", "supabase"]
+      "skills": [
+        "store",
+        "react-store",
+        "server",
+        "utils",
+        "supabase",
+        "firebase"
+      ]
     },
     {
       "title": "Static Sites",
