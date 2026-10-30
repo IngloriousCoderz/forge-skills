@@ -111,6 +111,14 @@ Use for generative UI: interfaces a model writes per request.
 - `uiLibrary` of Inglorious UI components, charts, and forms with validation
 - `Query`/`Mutation` calling the app's own tools, results in the entity
 
+### [@inglorious/supabase](../supabase/SKILL.md)
+
+Use for apps on Supabase, and for any screen that shows data other people change.
+
+- `realtimeSource` over Supabase Realtime, for the `withLiveReload` decorator of `@inglorious/web`
+- Entities reload when a table they read changes, with no per-row matching
+- One channel per table, joined after the saved session is restored
+
 ### [@inglorious/ssx](../ssx/SKILL.md)
 
 Use for static site generation and hydration workflows.
@@ -136,4 +144,3 @@ Use for functional 2D game loop architecture on top of `@inglorious/store`.
 - **[Vue Vite Plugin](../vite-plugin-vue/SKILL.md):** Use Vue-like template syntax instead of `lit-html`.
 - **[Create App](../create-app/SKILL.md):** Scaffold Inglorious Web applications.
 - **[Create Game](../create-game/SKILL.md):** Scaffold Inglorious Engine games.
-

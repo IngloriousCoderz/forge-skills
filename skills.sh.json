@@ -19,50 +19,32 @@
     {
       "title": "Data & State",
       "description": "Entity-based application state, stores, and server integration.",
-      "skills": [
-        "store",
-        "react-store",
-        "server",
-        "utils"
-      ]
+      "skills": ["store", "react-store", "server", "utils", "supabase"]
     },
     {
       "title": "Static Sites",
       "description": "Static site generation, hydration, and content-driven workflows.",
-      "skills": [
-        "ssx"
-      ]
+      "skills": ["ssx"]
     },
     {
       "title": "UI & Charts",
       "description": "Visual components, theming, and charting patterns.",
-      "skills": [
-        "charts"
-      ]
+      "skills": ["charts"]
     },
     {
       "title": "Game Engine",
       "description": "2D game loop architecture and game project scaffolding.",
-      "skills": [
-        "engine",
-        "engine-best-practices",
-        "create-game"
-      ]
+      "skills": ["engine", "engine-best-practices", "create-game"]
     },
     {
       "title": "Scaffolding",
       "description": "Create new Inglorious Web and game projects quickly.",
-      "skills": [
-        "create-app"
-      ]
+      "skills": ["create-app"]
     },
     {
       "title": "Getting Started",
       "description": "Entry point that routes a goal to the smallest relevant set of skills, and the code style every project follows.",
-      "skills": [
-        "forge",
-        "forge-best-practices"
-      ]
+      "skills": ["forge", "forge-best-practices"]
     }
   ]
 }
