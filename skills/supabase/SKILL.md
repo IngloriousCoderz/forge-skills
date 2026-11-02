@@ -52,7 +52,7 @@ const types = {
 | `isLive`  | always   | `(entity, api) => boolean`; changes are skipped while false |
 | `delay`   | `300`    | Milliseconds that gather a burst of changes into one reload |
 
-It also reloads every live entity when the page comes back into view, since a backgrounded phone may have dropped the connection. Subscriptions end when the entity is destroyed.
+It also reloads every live entity when the page comes back into view or the browser comes back online, since a backgrounded or offline phone may have dropped the connection. Subscriptions end when the entity is destroyed.
 
 ## Rules
 
@@ -61,6 +61,11 @@ It also reloads every live entity when the page comes back into view, since a ba
 - **Show your own writes without waiting for Realtime.** After a successful write, update the entity from what was written, or reload it. Realtime is for other people's changes.
 - **Keep what the user is typing.** A reload's `success` should not overwrite a dirty form: check `entity.isPristine` before copying loaded values into `entity.values`.
 - **Publish each table**: `alter publication supabase_realtime add table public.<table>;`
+- **Tell a lost connection from a refusal** with `isNetworkError(error)`, and show an "offline" message instead of the browser's raw "Failed to fetch". The `NetworkStatus` sensor of `@inglorious/web` says when the device is offline.
+
+## isNetworkError
+
+`isNetworkError(error)` is true when a call never reached the server: PostgREST's `{ message: "TypeError: Failed to fetch" }` (worded differently in every browser), Functions' `FunctionsFetchError`, Auth's `AuthRetryableFetchError`, and Storage's `originalError`. A row-level security refusal or any other server answer is false.
 
 ## realtimeSource
 
