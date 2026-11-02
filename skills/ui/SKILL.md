@@ -106,12 +106,17 @@ const entities = {
 | `isPressed`    | `boolean`                                                                                          | `false`       | Pressed state           |
 | `isFullWidth`  | `boolean`                                                                                          | `false`       | Full width              |
 | `buttonType`   | `"button"` \| `"submit"` \| `"reset"` \| `"menu"`                                                  | `"button"`    | The `<button>`'s `type` |
+| `href`         | `string`                                                                                           | -             | Renders a link instead  |
 | `onClick`      | `(event: MouseEvent) => void`                                                                      | -             | Click callback          |
 | `onFileSelect` | `(files: FileList) => void`                                                                        | -             | Makes it a file picker  |
 | `accept`       | `string`                                                                                           | -             | Picker's file types     |
 | `isMultiple`   | `boolean`                                                                                          | `false`       | Picker takes many files |
 
 With `onFileSelect`, the button opens a file picker on click (after `onClick`) and calls `onFileSelect` with the chosen files. Use it instead of laying an invisible `<input type="file">` over a button.
+
+With `href`, the button is an `<a>` that looks like one: use it for navigation, such as a dashboard's shortcuts, instead of styling a link. A disabled one loses its `href`.
+
+In a `ButtonGroup`, an item with `children` keeps its `label` as the button's accessible name, and a group with a `value` or `isMultiple` sets `aria-pressed` on every button, `"false"` included.
 
 `IconButton`, `ButtonGroup` and `Fab` are built on `Button` and share its `color`, including `"default"`.
 
