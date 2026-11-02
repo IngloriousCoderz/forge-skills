@@ -1,11 +1,11 @@
 ---
 name: supabase
-description: Supabase for Inglorious Web with @inglorious/supabase — realtimeSource feeds withLiveReload from @inglorious/web so entities reload when a table they read changes, with one channel per table, joined after the session is restored.
+description: Supabase for Inglorious Web with @inglorious/supabase — realtimeSource feeds withLiveReload from @inglorious/web so entities reload when a table they read changes, with one channel per table, joined after the session is restored; @inglorious/supabase/edge has the helpers for Edge Functions (CORS, errors, the caller, Resend email).
 ---
 
 # @inglorious/supabase - Complete Reference
 
-Supabase integration for `@inglorious/web`. It starts with Realtime: `realtimeSource(client)` tells entities that a table changed, and the `withLiveReload` decorator from `@inglorious/web` reloads them.
+Supabase integration for `@inglorious/web`. `realtimeSource(client)` tells entities that a table changed, and the `withLiveReload` decorator from `@inglorious/web` reloads them. `@inglorious/supabase/edge` holds the helpers every Edge Function needs.
 
 ## Installation
 
@@ -70,3 +70,37 @@ It also reloads every live entity when the page comes back into view, since a ba
 - Joins only after `client.auth.getSession()` resolves.
 - Rejoining after a dropped connection notifies the subscribers.
 - Sign-in and sign-out later need nothing: supabase-js hands every channel the new token.
+
+## Edge Functions
+
+`@inglorious/supabase/edge`, for Supabase's Deno runtime. It imports nothing, supabase-js included: pass your own client.
+
+```ts
+import "jsr:@supabase/functions-js@2/edge-runtime.d.ts";
+import { STATUS_CODE } from "jsr:@std/http@1/status";
+import { currentUser, env, json, serve } from "npm:@inglorious/supabase@^0.2.0/edge";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const admin = () => createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"));
+
+serve(
+  async (req) => {
+    const user = await currentUser(admin(), req);
+    if (!user) return json({ error: "Not signed in" }, STATUS_CODE.Unauthorized);
+    return json({ id: user.id });
+  },
+  { fallbackError: "profile failed" },
+);
+```
+
+| Export | Use |
+| --- | --- |
+| `serve(handler, { fallbackError })` / `handle(...)` | Answers the CORS preflight; a thrown error becomes `{ error }`, status 500, with CORS headers. `handle` returns the wrapped handler, for tests |
+| `json(body, status, headers)` | JSON response with CORS headers, errors included |
+| `env(name)` | A variable that must be set; throws naming it |
+| `currentUser(client, req)` | The caller from their access token, never from the body; `null` without one |
+| `callerRole(req)` / `bearerToken(req)` | The JWT's `role` (`"service_role"` for a call from the database), unverified: the platform verifies it unless `verify_jwt` is off. Only legacy JWT keys carry it |
+| `upstreamError(service, res)` | An error with the start of another API's answer |
+| `isLocalStack(url)` | Whether `SUPABASE_URL` is local: skip paid and outside services there |
+| `sendEmail(email, { apiKey, from })` / `sendEmails(emails, …)` | Resend; the batch sends up to 100 in one request, all or none. Throws `EmailError` with Resend's `status` (429: rate or daily limit). An email is `{ to, subject, text, html, headers }` |
+

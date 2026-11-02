@@ -386,15 +386,40 @@ api.notify("#router:navigate", { to: "/users/456", replace: true });
 
 With the `Router` type, `mount` announces each navigation to screen readers and moves focus to the top of the new page, with nothing to set up. Links that only change part of the page (tabs, filters) keep focus with `data-is-focus-kept`, or `state: { isFocusKept: true }` from code. Pass `getPageName` to `mount` when the title is known only after data loads; `hasAccessibleNavigation: false` turns it off.
 
+### Page entities
+
+Every entity hears `routeChange`. `pageRouteChange({ select, open, close })`, each optional, writes the handler of a page that loads when it opens and clears when it closes:
+
+```javascript
+import { pageRouteChange } from "@inglorious/web/router";
+
+export const EventPage = {
+  routeChange: pageRouteChange({
+    select: (payload) => payload.params.eventId,
+    open: (entity, eventId, api) => api.notify(`#${entity.id}:fetch`, eventId),
+    close: (entity) => {
+      entity.event = null;
+    },
+  }),
+};;
+```
+
+Inside `routeChange`, read the route from the payload: the router entity still names the route being left.
+
 ### Route Guards
 
 ```javascript
+import { safePath } from "@inglorious/web/router";
+
 const requireAuth = (type) => ({
   routeChange(entity, payload, api) {
-    if (payload.route !== entity.type) return;
+    if (payload.route !== entity.id) return;
     const user = localStorage.getItem("user");
     if (!user) {
-      api.notify("#router:navigate", { to: "/login", replace: true });
+      api.notify("#router:navigate", {
+        to: `/login?from=${encodeURIComponent(payload.path)}`,
+        replace: true,
+      });
       return;
     }
     type.routeChange?.(entity, payload, api);
@@ -404,6 +429,9 @@ const requireAuth = (type) => ({
 const types = {
   AdminPage: [AdminPageBase, requireAuth],
 };
+
+// After signing in: only a path on this site, never //evil.com or /\evil.com
+api.notify("#router:navigate", safePath(router.query.from) ?? "/");
 ```
 
 ## Selectors

@@ -17,31 +17,24 @@ npm install @inglorious/i18n
 
 ```javascript
 // src/i18n.js — one JSON per language in ./locales, named after it
-import { createI18n } from "@inglorious/i18n"
+import { createI18n } from "@inglorious/i18n";
 
-export const {
-  I18n,
-  t,
-  trans,
-  ready,
-  currentLocale,
-  labelled,
-  translatedLabel,
-} = createI18n({
+export const { I18n, t, trans, ready, currentLocale } = createI18n({
   catalogues: import.meta.glob("./locales/*.json"),
   defaultLocale: "en",
   storageKey: "my-app-locale", // omit to not remember the choice
-})
+  queryParam: "lang", // optional: ?lang=it opens in Italian, and is remembered
+});
 ```
 
 ```javascript
 // src/main.js — mount after the starting language and the fallback load
-ready.then(() => mount(store, renderApp, document.getElementById("root")))
+ready.then(() => mount(store, renderApp, document.getElementById("root")));
 ```
 
 Register `I18n` in `types` and add an entity `i18n: { type: "I18n" }`.
 
-- Starting locale: saved choice → first supported device language (base match: `it-CH` → `it`) → `defaultLocale`.
+- Starting locale: `queryParam` in the URL (when set and supported) → saved choice → first supported device language (base match: `it-CH` → `it`) → `defaultLocale`.
 - `<html lang>` and `<html dir>` follow the active locale (`entity.dir`: `rtl` for Arabic, Hebrew…). Write styles with logical properties (`margin-inline-start`, `inset-inline-end`, `text-align: start`); for sideways motion multiply by `var(--iw-dir-sign)` from Inglorious UI; give icons that point along the line `Icon`'s `direction: entity.dir`.
 - A lazy glob makes each catalogue its own chunk; `{ eager: true }` bundles them all. A new language is a new file.
 - A switch to an unloaded locale loads it first (`entity.loadingLocale`); only the latest choice applies; a failed load keeps the current language.
@@ -51,24 +44,23 @@ Register `I18n` in `types` and add an entity `i18n: { type: "I18n" }`.
 
 ## API
 
-| Export                                              | Use                                                                                                                                                                                                                                            |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ready`                                             | Promise: the starting locale and the fallback are loaded. Mount after it                                                                                                                                                                       |
-| `I18n`                                              | Type. `create` sets `entity.locale` / `entity.locales` / `entity.languages`; `localeChange(entity, locale)` switches, remembers, sets `<html lang>`, ignores unsupported locales; `userLocaleLoad` / `userLocaleClear` for the user's language |
-| `languages`                                         | The picker options, as on the entity                                                                                                                                                                                                           |
-| `currentLocale()`                                   | The active locale, for `Intl` formatters                                                                                                                                                                                                       |
-| `labelled(key, fields)` / `translatedLabel(option)` | Data items whose label translates on every read, keeping `labelKey` in state                                                                                                                                                                   |
-| `t(key, options)`                                   | i18next's `t`: interpolation `{{name}}`, plurals `key_one` / `key_other` with `{ count }`, formatting `{{date, datetime}}`                                                                                                                     |
-| `trans(key, { values, components })`                | Translation with tags rendered by components; returns an array of parts for lit                                                                                                                                                                |
-| `i18next`                                           | The instance, for anything the adapter does not cover                                                                                                                                                                                          |
-| `detectLocale(options)`                             | The detection used at startup                                                                                                                                                                                                                  |
+| Export                               | Use                                                                                                                                                                                                                                            |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ready`                              | Promise: the starting locale and the fallback are loaded. Mount after it                                                                                                                                                                       |
+| `I18n`                               | Type. `create` sets `entity.locale` / `entity.locales` / `entity.languages`; `localeChange(entity, locale)` switches, remembers, sets `<html lang>`, ignores unsupported locales; `userLocaleLoad` / `userLocaleClear` for the user's language |
+| `languages`                          | The picker options, as on the entity                                                                                                                                                                                                           |
+| `currentLocale()`                    | The active locale, for `Intl` formatters                                                                                                                                                                                                       |
+| `t(key, options)`                    | i18next's `t`: interpolation `{{name}}`, plurals `key_one` / `key_other` with `{ count }`, formatting `{{date, datetime}}`. Also takes a message kept in state as `{ key, values }`; text that is not a key comes back as it is                |
+| `trans(key, { values, components })` | Translation with tags rendered by components; returns an array of parts for lit                                                                                                                                                                |
+| `i18next`                            | The instance, for anything the adapter does not cover                                                                                                                                                                                          |
+| `detectLocale(options)`              | The detection used at startup                                                                                                                                                                                                                  |
 
 Switch language: `api.notify("#i18n:localeChange", "it")`.
 
 ## Rules
 
-- **Never store translated text in state.** Store the key and translate in `render`; stored text stays in the old language.
-- **Labels in module-level data use `labelled("periods.week", { value: "week" })`** and are read with `translatedLabel`. A plain string freezes at import time.
+- **Never store translated text in state.** Store the key, or `{ key, values }`, and render it with `t`; stored text stays in the old language.
+- **Labels in module-level data hold the key**, `{ value: "week", label: "periods.week" }`, and are rendered with `t(option.label)`. A translated string freezes at import time; a label that is not a key comes back as it is.
 - **Keep a sentence with markup as one key** and render it with `trans`; never split it around the markup, so each language can order it freely.
 - **Plurals: give `_many` keys in languages that have the form** (Italian, French): `Intl.PluralRules` selects it for large numbers.
 - **Interpolated values are not HTML-escaped by i18next**: lit escapes text bindings. Never pass a `t()` result to `unsafeHTML`; use `trans` for markup.
@@ -81,7 +73,7 @@ Switch language: `api.notify("#i18n:localeChange", "it")`.
 trans("loggedInAs", {
   values: { email },
   components: { strong: (children) => html`<strong>${children}</strong>` },
-})
+});
 ```
 
 - Tags are placeholders: only names in `components` are rendered; anything else (including `<script>`, typos, stray or unclosed tags) shows as written.
