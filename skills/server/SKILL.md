@@ -53,7 +53,7 @@ If no path is provided, the server starts with an empty game config.
 
 ## Notes
 
-- Requires Node 22+.
+- Requires Node 26+.
 - Uses `ws` for WebSockets and `pino` for logging.
 
 ## Client Middleware
