@@ -285,6 +285,8 @@ const types = {
 };
 ```
 
+`entity` and everything read from it are drafts of the current update, revoked when it ends, and the update does not wait for `await`. Write to `entity` only before the first `await`, then notify an event that does the rest, as `itemsLoadSuccess` does. Anything kept past an `await`, including a payload passed to an async handler, must be a copy: `api.notify("signIn", { ...entity.values })`, never `entity.values`.
+
 ### handleAsync Helper
 
 ```javascript
@@ -617,8 +619,9 @@ lifecycle events.
 **Rules:**
 
 - Mutations inside handlers are safe (store uses Mutative)
-- `api.getEntity()` and `api.getEntities()` return read-only snapshots
+- `api.getEntity()` and `api.getEntities()` return read-only snapshots of the state from **before** the current update: a handler cannot see what an earlier handler in the same chain changed (see Common Pitfalls)
 - Events triggered via `api.notify()` are queued and processed in order
+- `entity` is a draft revoked when the update ends: never use it after an `await`, and pass copies, not drafts, as payloads that are read later
 
 ### Built-in Events
 
@@ -849,7 +852,7 @@ export const Form: FormType = {
     entity.value = value;
   },
   submit(entity, _payload, api) {
-    api.notify("formSubmitted", api.getEntity("form")?.value);
+    api.notify("formSubmitted", entity.value);
   },
 };
 
@@ -907,4 +910,67 @@ const types = {
     },
   },
 };
+```
+
+### ❌ Wrong: Reading a change made earlier in the same chain
+
+`api.getEntity()` returns the state from before the current update, and every event a chain notifies runs in that one update. A guard that asks the session cannot see a sign-in that just happened:
+
+```javascript
+const types = {
+  Session: {
+    signIn(entity, user, api) {
+      entity.user = user;
+      api.notify("navigate", "/account");
+    },
+  },
+  AccountPage: {
+    routeChange(entity, payload, api) {
+      const { user } = api.getEntity("session"); // Wrong - no user yet
+      if (!user) api.notify("navigate", "/login");
+    },
+  },
+};
+```
+
+### ✅ Correct: Announce the change and keep a copy
+
+```javascript
+const types = {
+  Session: {
+    signIn(entity, user, api) {
+      entity.user = user;
+      api.notify("sessionChange", user);
+      api.notify("navigate", "/account");
+    },
+  },
+  AccountPage: {
+    sessionChange(entity, user) {
+      entity.user = user;
+    },
+    routeChange(entity, payload, api) {
+      if (!entity.user) api.notify("navigate", "/login");
+    },
+  },
+};
+```
+
+### ❌ Wrong: Passing a draft to an async handler
+
+```javascript
+submit(entity, _, api) {
+  api.notify("signIn", entity.values); // Wrong - revoked when this update ends
+},
+async signIn(entity, values, api) {
+  await auth.ready;
+  await auth.signIn(values.email, values.password); // Throws: proxy revoked
+},
+```
+
+### ✅ Correct: Pass a copy
+
+```javascript
+submit(entity, _, api) {
+  api.notify("signIn", { ...entity.values }); // copy nested objects too
+},
 ```

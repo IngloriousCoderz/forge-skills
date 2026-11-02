@@ -434,6 +434,8 @@ const types = {
 api.notify("#router:navigate", safePath(router.query.from) ?? "/");
 ```
 
+A guard that checks a session entity rather than `localStorage` must keep its own copy: `api.getEntity("session")` returns the state from before the current update, so a sign-in earlier in the same chain (sign in, then navigate) is not there yet and the guard sends the user back to `/login`. Have the session notify `sessionChange` with the user, and give the guard a `sessionChange(entity, user) { entity.user = user }` handler to check in `routeChange`. See the store skill's Common Pitfalls.
+
 ## Selectors
 
 Use `api.select(selector)` to run selector functions against the current state. This allows selectors to be named naturally and facilitates access to data from any entity during render.
@@ -557,6 +559,8 @@ Connect store to DOM. Returns unsubscribe function.
 
 - ALWAYS use `api.notify()` for state changes - Format: `api.notify("#id:event", payload)`
 - `api.getEntity()` returns read-only - Mutations won't trigger re-renders
+- In a handler, `api.getEntity()` reads the state from before the current update: be told a change by an event, don't look for it
+- `entity` is a draft revoked when the update ends: never use it after an `await`, and pass a copy (`{ ...entity.values }`) as a payload an async handler reads
 - Event targeting: `"event"` (all), `"type:event"` (type), `"#id:event"` (specific entity)
 - Mutations inside event handlers are safe - Store handles immutability automatically
 
