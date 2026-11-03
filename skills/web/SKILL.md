@@ -163,6 +163,8 @@ const types = {
 };
 ```
 
+`withDebounce(delay, ["saveData"])` (from `@inglorious/web/decorators/with-debounce`) runs a handler after the event's draft is gone, so it gets the read-only `api.getEntity(id)` snapshot instead: a write to `entity` there changes state behind the store's back, and nothing re-renders. Read in the debounced handler and write with `api.notify` to one that isn't debounced.
+
 ## Built-in Components
 
 ### Compass
