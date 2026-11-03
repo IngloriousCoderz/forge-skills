@@ -384,6 +384,8 @@ api.notify("#router:navigate", "/users/456");
 api.notify("#router:navigate", { to: "/users/456", replace: true });
 ```
 
+**Lazy routes:** `"/clients": () => import("./pages/clients.js")`. The router registers every named export that an entity is of (a page with its grid and form), and routes to the default export's entity, or else the first export that renders. While loading, the router has `isLoading` and `loadingPath`. The same path isn't loaded twice, and a navigation elsewhere meanwhile wins. A lazy page missed every broadcast sent before it loaded: read what it needs (the session, say) in `create` instead of waiting for an event.
+
 With the `Router` type, `mount` announces each navigation to screen readers and moves focus to the top of the new page, with nothing to set up. Links that only change part of the page (tabs, filters) keep focus with `data-is-focus-kept`, or `state: { isFocusKept: true }` from code. Pass `getPageName` to `mount` when the title is known only after data loads; `hasAccessibleNavigation: false` turns it off.
 
 ### Page entities

@@ -145,6 +145,9 @@ and a destructor rather than as handlers that first check whether they are the o
 talked about. `add` and `remove` are broadcast: something counting down what it put up
 needs to hear about each of them going.
 
+A thing added before its type exists, as with a lazily loaded page, gets its `create` when
+`setType` first registers that type. Replacing a type, as hot reload does, sends no `create`.
+
 ### Changing what is already there
 
 `patch` and `replace` cover what `add` and `remove` do not: changing a thing without taking
@@ -331,7 +334,7 @@ const types = {
 - `run` receives `(payload, api)` — **not** `entity`
 - All handlers receive `api` as the last parameter
 - `start` is optional
-- Wrap the result in `optimistic(handleAsync(...), patch)` from `@inglorious/store/optimistic` for optimistic updates: `patch` is an object or `(entity, payload, api) => patch`, applied on start and rolled back on error
+- Wrap the result in `optimistic(handleAsync(...), patch)` from `@inglorious/store/optimistic` for optimistic updates: `patch` is an object or `(entity, payload, api) => patch`, applied on start and rolled back on error. Each call keeps its own snapshot, so calls can overlap; for a patch built on the current value (a list with a temporary item), pass `{ rollback(entity, payload, api) }` as the third argument to undo just that call. Every async event carries the call's `callId`: `Start`/`Run` get `{ payload, callId }`, `Success` `{ result, callId }`, `Error` `{ error, callId }`, `Finally` `{ callId }`, while the `start`/`run`/`success`/`error`/`finally` handlers still get the bare value
 - In TypeScript, see `AsyncEvents` in the TypeScript section
 
 ## Systems
