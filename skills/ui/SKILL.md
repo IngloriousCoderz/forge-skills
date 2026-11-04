@@ -314,6 +314,39 @@ Icon.render({ children: "★" }); // a glyph instead
 - Icon data (`{ width, height, body }`) is plain data, fine in entities and option lists.
 - Decorative unless `label` is set. There is no `MaterialIcon` and no icon font to load.
 
+### Page Transitions
+
+`withTransitions` is a store middleware that runs the render after each navigation inside a view transition, and `view-transitions.css` (included in `all.css`) turns it into a slide: a push arrives from the right, going back from the left, a replacement cross-fades. It needs the `Router` type from `@inglorious/web`, whose history index tells the direction, and it is skipped under `prefers-reduced-motion`.
+
+```javascript
+import { withTransitions } from "@inglorious/ui/view-transitions";
+
+const tabs = ["home", "search", "profile"];
+
+createStore({
+  types,
+  entities,
+  middlewares: [
+    withTransitions({
+      // Which navigations animate: route names (into or out of them) or a predicate.
+      routes: ["eventDetail", ...tabs],
+      // Which way they slide; defaults to the history's `type`. Every tab tap is a
+      // push, so slide towards the tapped tab instead.
+      direction: ({ type, from, to }) => {
+        const [a, b] = [tabs.indexOf(from.route), tabs.indexOf(to.route)];
+        if (a < 0 || b < 0 || a === b) return type;
+        return b > a ? "forward" : "back";
+      },
+    }),
+  ],
+});
+```
+
+Both options get `{ type, from, to }`, each side with `path`, `index` and `route`. Without `routes` every navigation animates.
+
+- To keep bars still while the page slides, give each one its own `view-transition-name` (`app-bar`, `tab-bar`, `drawer`, `fab`).
+- Every name must be unique on the page: if two elements share one, the browser aborts **every** transition and the pages just swap, with only a console warning ("Unexpected duplicate view-transition-name"). Name an app's element by its own class, never a component class like `.iw-drawer` that other instances share.
+
 ## Theming
 
 ### Available Themes
