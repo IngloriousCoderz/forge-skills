@@ -301,7 +301,7 @@ if (!isNative()) {
 ```javascript
 import { createAnalytics } from "@inglorious/web/analytics";
 
-const types = { Analytics: [createAnalytics({ adapter }), renderers] }; // renders the consent prompt while entity.isAsking
+const types = { Analytics: [createAnalytics({ adapter }), template] }; // renders the consent prompt while entity.isAsking
 const entities = { analytics: { type: "Analytics" } };
 
 api.notify("#analytics:analyticsTrack", {
@@ -334,7 +334,7 @@ const prompt = createPushPrompt({ adapter });
 const types = {
   PushPrompt: {
     ...prompt,
-    ...renderers, // renders the prompt while entity.isOpen
+    ...template, // renders the prompt while entity.isOpen
     sessionStart: prompt.pushStart,
     sessionEnd: prompt.pushStop,
   },

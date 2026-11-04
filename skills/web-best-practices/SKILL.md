@@ -5,19 +5,19 @@ description: Best practices for organizing Inglorious Web types and page structu
 
 # Best Practices: File Structure for Inglorious Web Types
 
-This document defines recommended folder structures and export patterns for Inglorious Web types. Each type lives in its own folder so rendering, styling, behavior, and documentation stay modular and predictable. Prefer plain props-first renderers for primitives, and let `index.js` attach store behavior only when needed.
+This document defines recommended folder structures and export patterns for Inglorious Web types. Each type lives in its own folder so rendering, styling, behavior, and documentation stay modular and predictable. Templates take props, and `index.js` attaches store behavior only when needed.
 
 ## Standard structure
 
 For a type named `Button`, create `types/button` with the following files:
 
-- `template.js`: Exports plain renderers such as `render(props)` and optional sub-renderers such as `renderItem(props, payload)`.
-- `style.module.css` or `style.css`: Styles used by `template.js`.
+- `index.js`: Public entry point. For a presentational type it holds the type itself; once the type has logic, it composes `template.js`, handlers and helpers.
+- `template.js` (once the type has logic): Exports `template`, the object of render methods.
+- `style.module.css` or `style.css`: Styles used by the render methods.
 - `handlers.js` (optional): Named exports for event handlers and event-related logic.
 - `helpers.js` (optional): Named exports for reusable utilities used by template/handlers.
 - `button.stories.js` (optional): Storybook stories.
 - `button.test.js` (optional): Vitest tests.
-- `index.js`: Public entry point that composes and exposes the type surface.
 
 ## Component taxonomy (recommended)
 
@@ -42,65 +42,29 @@ Common practice in design systems:
 - Introduce categories once discovery or ownership becomes harder.
 - Keep export paths stable (barrels or explicit exports) so internal folder moves do not break consumers.
 
-## Type composition and sub-renderers
+## Components: files and shape
 
-### Simple primitives (recommended)
+One convention for every component, in apps and in packages.
 
-For simple primitives such as `input`, `button`, or `select`, prefer plain render functions that accept props.
+### Files
 
-- Use `render(props)` in `template.js`.
-- Treat event handlers such as `onChange` or `onClick` as normal props.
-- Do not force a store API into simple templates.
+- A presentational component, with render methods only, is a folder whose `index.js` holds it.
+- Once it gains logic (handlers, `create`, store wiring), its markup moves to `template.js` and `index.js` composes it. Callers import the folder's `index.js` either way, so the split never touches them.
+- No `template.js` without an `index.js`, and no `index.js` that only forwards `template.js`.
+- A second presentational component that shares the folder's stylesheet can live in `template.js` too, exported through `index.js`: `export { NotificationsPanel } from "./template.js"`.
 
-Example:
+### Shape
 
-```javascript
-export function render(props) {
-  const { value = "", onChange } = props;
+- A component is an object of methods, even with a single render: `export const Button = { render(props) { … } }`.
+- `template.js` exports that object as `template`. `index.js` imports `{ template }` and spreads it.
+- Renders are methods, never arrow functions: an arrow has no `this`.
+- A render calls its siblings through `this` (`this.renderItem(props)`), so a type that spreads the component and overrides one renderer gets its override.
+- `this` comes from the call, not the declaration: `Card.render(props)` has it; a bare `render(props)`, or a render passed as a callback, does not. Never call the template through the module from `index.js` (`template.render(props)`): `this` would be the template, and the type's overrides would be skipped.
 
-  return html`<input
-    .value=${value}
-    @input=${(event) => onChange?.(event.target.value)}
-  />`;
-}
-```
-
-### Wiring a primitive to the store
-
-If a primitive needs store integration, keep the template plain and attach behavior in `index.js`.
-
-Example:
+A presentational component:
 
 ```javascript
-import * as renderers from "./template.js";
-
-export const Input = {
-  ...renderers,
-};
-
-export const MyInput = {
-  ...renderers,
-  change(entity, value) {
-    entity.value = value;
-  },
-  render(entity, api) {
-    return renderers.render({
-      ...entity,
-      onChange: (value) => api.notify(`#${entity.id}:change`, value),
-    });
-  },
-};
-```
-
-This keeps `template.js` presentational and moves store wiring to the container layer.
-
-### Composite primitives must be objects
-
-If a primitive has overridable sub-renderers such as `renderHeader`, `renderFooter`, or `renderItem`, export it as an object with methods.
-
-Example:
-
-```javascript
+// card/index.js
 export const Card = {
   render(props) {
     return html`<article>
@@ -116,7 +80,7 @@ export const Card = {
 };
 ```
 
-Then consumers can override behavior predictably:
+Consumers override one step with a spread:
 
 ```javascript
 const MyCard = {
@@ -127,82 +91,55 @@ const MyCard = {
 };
 ```
 
-### Composite primitives: prefer a base render function
+### The base renderer
 
-For composed primitives, expose a top-level `render()` that delegates to a named base renderer such as `renderPrimitive()`. This keeps `render()` overrideable while still letting users invoke the canonical internal implementation from their overrides.
-
-Example pattern (template renderers):
+When `index.js` defines `render(entity, api)`, it shadows the template's `render(props)`. So the template keeps its markup in a renderer named after the component, which `render` delegates to, and `index.js` calls that:
 
 ```javascript
-export const Primitive = {
+// combobox/template.js
+export const template = {
   render(props) {
-    return this.renderPrimitive(props);
+    return this.renderCombobox(props);
   },
-  renderPrimitive(props) {
-    return html`<div class="iw-primitive">
-      ${this.renderHeader?.(props)} ${this.renderBody?.(props)}
-      ${this.renderFooter?.(props)}
+  renderCombobox(props) {
+    return html`<div class="iw-combobox">
+      ${this.renderControl(props)} ${this.renderDropdown(props)}
     </div>`;
   },
-  renderHeader(props) {
+  renderControl(props) {
     // ...
   },
-  renderBody(props) {
-    // ...
-  },
-  renderFooter(props) {
+  renderDropdown(props) {
     // ...
   },
 };
 ```
 
-Example pattern (type wiring):
-
 ```javascript
-export const WiredPrimitive = {
-  ...handlers,
-  ...renderers,
-  render(entity, api) {
-    const id = entity.id;
-    const props = {
-      ...entity,
-      onChange: (value) => api.notify(`#${id}:change`, value),
-    };
-
-    return this.renderPrimitive(props);
-  },
-};
-```
-
-Do not call `this.render()` from `render()`; always delegate to a named base renderer (for example `renderPrimitive()`) to avoid infinite recursion. Keep that renderer reusable from both the default `render()` and user overrides.
-
-### Stateful primitives
-
-A few primitives such as `combobox` or `data-grid` may need richer behavior, but the template should still stay plain.
-
-- Keep `template.js` as an object of render methods that accept props.
-- Use `index.js` to wire store notifications and derived event handlers.
-- Avoid introducing ad-hoc local state objects inside the primitive.
-- If true local component state is required, prefer a web component instead.
-
-Example:
-
-```javascript
-import * as renderers from "./template.js";
+// combobox/index.js
+import * as handlers from "./handlers.js";
+import { template } from "./template.js";
 
 export const Combobox = {
-  ...renderers,
-  toggle(entity) {
-    entity.isOpen = !entity.isOpen;
-  },
+  ...handlers,
+  ...template,
   render(entity, api) {
-    return renderers.render({
+    return this.renderCombobox({
       ...entity,
       onToggle: () => api.notify(`#${entity.id}:toggle`),
     });
   },
 };
 ```
+
+`render()` never calls `this.render()`. The same goes for any renderer `index.js` redefines with another signature, such as `renderHeader(entity, api)`: the template's version takes its own name (`renderNotificationsHeader(props)`).
+
+### Props, not the store
+
+- A template takes props: data, and events as `onX` callbacks such as `onChange`, `onClick` or `onToggle`. It never calls `api.notify`, `api.getEntity` or `api.select`; `index.js` reads the store and turns events into callbacks.
+- A template takes `api` only to render child entities: `api.render("language")`.
+- Base types that render their own entity, such as `AgGrid` or `VirtualList`, are the exception.
+- If true local component state is required, prefer a web component.
 
 ## Choose a styling mode
 
@@ -273,12 +210,10 @@ This ensures theme switching actually changes component tokens.
 ### `template.js`
 
 - Keep templates pure and side-effect free.
-- Prefer `render(props)` for simple primitives.
-- Treat event handlers such as `onChange`, `onClick`, and `onToggle` as normal props.
+- Export `template`, an object of render methods taking props (see [Components: files and shape](#components-files-and-shape)).
 - Add concise JSDoc typedef imports for props and payload types when useful.
 - Render conditionally with `when(condition, () => html`...`, () => html`...`)` from `@inglorious/web/directives/when`, rather than `condition ? html`...` : nothing` or `condition && html`...``. Attribute values are the exception: `attr=${condition ? value : nothing}` keeps `nothing`, which removes the attribute.
 - Extract sub-renderers (`renderHeader`, `renderBody`, `renderFooter`, `renderItem`, etc.) when template complexity grows.
-- If sub-renderers exist, export an object with methods so consumers can override them.
 
 ### `style.module.css` or `style.css`
 
@@ -300,33 +235,9 @@ This ensures theme switching actually changes component tokens.
 
 ### `index.js`
 
-- Use `index.js` as the container layer when store wiring is needed.
-- Map store events to plain handler props passed into `template.js`.
+- The type itself while it is presentational; the container layer once it has logic.
+- Map store events to plain handler props passed into the template's base renderer.
 - Re-export only selected helpers as part of the public API.
-
-Recommended patterns:
-
-```javascript
-// Pure primitive
-export { render } from "./template.js";
-```
-
-```javascript
-// Store-wired primitive
-import * as handlers from "./handlers.js";
-import * as renderers from "./template.js";
-
-export const Input = {
-  ...handlers,
-  ...renderers,
-  render(entity, api) {
-    return renderers.render({
-      ...entity,
-      onChange: (value) => api.notify(`#${entity.id}:change`, value),
-    });
-  },
-};
-```
 
 If optional files are absent, omit those imports/exports instead of creating empty modules.
 
@@ -357,7 +268,7 @@ For published packages, add a typed public contract (for example `types/button.d
 ## Migration notes
 
 - Move each type from a flat structure into `types/<type-name>/`.
-- Split mixed files into `template.js`, style file, `handlers.js`, and `helpers.js` by responsibility.
+- Split mixed files into `template.js`, style file, `handlers.js`, and `helpers.js` by responsibility, once the type has logic.
 - Add `index.js` as the single public entry for the type.
 - If the type uses BEM classes, rename to flat prefixed classes and nest selectors under the root class.
 - If themes use `:root` component tokens, migrate them to theme-class scoping.
@@ -368,14 +279,14 @@ For published packages, add a typed public contract (for example `types/button.d
 ## Pre-ship checklist
 
 - Every type has its own folder.
-- Simple primitives use plain `render(props)`.
-- Store wiring lives in `index.js`, not in simple templates.
+- Every component is an object of render methods, never arrow functions, calling its siblings through `this`.
+- A split component's `template.js` exports `template`, and its `index.js` calls the base renderer through `this`.
+- Templates take props: store reads and notifications live in `index.js`.
 - Styling mode is explicit (`style.module.css` for local types, `style.css` + prefix/tokens for reusable design-system types).
 - Global component CSS avoids BEM and uses nested rules under one root selector.
 - Theme tokens are class-scoped and Storybook theme switching updates class names.
 - Stories are controls-friendly by default (single instance per args story).
 - Tests verify both visual contract (DOM/classes) and behavior contract (events).
-- Composite primitives are exported as objects with overridable methods.
 - Complex templates are decomposed into overridable sub-renderers.
 - Stateful behavior is still wired through plain props; if true local state is needed, use a web component.
 

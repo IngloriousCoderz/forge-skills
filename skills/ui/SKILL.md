@@ -17,7 +17,7 @@ npm install @inglorious/ui
 
 - Components are props-first: `Button.render(props)` returns markup, and interactions are callbacks (`onClick`, `onChange`) passed as props
 - To bind a component to an entity, a type wraps its `render(entity, api)`, spreads the entity into props and turns callbacks into `api.notify()` calls
-- Composite components are objects with overridable sub-renderers (`renderCell`, `renderHeader`, ...), so customizing one step is an object spread
+- Components are objects of render methods with overridable sub-renderers (`renderCell`, `renderHeader`, ...), so customizing one step is an object spread
 - All styling via CSS custom properties (tokens)
 - Multiple themes with light/dark variants
 
@@ -446,28 +446,22 @@ Each theme defines component-specific tokens:
 
 Types are the building blocks of Inglorious Web. What makes a type a "component" is the presence of a `render` method.
 
+Follow the component convention in `web-best-practices` (files and shape): a component is an object of render methods, never arrows, calling its siblings through `this`; a presentational component lives in `index.js`, and `template.js` (exporting `template`) appears only once the type has logic.
+
 ### Directory Structure
 
 ```
 src/components/my-component/
-├── index.js           # Exports the type (render + optional handlers/helpers)
-├── template.js        # The render function
-├── style.css         # Component styles
+├── index.js                 # The component; once it has logic, composes template.js
+├── template.js              # Only with logic: exports `template`, the render methods
+├── style.css                # Component styles
 ├── my-component.stories.js  # Storybook stories
-├── template.test.js  # Vitest tests (optional)
-├── handlers.js       # Event handlers (optional)
-└── helpers.js        # Helper functions (optional)
+├── my-component.test.js     # Vitest tests (optional)
+├── handlers.js              # Event handlers (optional)
+└── helpers.js               # Helper functions (optional)
 ```
 
-### Best Practices
-
-1. **template.js** - Contains only the `render(props)` function that returns a TemplateResult
-2. **style.css** - Uses CSS custom properties for theming (`--iw-*` tokens)
-3. **index.js** - Exports only the `render` function (or render + handlers/helpers)
-4. **handlers.js** - Optional. Only needed if the type has default event behavior
-5. **helpers.js** - Optional. Pure utility functions used by the type
-
-### template.js
+### index.js (presentational)
 
 ```javascript
 /** @typedef {import('../../../types/my-component').MyComponentProps} MyComponentProps */
@@ -476,24 +470,26 @@ src/components/my-component/
 import { html, nothing } from "@inglorious/web";
 import { classMap } from "@inglorious/web/directives/class-map";
 
-/**
- * @param {MyComponentProps} props
- * @returns {TemplateResult}
- */
-export function render(props) {
-  const { id, title, variant = "default", onClick } = props;
+export const MyComponent = {
+  /**
+   * @param {MyComponentProps} props
+   * @returns {TemplateResult}
+   */
+  render(props) {
+    const { id, title, variant = "default", onClick } = props;
 
-  const classes = {
-    "iw-my-component": true,
-    [`iw-my-component-${variant}`]: variant !== "default",
-  };
+    const classes = {
+      "iw-my-component": true,
+      [`iw-my-component-${variant}`]: variant !== "default",
+    };
 
-  return html`
-    <div id=${id || nothing} class=${classMap(classes)} @click=${onClick}>
-      ${title}
-    </div>
-  `;
-}
+    return html`
+      <div id=${id || nothing} class=${classMap(classes)} @click=${onClick}>
+        ${title}
+      </div>
+    `;
+  },
+};
 ```
 
 Bind an optional attribute to `nothing` when it has no value, so it is left off. An empty `id=""` is invalid HTML, and an empty `for=""` on a label points at nothing, which breaks even a label that wraps its input.
@@ -516,50 +512,57 @@ Use CSS custom properties for all theming, flat `iw-` class names, and nest ever
 
 Give child elements their own class (`iw-my-component-input`) rather than reusing the root's. A child that also matches the root rule picks up the root's custom properties too, which silently overrides whatever a modifier set on the root.
 
-### index.js
+### index.js (with logic)
+
+Once the type has handlers, the render methods move to `template.js` as `template`, with a base renderer named after the component:
 
 ```javascript
-import * as renderers from "./template.js";
-
-export const MyComponent = { ...renderers };
+// template.js
+export const template = {
+  render(props) {
+    return this.renderMyComponent(props);
+  },
+  renderMyComponent(props) {
+    // the markup above
+  },
+};
 ```
 
-If the type has event handlers:
-
 ```javascript
-import * as renderers from "./template.js";
-import * as handlers from "./handlers.js";
-
-export const MyComponent = { ...renderers, ...handlers };
-```
-
-If the type exposes helper functions too:
-
-```javascript
-import * as renderers from "./template.js";
+// index.js
 import * as handlers from "./handlers.js";
 import * as helpers from "./helpers.js";
+import { template } from "./template.js";
 
-export const MyComponent = { ...renderers, ...handlers };
+export const MyComponent = {
+  ...handlers,
+  ...template,
+  render(entity, api) {
+    return this.renderMyComponent({
+      ...entity,
+      onClick: () => api.notify(`#${entity.id}:click`),
+    });
+  },
+};
 
 export const { helper1, helper2 } = helpers;
 ```
 
-### template.test.js
+### my-component.test.js
 
 Use `@inglorious/web/test` for testing:
 
 ```javascript
 import { describe, it, expect } from "vitest";
 import { render } from "@inglorious/web/test";
-import { render as renderTemplate } from "./template.js";
+import { MyComponent } from "./index.js";
 
 describe("MyComponent", () => {
   describe("render", () => {
     it("renders with title", () => {
       const container = document.createElement("div");
 
-      render(renderTemplate({ title: "Hello" }), container);
+      render(MyComponent.render({ title: "Hello" }), container);
 
       expect(container.textContent).toContain("Hello");
     });
@@ -567,7 +570,7 @@ describe("MyComponent", () => {
     it("leaves off an id it was not given", () => {
       const container = document.createElement("div");
 
-      render(renderTemplate({ title: "Hello" }), container);
+      render(MyComponent.render({ title: "Hello" }), container);
 
       const div = container.querySelector(".iw-my-component");
       expect(div.hasAttribute("id")).toBe(false);
@@ -580,7 +583,10 @@ describe("MyComponent", () => {
       const container = document.createElement("div");
 
       render(
-        renderTemplate({ title: "Click me", onClick: () => (clicked = true) }),
+        MyComponent.render({
+          title: "Click me",
+          onClick: () => (clicked = true),
+        }),
         container,
       );
       container.querySelector(".iw-my-component").click();
@@ -601,7 +607,7 @@ Use `@inglorious/web/test` for Storybook stories:
 
 ```javascript
 import { render } from "@inglorious/web/test";
-import { render as renderTemplate } from "./template.js";
+import { MyComponent } from "./index.js";
 
 export default {
   title: "Components/MyComponent",
@@ -617,7 +623,7 @@ export default {
 
 const Template = (args) => {
   const container = document.createElement("div");
-  render(renderTemplate(args), container);
+  render(MyComponent.render(args), container);
   return container;
 };
 

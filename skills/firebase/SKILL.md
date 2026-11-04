@@ -36,7 +36,7 @@ const prompt = createPushPrompt({ adapter: push });
 const types = {
   PushPrompt: {
     ...prompt,
-    ...renderers,
+    ...template,
     sessionStart: prompt.pushStart,
     sessionEnd: prompt.pushStop,
   },
@@ -61,7 +61,7 @@ const types = {
     createAnalytics({
       adapter: firebaseAnalytics({ firebase: firebaseConfig }),
     }),
-    renderers,
+    template,
   ],
 };
 ```
