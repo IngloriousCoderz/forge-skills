@@ -1,11 +1,11 @@
 ---
 name: supabase
-description: Supabase for Inglorious Web with @inglorious/supabase — realtimeSource feeds withLiveReload from @inglorious/web so entities reload when a table they read changes, with one channel per table, joined after the session is restored; @inglorious/supabase/edge has the helpers for Edge Functions (CORS, errors, the caller, Resend email).
+description: Supabase for Inglorious Web with @inglorious/supabase — realtimeSource feeds withLiveReload from @inglorious/web so entities reload when a table they read changes, with one channel per table, joined after the session is restored; createCaptcha gives Supabase Auth's CAPTCHA protection its Turnstile tokens; @inglorious/supabase/edge has the helpers for Edge Functions (CORS, errors, the caller and their IP, Resend email).
 ---
 
 # @inglorious/supabase - Complete Reference
 
-Supabase integration for `@inglorious/web`. `realtimeSource(client)` tells entities that a table changed, and the `withLiveReload` decorator from `@inglorious/web` reloads them. `@inglorious/supabase/edge` holds the helpers every Edge Function needs.
+Supabase integration for `@inglorious/web`. `realtimeSource(client)` tells entities that a table changed, and the `withLiveReload` decorator from `@inglorious/web` reloads them. `createCaptcha` makes the Turnstile tokens Supabase Auth's CAPTCHA protection asks for. `@inglorious/supabase/edge` holds the helpers every Edge Function needs.
 
 ## Installation
 
@@ -67,6 +67,35 @@ It also reloads every live entity when the page comes back into view or the brow
 
 `isNetworkError(error)` is true when a call never reached the server: PostgREST's `{ message: "TypeError: Failed to fetch" }` (worded differently in every browser), Functions' `FunctionsFetchError`, Auth's `AuthRetryableFetchError`, and Storage's `originalError`. A row-level security refusal or any other server answer is false.
 
+## CAPTCHA
+
+With CAPTCHA protection on in the Supabase dashboard (Attack Protection, provider Turnstile, with the secret key), Auth refuses signups, password logins, magic links and resends without a token.
+
+```javascript
+import { createCaptcha, isCaptchaError } from "@inglorious/supabase";
+
+const captcha = createCaptcha({
+  siteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+  element: "captcha", // <div id="captcha"></div>, kept on the page across steps
+  language: () => currentLocale(),
+});
+
+captcha.prepare("login"); // when the form shows: solves it while they type
+
+const { error } = await supabase.auth.signInWithPassword({
+  email,
+  password,
+  options: { captchaToken: await captcha.token("login") },
+});
+if (isCaptchaError(error)) showError("errors.captcha");
+```
+
+- **Never reuse a token**: each `token(action)` is new, or the prepared one for that action, used once and only within its lifetime.
+- **Leave the site key empty locally**: tokens are then `undefined` and nothing loads, which Auth accepts while protection is off.
+- **Ship before switching on**: store builds without the site key can't sign in once protection is on.
+- **Allow it in the CSP**: `https://challenges.cloudflare.com` in `script-src` and `frame-src`. The widget's hostnames need `localhost` for Capacitor apps.
+- `isCaptchaError(error)` covers the widget's `CaptchaError` (`code` is Turnstile's) and Auth's `captcha_failed`.
+
 ## realtimeSource
 
 `realtimeSource(client, { schema = "public" })`:
@@ -105,6 +134,7 @@ serve(
 | `env(name)` | A variable that must be set; throws naming it |
 | `currentUser(client, req)` | The caller from their access token, never from the body; `null` without one |
 | `callerRole(req)` / `bearerToken(req)` | The JWT's `role` (`"service_role"` for a call from the database), unverified: the platform verifies it unless `verify_jwt` is off. Only legacy JWT keys carry it |
+| `clientIp(req)` | The caller's IP for per-address limits, or `null`: Cloudflare's `cf-connecting-ip` before the first `x-forwarded-for` entry, which the caller writes |
 | `upstreamError(service, res)` | An error with the start of another API's answer |
 | `isLocalStack(url)` | Whether `SUPABASE_URL` is local: skip paid and outside services there |
 | `sendEmail(email, { apiKey, from })` / `sendEmails(emails, …)` | Resend; the batch sends up to 100 in one request, all or none. Throws `EmailError` with Resend's `status` (429: rate or daily limit). An email is `{ to, subject, text, html, headers }` |
