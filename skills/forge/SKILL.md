@@ -41,6 +41,7 @@ Use for utility functions and algorithmic helpers.
 - Physics helpers (velocity, acceleration, friction)
 - Functional helpers (composition, piping)
 - Data structures and algorithms
+- Saving and loading JSON from `localStorage` (`readJSON`, `writeJSON`)
 
 ### [@inglorious/store](../store/SKILL.md)
 

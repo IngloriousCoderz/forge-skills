@@ -13,7 +13,7 @@ npm install @inglorious/utils
 
 ## Core Concepts
 
-- Pure, composable utilities for plain arrays and objects.
+- Composable utilities for plain arrays and objects, with no dependency on entities or rendering. Most are pure; those whose job is a side effect say so: random numbers, `debounce` and `throttle`, in-place helpers such as `merge` and `set`, and storage.
 - Vector helpers use arrays tagged by `v()` with a non-enumerable `__isVector__` property. That
   makes them mutable, so copy a shared vector instead of storing it where something writes to one.
 - Prefer subpath imports for tree-shaking and smaller bundles.
@@ -56,6 +56,7 @@ import {
 import { magnitude, sum, ZERO_VECTOR } from "@inglorious/utils/math/vector.js";
 import { findPath } from "@inglorious/utils/algorithms/path-finding.js";
 import { applyVelocity } from "@inglorious/utils/physics/velocity.js";
+import { readJSON, writeJSON } from "@inglorious/utils/storage.js";
 ```
 
 ```javascript
@@ -168,6 +169,20 @@ import {
 
 const board = createBoard([2, 3], (row, col) => `${row}:${col}`);
 const text = toString(board, [2, 3]);
+```
+
+## Storage
+
+`readJSON` and `writeJSON` save and load JSON from `localStorage`, for a game's high scores or an app's saved state. Neither throws: absent storage (a server render, a test), storage the browser blocks, and a value that cannot be parsed all read as the fallback, and a write that did not happen answers `false`.
+
+```javascript
+import { readJSON, writeJSON } from "@inglorious/utils/storage.js";
+
+const scores = readJSON("breakout.high-scores", []);
+writeJSON("breakout.high-scores", [...scores, 1200]); // true if it was written
+
+// Any Storage works, such as sessionStorage or a fake in tests.
+readJSON("draft", "", sessionStorage);
 ```
 
 ## Math
