@@ -126,17 +126,17 @@ The default color is neutral, unless the theme gives it its own tokens (`--iw-bu
 
 - **Progress**: `variant` is `"linear"` or `"circular"`; both take `color`. Without a `value` it is indeterminate.
 - **Tabs**: `value` picks the selected tab and defaults to the first; `value: null` selects none.
-- **Table**: wide tables scroll horizontally by default. `isWrapping` wraps cell content to fit the container instead. Columns take `id`, `label` and `align`; rows are plain objects keyed by column id. To format or replace cells, override a step:
+- **Table**: wide tables scroll horizontally by default. `isWrapping` wraps cell content to fit the container instead. Columns take `id`, `label` and `align`; rows are plain objects keyed by column id. To format or replace cells, override a step. Like every sub-renderer, `renderCell` takes the table's props, then the cell's own (`{ column, row }`), then optionally the api:
 
   ```javascript
   const MoneyTable = {
     ...Table,
-    renderCell(props, payload) {
-      const { column, row } = payload;
-      if (!column.isMoney) return Table.renderCell(props, payload);
+    renderCell(props, ownProps) {
+      const { column, row } = ownProps;
+      if (!column.isMoney) return Table.renderCell(props, ownProps);
 
       return Table.renderCell(props, {
-        ...payload,
+        ...ownProps,
         row: { ...row, [column.id]: formatMoney(row[column.id]) },
       });
     },

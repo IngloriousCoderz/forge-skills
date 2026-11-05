@@ -86,6 +86,11 @@ One convention for every component, in apps and in packages.
 - A component is an object of methods, even with a single render: `export const Button = { render(props) { … } }`.
 - `template.js` exports that object as `template`. `index.js` imports `{ template }` and spreads it.
 - Renders are methods, never arrow functions: an arrow has no `this`.
+- Every render method takes the component's props first, the same object passed through untouched:
+  - `render(props, api)` and the base renderer (`renderCombobox(props, api)`) draw the whole component. A type's props are its entity.
+  - A sub-renderer that draws one item takes `renderX(props, ownProps, api)`: the component's props, then the item's own (a row, an option, a message), then the api. Never merge the item into the props (`{ ...props, row }`): that copies the props for every item, and mixes the component's props with the item's.
+  - `api` comes last and may be left out: a template uses it only to render child entities (`api.render(id)`).
+  - The app follows it too: `App.render(props, api)`, mounted with `App.render(null, api)`.
 - A render calls its siblings through `this` (`this.renderItem(props)`), so a type that spreads the component and overrides one renderer gets its override.
 - `this` comes from the call, not the declaration: `Card.render(props)` has it; a bare `render(props)`, or a render passed as a callback, does not. Never call the template through the module from `index.js` (`template.render(props)`): `this` would be the template, and the type's overrides would be skipped.
 
@@ -167,7 +172,7 @@ export const Combobox = {
 - A template takes props: data, and events as `onX` callbacks such as `onChange`, `onClick` or `onToggle`. It never calls `api.notify`, `api.getEntity` or `api.select`; `index.js` reads the store and turns events into callbacks.
 - A template takes `api` only to render child entities: `api.render("language")`.
 - Base types that render their own entity, such as `AgGrid` or `VirtualList`, are the exception.
-- A piece that reads the store but keeps nothing of its own is not an entity, and still gets the same split: `template.js` takes props, and `index.js` spreads it and defines `render(api)`, which reads what it needs and calls the base renderer through `this`. Its parent renders it with `Scoreboard.render(api)` rather than `api.render(id)`. Make it an entity only once it has state of its own.
+- A piece that reads the store but keeps nothing of its own is not an entity, and still gets the same split: `template.js` takes props, and `index.js` spreads it and defines `render(props, api)`, which reads what it needs and calls the base renderer through `this`. Its parent renders it with `Scoreboard.render(null, api)`, or with whatever props it has, rather than `api.render(id)`. Make it an entity only once it has state of its own.
 
   ```javascript
   // app/scoreboard/index.js
@@ -175,12 +180,16 @@ export const Combobox = {
 
   export const Scoreboard = { ...template, render }
 
-  function render(api) {
+  function render(props, api) {
     const debate = api.getEntity("debate")
-    return this.renderScoreboard({
-      memory: debate.memory,
-      onRestart: () => api.notify("#debate:restart"),
-    })
+    return this.renderScoreboard(
+      {
+        ...props,
+        memory: debate.memory,
+        onRestart: () => api.notify("#debate:restart"),
+      },
+      api,
+    )
   }
   ```
 
@@ -309,6 +318,8 @@ In a TypeScript app, every type definition lives in the project's `types/` folde
 - `types/index.d.ts`: the store's `AppEntity`, `AppState` and `AppApi`.
 - One file per piece for its entity, its props and its renderers, such as `types/scoreboard.d.ts` with `ScoreboardProps` and `ScoreboardTemplate`.
 - `template.js` types its object as `ScoreboardTemplate & ThisType<ScoreboardTemplate>`, so `this` knows its sibling renderers.
+- A type wired to the store whose template takes props spreads it into `defineType<ScoreboardEntity, AppApi>()({ ...template, render })` from `@inglorious/store`: `EntityType` would reject sub-renderers that take props rather than the entity (see the store skill's TypeScript section).
+- `types/index.d.ts` also reads the app's events from the types' aliases, `type AppEvents = EventsOf<DebateType | RouterType>`, and gives them to `AppApi`, so that `notify` checks every event's name and payload.
 
 For published packages, add a typed public contract (for example `types/button.d.ts`) that matches runtime behavior:
 
