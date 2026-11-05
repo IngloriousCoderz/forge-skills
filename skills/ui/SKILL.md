@@ -451,7 +451,7 @@ Follow the component convention in `web-best-practices` (files and shape): a com
 ### Directory Structure
 
 ```
-src/components/my-component/
+src/app/my-component/        # Where it belongs: see web-best-practices' App structure
 ├── index.js                 # The component; once it has logic, composes template.js
 ├── template.js              # Only with logic: exports `template`, the render methods
 ├── style.css                # Component styles

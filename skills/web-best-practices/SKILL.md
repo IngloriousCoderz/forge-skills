@@ -9,7 +9,7 @@ This document defines recommended folder structures and export patterns for Ingl
 
 ## Standard structure
 
-For a type named `Button`, create `types/button` with the following files:
+For a type named `Button`, create a `button/` folder where it belongs: in an app, see [App structure](#app-structure); in a library, see [Component taxonomy](#component-taxonomy-recommended). It holds these files:
 
 - `index.js`: Public entry point. For a presentational type it holds the type itself; once the type has logic, it composes `template.js`, handlers and helpers.
 - `template.js` (once the type has logic): Exports `template`, the object of render methods.
@@ -18,6 +18,34 @@ For a type named `Button`, create `types/button` with the following files:
 - `helpers.js` (optional): Named exports for reusable utilities used by template/handlers.
 - `button.stories.js` (optional): Storybook stories.
 - `button.test.js` (optional): Vitest tests.
+
+## App structure
+
+In an app, group code by where it belongs, never by whether it talks to the store. A type wired to the store and a component that only takes props sit side by side when they belong to the same place.
+
+```
+src/
+├── main.js            # Mounts the app
+├── app/               # The shell: app bar, navigation, page layout
+│   ├── index.js
+│   ├── style.css
+│   └── tab-bar/       # The shell's own pieces, one folder each
+├── views/             # Only with a router: one folder per routed screen
+│   ├── home/
+│   │   ├── index.js
+│   │   └── message/   # A piece lives with what renders it
+│   └── about/
+├── common/            # Pieces rendered in more than one place
+├── api/               # Calls to servers
+├── store/             # Store setup: entities, middlewares, routes
+└── styles/            # Global stylesheets and the app's tokens
+types/                 # In a TypeScript app: type definitions only, never code
+```
+
+- `views/` are the screens the router swaps in. An app with a single screen has no `views/`: the screen and its pieces live in `app/`.
+- A piece lives in the folder of what renders it. A card only the job list draws is `views/job-list/card/`; once a second screen draws it, it moves to `common/card/`.
+- Never name a code folder `types/` or `components/`. "Type" says what a folder holds, not where it belongs, and in a TypeScript project `types/` holds type definitions (see [Type definitions](#type-definitions)).
+- `create-app` generates this layout.
 
 ## Component taxonomy (recommended)
 
@@ -139,6 +167,23 @@ export const Combobox = {
 - A template takes props: data, and events as `onX` callbacks such as `onChange`, `onClick` or `onToggle`. It never calls `api.notify`, `api.getEntity` or `api.select`; `index.js` reads the store and turns events into callbacks.
 - A template takes `api` only to render child entities: `api.render("language")`.
 - Base types that render their own entity, such as `AgGrid` or `VirtualList`, are the exception.
+- A piece that reads the store but keeps nothing of its own is not an entity, and still gets the same split: `template.js` takes props, and `index.js` spreads it and defines `render(api)`, which reads what it needs and calls the base renderer through `this`. Its parent renders it with `Scoreboard.render(api)` rather than `api.render(id)`. Make it an entity only once it has state of its own.
+
+  ```javascript
+  // app/scoreboard/index.js
+  import { template } from "./template.js"
+
+  export const Scoreboard = { ...template, render }
+
+  function render(api) {
+    const debate = api.getEntity("debate")
+    return this.renderScoreboard({
+      memory: debate.memory,
+      onRestart: () => api.notify("#debate:restart"),
+    })
+  }
+  ```
+
 - If true local component state is required, prefer a web component.
 
 ## Choose a styling mode
@@ -257,7 +302,13 @@ If optional files are absent, omit those imports/exports instead of creating emp
 - Test behavior wiring: user interaction should emit expected events through `api.notify()`.
 - Keep tests deterministic and focused on observable DOM/events.
 
-## Optional type declarations
+## Type definitions
+
+In a TypeScript app, every type definition lives in the project's `types/` folder, one `.d.ts` file per subject, never in the code (see forge-best-practices):
+
+- `types/index.d.ts`: the store's `AppEntity`, `AppState` and `AppApi`.
+- One file per piece for its entity, its props and its renderers, such as `types/scoreboard.d.ts` with `ScoreboardProps` and `ScoreboardTemplate`.
+- `template.js` types its object as `ScoreboardTemplate & ThisType<ScoreboardTemplate>`, so `this` knows its sibling renderers.
 
 For published packages, add a typed public contract (for example `types/button.d.ts`) that matches runtime behavior:
 
@@ -267,18 +318,21 @@ For published packages, add a typed public contract (for example `types/button.d
 
 ## Migration notes
 
-- Move each type from a flat structure into `types/<type-name>/`.
+- Move each type from a flat structure into its own folder, where it belongs (see [App structure](#app-structure)).
 - Split mixed files into `template.js`, style file, `handlers.js`, and `helpers.js` by responsibility, once the type has logic.
 - Add `index.js` as the single public entry for the type.
 - If the type uses BEM classes, rename to flat prefixed classes and nest selectors under the root class.
 - If themes use `:root` component tokens, migrate them to theme-class scoping.
 - If entities contain template/function fields, migrate those customizations to type composition and sub-renderer overrides.
 - Update imports to target the new type entry, for example:
-  - `import { Button } from "./types/button/index.js"`
+  - `import { Button } from "./app/button/index.js"`
 
 ## Pre-ship checklist
 
 - Every type has its own folder.
+- Code is grouped by where it belongs: the shell and its pieces in `app/`, routed screens in `views/`, shared pieces in `common/`. No code folder is named `types/` or `components/`.
+- Every piece that reads the store has `index.js` (store wiring) and `template.js` (props only), whether or not it is an entity.
+- In a TypeScript app, no code file declares an `interface` or a `type`: they are in `types/*.d.ts`.
 - Every component is an object of render methods, never arrow functions, calling its siblings through `this`.
 - A split component's `template.js` exports `template`, and its `index.js` calls the base renderer through `this`.
 - Templates take props: store reads and notifications live in `index.js`.

@@ -1,6 +1,6 @@
 ---
 name: forge-best-practices
-description: Code style for Inglorious Forge and for projects written in its style - kebab-case files and folders, named numbers instead of magic numbers, and the newspaper metaphor (exports first, support functions below). Load when writing, moving, or reviewing code in such a project.
+description: Code style for Inglorious Forge and for projects written in its style - kebab-case files and folders, named numbers instead of magic numbers, the newspaper metaphor (exports first, support functions below), and type definitions kept in types/. Load when writing, moving, or reviewing code in such a project.
 ---
 
 # Forge Best Practices: Code Style
@@ -94,6 +94,15 @@ function compareTotalCost(a, b) {
 - Imports and re-exports are sorted by `eslint-plugin-simple-import-sort`: run
   `eslint --fix` rather than ordering them by hand.
 
+## Keep type definitions in `types/`
+
+A file opens on what it does, not on what its values look like. Type definitions live in the project's `types/` folder as `.d.ts` files, one per subject, and never in the code: no `interface` or `type` declaration in a `.js` or `.ts` file. TypeScript imports them with `import type`; JavaScript, with a JSDoc `@typedef {import(...)}`.
+
+- That includes a component's props and its renderer interfaces, and the options of a helper only the server uses.
+- A type read from a runtime list stays in `types/` too: `import type { SPEAKERS } from "../src/game.ts"`, then `export type Speaker = (typeof SPEAKERS)[number]`.
+- Keep `skipLibCheck` off: it skips every `.d.ts` file, your own included, so a broken type definition would go unreported. Turn it on only in a tsconfig whose libraries' typings break, and say which.
+- `types/` holds type definitions only. No code goes in a folder called `types/`.
+
 ## Format and lint before committing
 
 Run `pnpm format` and `pnpm lint` from the repository root before every commit, and fix what
@@ -116,3 +125,4 @@ Before finishing a change, check every file you created or touched:
       destructure.
 - [ ] Imports, then constants, then exports, then support functions.
 - [ ] Support functions are `function` declarations, not arrow functions in a `const`.
+- [ ] It declares no `interface` or `type`: those are in `types/*.d.ts`.

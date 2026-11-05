@@ -76,6 +76,16 @@ An unknown template, syntax, theme, icon pack or language stops with the valid c
 - `ssx-js` — SSX + JavaScript
 - `ssx-ts` — SSX + TypeScript
 
+## Project layout
+
+A generated app groups its code by where it belongs, as web-best-practices' App structure describes:
+
+- `src/app/` is the shell (`index` and `style.css`) with its own pieces: the analytics and push prompts.
+- With routing, each screen is a folder in `src/views/` (`home/`, `about/`); without it, the home screen is a piece of the shell, in `src/app/home/`.
+- A piece lives with what renders it: the messages are in the home screen's `message/` folder, or in `src/app/message/` in the hello world.
+- `src/common/`, `src/api/`, `src/store/` and `src/i18n/` hold what more than one piece uses.
+- In a TypeScript app, `types/` holds only type definitions: `index.d.ts` and `vite-env.d.ts`.
+
 ## TypeScript
 
 TypeScript 7 has no JavaScript API, which typescript-eslint and the Capacitor CLI need. So the TypeScript templates install two TypeScripts side by side:

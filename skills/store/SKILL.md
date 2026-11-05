@@ -826,7 +826,7 @@ expect(api.getEvents()).toEqual([{ type: "#counter2:valueIncrement" }]);
 
 ## TypeScript
 
-Describe the entities and the state, declare each type's events and payloads with a `type` alias, and write the type against it. Handler parameters are inferred and `createStore` checks each type against its entities. Never cast `types`.
+Describe the entities and the state, declare each type's events and payloads with a `type` alias, and write the type against it. Handler parameters are inferred and `createStore` checks each type against its entities. Never cast `types`. In an app, these declarations live in `types/*.d.ts` and the code imports them with `import type` (see forge-best-practices); the example keeps them together only to fit on one page.
 
 ```typescript
 import type { Api, BaseEntity, EntitiesState, EntityType } from "@inglorious/store";
