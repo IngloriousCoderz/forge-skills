@@ -85,7 +85,7 @@ One convention for every component, in apps and in packages.
 
 - A component is an object of methods, even with a single render: `export const Button = { render(props) { … } }`.
 - `template.js` exports that object as `template`. `index.js` imports `{ template }` and spreads it.
-- Renders are methods, never arrow functions: an arrow has no `this`.
+- Renders are methods, never arrow functions: an arrow has no `this`. Define them inside the component's object, never as functions outside it spread in afterwards (`{ ...template, render }` with a separate `function render`): the newspaper metaphor's support functions are helpers, not a component's methods, and a detached method loses `this`, which TypeScript then needs spelled out as a fake first parameter.
 - Every render method takes the component's props first, the same object passed through untouched:
   - `render(props, api)` and the base renderer (`renderCombobox(props, api)`) draw the whole component. A type's props are its entity.
   - A sub-renderer that draws one item takes `renderX(props, ownProps, api)`: the component's props, then the item's own (a row, an option, a message), then the api. Never merge the item into the props (`{ ...props, row }`): that copies the props for every item, and mixes the component's props with the item's.
@@ -178,18 +178,20 @@ export const Combobox = {
   // app/scoreboard/index.js
   import { template } from "./template.js"
 
-  export const Scoreboard = { ...template, render }
+  export const Scoreboard = {
+    ...template,
 
-  function render(props, api) {
-    const debate = api.getEntity("debate")
-    return this.renderScoreboard(
-      {
-        ...props,
-        memory: debate.memory,
-        onRestart: () => api.notify("#debate:restart"),
-      },
-      api,
-    )
+    render(props, api) {
+      const debate = api.getEntity("debate")
+      return this.renderScoreboard(
+        {
+          ...props,
+          memory: debate.memory,
+          onRestart: () => api.notify("#debate:restart"),
+        },
+        api,
+      )
+    },
   }
   ```
 
