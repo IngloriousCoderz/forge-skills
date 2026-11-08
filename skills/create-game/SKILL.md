@@ -9,4 +9,6 @@ description: Scaffolding new Inglorious Engine game projects with create-game.
 
 Templates: `minimal` (no bundler), `js`, `ts`, `ijs`/`its` (IngloriousScript, see [engine](../engine/SKILL.md)).
 
+Every template has a `vercel.json` deploying only `main`.
+
 Every template but `minimal` offers to install the game skills (`forge`, `forge-best-practices`, `store`, `utils`, `engine`, `engine-best-practices`) via the skills CLI; on failure it prints the retry command.
