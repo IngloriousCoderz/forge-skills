@@ -46,6 +46,7 @@ const SubmitButton = {
 - **Lightbox**: `images`, `index`, `onStep(±1)`, `onClose`.
 - **Dialog**: `size`, `variant` `dialog|sheet`, `closeLabel`. **Drawer**: `closeLabel`, `collapseLabel`, `expandLabel`.
 - **Snackbar**: `position` (`bottom-left` default, `top-*`, `bottom-*`); close button only with `onClose`; lift above bottom bars with `--iw-snackbar-offset-bottom`.
+- **Toast**: `toasts` (`{ id, title?, message, color?, icon?, duration? }`, newest first), `position` (`top-right` default), `duration` (ms, 5000; `null` sticky), `onClose(id)` after the exit animation (button or timeout; hover pauses; removing an item from `toasts` yourself skips the exit), `onClick(id)` makes toasts buttons. State lives in an entity.
 - **Slider**: `[low, high]` for ranges, `hasMarks`. **Progress**: `linear|circular`, indeterminate without `value`. **Tabs**: `value` (`null` for none).
 - **Chip**: `icon`, `isSelected` toggles. **RadioGroup**/**Checkbox**: `variant: "card"`, `media`, `description` (also Switch). **Alert**: `neutral` severity. **Divider**: `isDecorative`. **Textarea**: `onKeyDown`, `ariaLabel`.
 - All visible/announced text is a prop with an English default; counts are `format…(…)` functions (1-based).
