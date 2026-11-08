@@ -12,7 +12,7 @@ import { vue } from "@inglorious/vite-plugin-vue";
 export default defineConfig({ plugins: [vue()] });
 ```
 
-Compiles `.vue` files to Inglorious Web types; no Vue runtime.
+Compiles `.vue` files to Inglorious Web types named after the file (`counter.vue` → `Counter`), or the folder for `index.vue` (`job-list/index.vue` → `JobList`); no Vue runtime.
 
 - `<script>` `const`/`let` values become `create(entity)` fields; function values become handlers `(entity, payload, api)`.
 - `@click="method"` becomes `api.notify(#id:method)`; inline arrows pass through as-is.
