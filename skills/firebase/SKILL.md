@@ -1,13 +1,9 @@
 ---
 name: firebase
-description: Firebase for Inglorious Web with @inglorious/firebase — firebasePush (FCM) for createPushPrompt and firebaseAnalytics (Google Analytics for Firebase) for createAnalytics, in the browser and in Capacitor apps, with consent before any measuring.
+description: "@inglorious/firebase: firebasePush (FCM) for createPushPrompt and firebaseAnalytics for createAnalytics, in browser and Capacitor apps, consent first."
 ---
 
-# @inglorious/firebase - Complete Reference
-
-Firebase adapters for `@inglorious/web`, working in a browser (the PWA) and in Capacitor's Android and iOS apps alike, through Capawesome's Capacitor Firebase plugins. Each adapter has its own entry point, so an app loads only the plugin it uses.
-
-## Installation
+# @inglorious/firebase
 
 ```bash
 pnpm add @inglorious/firebase @inglorious/web @capacitor/core firebase@^12
@@ -15,9 +11,7 @@ pnpm add @capacitor-firebase/messaging   # push
 pnpm add @capacitor-firebase/analytics   # analytics
 ```
 
-Keep `firebase` on 12.x: the Capacitor plugins require `^12`.
-
-The native apps read the project from `android/app/google-services.json` and `ios/App/GoogleService-Info.plist`. A browser gets it from the `firebase` option, which is the web app's config from the Firebase console. Its values are not secret.
+Keep `firebase` on 12.x. Native apps read `android/app/google-services.json` and `ios/App/GoogleService-Info.plist`; browsers take the `firebase` option (web config, not secret).
 
 ## Push
 
@@ -27,28 +21,22 @@ import { createPushPrompt } from "@inglorious/web/push";
 
 export const push = firebasePush({
   firebase: firebaseConfig,
-  vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY, // public half of the Web Push pair
+  vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
   saveToken: (token, platform) => saveToken(token, platform), // "web" | "android" | "ios"
   deleteToken: (token) => deleteToken(token),
 });
 
 const prompt = createPushPrompt({ adapter: push });
 const types = {
-  PushPrompt: {
-    ...prompt,
-    ...template,
-    sessionStart: prompt.pushStart,
-    sessionEnd: prompt.pushStop,
-  },
+  PushPrompt: { ...prompt, ...template, sessionStart: prompt.pushStart, sessionEnd: prompt.pushStop },
 };
 
-// Sign-out: before the session ends, while the user may delete their token.
-await push.unregister();
+await push.unregister(); // on sign-out, before the session ends
 ```
 
-- **Browser:** pushes arrive at the PWA's own service worker (`navigator.serviceWorker.ready`) as Web Push whose JSON carries FCM's `data`. The worker shows them and handles their taps; Firebase's own `firebase-messaging-sw.js` is not needed. Send web pushes as data only (`{ token, data: { title, body, url } }`).
-- **Native:** send `notification` plus `data.url`. The system shows them, and a tap opens `url` through `#router:navigate`. With the app in the foreground, Android shows nothing.
-- **Server:** FCM HTTP v1 (`messages:send`) with a service account. The account needs the **Firebase Cloud Messaging API Admin** role (`roles/firebasecloudmessaging.admin`). "Firebase Cloud Messaging Admin" (`roles/firebasenotifications.admin`) is a different role and cannot send. A 404 means the token is gone: delete it.
+- Browser: the PWA's own service worker receives them; no `firebase-messaging-sw.js`. Send data only: `{ token, data: { title, body, url } }`.
+- Native: send `notification` plus `data.url`; a tap navigates to `url`. Android shows nothing in the foreground.
+- Server: FCM HTTP v1 with a service account holding `roles/firebasecloudmessaging.admin` (not `roles/firebasenotifications.admin`). 404 means delete the token.
 
 ## Analytics
 
@@ -57,20 +45,12 @@ import { firebaseAnalytics } from "@inglorious/firebase/analytics";
 import { createAnalytics } from "@inglorious/web/analytics";
 
 const types = {
-  Analytics: [
-    createAnalytics({
-      adapter: firebaseAnalytics({ firebase: firebaseConfig }),
-    }),
-    template,
-  ],
+  Analytics: [createAnalytics({ adapter: firebaseAnalytics({ firebase: firebaseConfig }) }), template],
 };
 ```
 
-`firebaseConfig` must include `measurementId`. The PWA reports to the web stream, and the native apps to their own. Do not paste the gtag snippet into `index.html`: inside the Capacitor apps it would report native usage as web visits from `localhost`.
-
-**Rules:**
-
-- **Consent before anything.** `createAnalytics` calls the adapter only after a yes. A refusal loads nothing, even in a browser.
-- **Native apps start with collection off**, or they measure from launch. In `AndroidManifest.xml`, inside `<application>`: `<meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />`. In `Info.plist`: `FIREBASE_ANALYTICS_COLLECTION_ENABLED` set to `false`.
-- **Advertising consents stay denied.**
-- **Page views:** in a browser, Google Analytics counts history changes itself, so `pageView` does nothing there. In the native apps, it logs a screen view named after the route.
+- `firebaseConfig` needs `measurementId`. No gtag snippet in `index.html`.
+- Nothing loads before consent.
+- Native collection starts off: `<meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />` in `AndroidManifest.xml`, `FIREBASE_ANALYTICS_COLLECTION_ENABLED` = `false` in `Info.plist`.
+- Advertising consents stay denied.
+- `pageView` is a no-op in browsers; native logs a screen view per route.

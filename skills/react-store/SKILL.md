@@ -1,99 +1,27 @@
 ---
 name: react-store
-description: React integration patterns for @inglorious/store, including hooks and provider setup.
+description: React bindings for @inglorious/store (createReactStore, useNotify, useEntity, useSelector).
 ---
 
-# @inglorious/react-store - Complete Reference
+# @inglorious/react-store
 
-## Installation
-
-```bash
-npm install @inglorious/store @inglorious/react-store react react-dom
-```
-
-## Core Concept
-
-Official React bindings for @inglorious/store, built on `react-redux` with a simplified event API.
-
-## Quick Start
-
-### 1. Create a Store
-
-```javascript
-import { createStore } from "@inglorious/store";
-
-const types = {
-  Counter: {
-    increment(entity) {
-      entity.value++;
-    },
-    decrement(entity) {
-      entity.value--;
-    },
-  },
-};
-
-const entities = {
-  myCounter: { type: "Counter", value: 0 },
-};
-
-export const store = createStore({ types, entities });
-```
-
-### 2. Create React Bindings
+Built on react-redux; works with Redux DevTools and React Native.
 
 ```javascript
 import { createReactStore } from "@inglorious/react-store";
 import { store } from "./store";
 
-export const { Provider, useSelector, useNotify, useEntity } =
-  createReactStore(store);
+export const { Provider, useSelector, useNotify, useEntity } = createReactStore(store);
 ```
 
-### 3. Use in Components
-
 ```jsx
-import { useNotify, useEntity } from "./react-store";
-
 function Counter() {
   const notify = useNotify();
   const { value } = useEntity("myCounter");
-
-  return (
-    <div>
-      <h1>Count: {value}</h1>
-      <button onClick={() => notify("increment")}>+</button>
-      <button onClick={() => notify("decrement")}>-</button>
-    </div>
-  );
+  return <button onClick={() => notify("increment")}>{value}</button>;
 }
 ```
 
-## API Reference
-
-### `createReactStore(store)`
-
-Returns:
-
-- `Provider`
-- `useSelector`
-- `useNotify`
-- `useEntity`
-
-### `useNotify()`
-
-Returns a `notify(type, payload?)` function for dispatching events.
-
-### `useSelector(selector, equalityFn?)`
-
-Same behavior as `react-redux`’s `useSelector`.
-
-### `useEntity(id)`
-
-Convenience hook to select a single entity by ID.
-
-## Notes
-
-- Compatible with Redux DevTools via @inglorious/store.
-- Works anywhere `react-redux` works (including React Native).
-
+- `useNotify()` returns `notify(type, payload?)`.
+- `useEntity(id)` selects one entity.
+- `useSelector(selector, equalityFn?)` as in react-redux.

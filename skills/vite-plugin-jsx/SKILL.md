@@ -1,92 +1,28 @@
 ---
 name: vite-plugin-jsx
-description: Documentation for using JSX syntax in Inglorious projects with the Vite JSX plugin.
+description: Writing Inglorious Web templates in JSX/TSX with @inglorious/vite-plugin-jsx.
 ---
 
-# @inglorious/vite-plugin-jsx - Complete Reference
-
-## Installation
-
-```bash
-npm install -D @inglorious/vite-plugin-jsx
-```
-
-## Vite Configuration
+# @inglorious/vite-plugin-jsx
 
 ```ts
 import { defineConfig } from "vite";
 import { jsx } from "@inglorious/vite-plugin-jsx";
 
-export default defineConfig({
-  plugins: [jsx()],
-});
+export default defineConfig({ plugins: [jsx()] });
 ```
 
-## Core Concept
-
-Compiles JSX/TSX into `lit-html` templates for @inglorious/web. No React runtime, hooks, or lifecycle.
-
-## Example
-
-```jsx
-function render(entity, api) {
-  return (
-    <div className="card">
-      {entity.visible && <h2>{entity.title}</h2>}
-
-      {entity.items.map((item) => (
-        <p key={item.id} onClick={() => api.notify("itemSelect", item)}>
-          {item.name}
-        </p>
-      ))}
-    </div>
-  );
-}
-```
-
-Compiles to:
-
-```js
-function render(entity, api) {
-  return html`
-    <div class="card">
-      ${when(entity.visible, () => html`<h2>${entity.title}</h2>`)}
-      ${repeat(
-        entity.items,
-        (item) => item.id,
-        (item) =>
-          html`<p @click=${() => api.notify("itemSelect", item)}>${item.name}</p>`,
-      )}
-    </div>
-  `;
-}
-```
-
-## Common Patterns
-
-### Events
-
-```jsx
-export const Button = {
-  render(entity, api) {
-    return (
-      <button onClick={() => api.notify(`#${entity.id}:click`)}>
-        {entity.label}
-      </button>
-    );
-  },
-};
-```
-
-### Lists
+Compiles JSX into lit-html templates: no React runtime. `cond && <x/>` becomes `when()`, `.map()` with `key` becomes `repeat()`, `onClick` becomes `@click`, `className` becomes `class`.
 
 ```jsx
 export const TodoList = {
-  render(entity) {
+  render(entity, api) {
     return (
       <ul>
         {entity.todos.map((todo) => (
-          <li key={todo.id}>{todo.text}</li>
+          <li key={todo.id} onClick={() => api.notify(`#${entity.id}:select`, todo.id)}>
+            {todo.text}
+          </li>
         ))}
       </ul>
     );
@@ -94,16 +30,4 @@ export const TodoList = {
 };
 ```
 
-## TypeScript Notes
-
-Use `jsx: "preserve"` in `tsconfig.json` and avoid automatic React imports.
-
-```json
-{
-  "compilerOptions": {
-    "jsx": "preserve",
-    "jsxImportSource": null
-  }
-}
-```
-
+TypeScript: `"jsx": "preserve"`, `"jsxImportSource": null`.

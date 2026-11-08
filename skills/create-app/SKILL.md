@@ -1,110 +1,36 @@
 ---
 name: create-app
-description: Guidance for scaffolding new Inglorious Web and game projects with the create-app tool.
+description: Scaffolding new Inglorious Web and SSX projects with create-app and its flags.
 ---
 
-# @inglorious/create-app - Complete Reference
+# @inglorious/create-app
 
-## Installation
-
-```bash
-npm create @inglorious/app@latest
-```
-
-## Core Concept
-
-Scaffolding tool for @inglorious/web and @inglorious/ssx projects. It creates a new project directory from a template and sets the `package.json` name.
-
-**Default renderer:** lit-html (via @inglorious/web).
-
-Optional template choices let you use different template syntaxes:
-
-- **JSX/TSX** via `@inglorious/vite-plugin-jsx`
-- **Vue-style templates** via `@inglorious/vite-plugin-vue`
-
-## Usage
+`pnpm create @inglorious/app` (or npm/yarn). Answer everything with flags to skip all prompts; don't pipe keystrokes:
 
 ```bash
-# npm
-npm create @inglorious/app@latest
-
-# yarn
-yarn create @inglorious/app
-
-# pnpm
-pnpm create @inglorious/app
+npm create @inglorious/app@latest -- my-app --template=ts --syntax=jsx --ui --theme=material --routing --transitions --icons=material --languages=en,it --no-mobile --no-analytics --no-push --no-pwa --skills
 ```
 
-You’ll be prompted for the project name, the template and the rendering syntax, unless the command line answers them:
+- `--template=minimal|js|ts|ssx-js|ssx-ts`, `--syntax=lit-html|jsx|vue`.
+- Vite templates: `--ui`, `--theme=inglorious|material|bootstrap`, `--mobile` (Capacitor), `--routing`, `--transitions`, `--icons=material,fontawesome,lucide`, `--i18n`/`--languages=en,it` (first is default), `--analytics` (Firebase, consent prompt), `--push` (FCM + Supabase sending, enables PWA), `--pwa`. Each has a `--no-` form.
+- `--skills` installs the matching Forge skills via the skills CLI.
 
-| Question                    | Argument or flag                             |
-| --------------------------- | -------------------------------------------- |
-| What is your project named? | The first argument, such as `my-app`         |
-| Select a template           | `--template=minimal\|js\|ts\|ssx-js\|ssx-ts` |
-| Select a rendering syntax   | `--syntax=lit-html\|jsx\|vue`                |
+## Generated layout
 
-For the JavaScript and TypeScript Vite templates, the CLI then asks about the app's features:
-
-| Question                  | Flag                                                 | Adds                                                                                                  |
-| ------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Use Inglorious UI?        | `--ui` / `--no-ui`                                   | `@inglorious/ui`, its base styles and an app bar                                                      |
-| Which theme?              | `--theme=inglorious\|material\|bootstrap`            | The theme's stylesheet and class                                                                      |
-| Is it a mobile app?       | `--mobile` / `--no-mobile`                           | Capacitor for Android and iOS; with Inglorious UI, a bottom tab bar and safe-area spacing             |
-| Add routing?              | `--routing` / `--no-routing`                         | The Router, a home and an about page, and navigation between them                                     |
-| Animate page transitions? | `--transitions` / `--no-transitions`                 | View transitions between pages (with routing and Inglorious UI)                                       |
-| Which icon packs?         | `--icons=material,fontawesome,lucide` / `--no-icons` | Iconify icon sets, drawn by Inglorious UI's `Icon` (with Inglorious UI)                               |
-| Translate the app?        | `--i18n` / `--no-i18n`, `--languages=en,it`          | `@inglorious/i18n`, a catalogue per language and a language picker; the first language is the default |
-| Add analytics?            | `--analytics` / `--no-analytics`                     | Google Analytics for Firebase behind a consent prompt, on the web and in the native apps |
-| Add push notifications?   | `--push` / `--no-push`                               | Firebase Cloud Messaging, a permission prompt and the Supabase side of sending; turns on PWA support |
-| Enable PWA support?       | `--pwa` / `--no-pwa`                                 | `vite-plugin-pwa`, a manifest, icons, and a service worker that keeps installed apps on the latest version |
-
-Every template except `minimal` then asks whether to add agent skills (`--skills` / `--no-skills`). Saying yes runs the [skills CLI](https://skills.sh) in the new project. It asks which coding agents to install for, and installs the [Inglorious Forge skills](https://github.com/IngloriousCoderz/forge-skills) that match your choices: `forge`, `forge-best-practices`, `store`, `web` and `web-best-practices` always, plus `ssx`, `vite-plugin-jsx` or `vite-plugin-vue`, `ui` and `ui-best-practices`, and `i18n` when the project uses them. If the install fails, the CLI prints the command to retry it.
-
-The app is generated in the syntax you chose: lit-html, JSX or Vue. Every question answered on the command line is skipped, so answering them all creates a project without any prompt. Prefer this over piping keystrokes into the prompts:
-
-```bash
-npm create @inglorious/app@latest -- my-app --template=ts --syntax=jsx --ui --theme=material-3 --routing --transitions --icons=material --languages=en,it --no-mobile --no-analytics --no-push --no-pwa --skills
-```
-
-An unknown template, syntax, theme, icon pack or language stops with the valid choices.
-
-## Templates
-
-- `minimal` — plain HTML/CSS/JS, no bundler
-- `js` — Vite + JavaScript
-- `ts` — Vite + TypeScript
-- `ssx-js` — SSX + JavaScript
-- `ssx-ts` — SSX + TypeScript
-
-## Project layout
-
-A generated app groups its code by where it belongs, as web-best-practices' App structure describes:
-
-- `src/app/` is the shell (`index` and `style.css`) with its own pieces: the analytics and push prompts.
-- With routing, each screen is a folder in `src/views/` (`home/`, `about/`); without it, the home screen is a piece of the shell, in `src/app/home/`.
-- A piece lives with what renders it: the messages are in the home screen's `message/` folder, or in `src/app/message/` in the hello world.
-- `src/common/`, `src/api/`, `src/store/` and `src/i18n/` hold what more than one piece uses.
-- In a TypeScript app, `types/` holds only type definitions: `index.d.ts` and `vite-env.d.ts`.
+- `src/app/`: shell (`index`, `style.css`) and its pieces (analytics, push prompts).
+- `src/views/<screen>/` with routing; otherwise `src/app/home/`.
+- `src/common/`, `src/api/`, `src/store/`, `src/i18n/`: shared code.
+- `types/`: type definitions only (`index.d.ts`, `vite-env.d.ts`).
 
 ## TypeScript
 
-TypeScript 7 has no JavaScript API, which typescript-eslint and the Capacitor CLI need. So the TypeScript templates install two TypeScripts side by side:
+Two TypeScripts side by side; keep both (pointing `typescript` at 7 breaks lint):
 
 ```json
 "typescript": "npm:@typescript/typescript6@^6.0.2",
 "@typescript/native": "npm:typescript@^7.0.2"
 ```
 
-`tsc` is TypeScript 7, and tools importing `typescript` get the TypeScript 6 API. Keep both when upgrading: pointing `typescript` at 7 breaks `pnpm lint`. A JavaScript app with `--mobile` gets only the first, for `capacitor.config.ts`.
+Needs `@inglorious/eslint-config` ≥ 1.1.3.
 
-Linting a TypeScript app needs `@inglorious/eslint-config` 1.1.3 or later: 1.1.2 declares `./typescript` but does not ship it.
-
-A generated TypeScript app types itself in `types/index.d.ts`: `AppEntity`, `AppState`, `AppApi`, a `type` alias per type listing its events and payloads (`MessageType`), and the `AppType<TEntity>` shorthand. Each type is written `export const Message: MessageType = { ... }`, and the store takes `types: { Message, ... }` with no cast. Add an entity by declaring its interface, adding it to `AppEntity` and `AppState`, and declaring its type alias the same way (see the store skill's TypeScript section). `AppEvents` reads every event from those aliases and from the library types the app uses (`RouterType`, `I18nType`, `AnalyticsType`, `PushPromptType`), and `AppApi` and the store take it, so `notify` checks each event's name and payload: add a new type's alias to `AppEvents` too. Only the plain Vue templates, without app features, declare no aliases, so their events stay unchecked.
-
-## After Creation
-
-```bash
-cd my-awesome-app
-pnpm install
-pnpm dev
-```
+`types/index.d.ts` declares `AppEntity`, `AppState`, `AppApi`, `AppEvents` and a type alias per type (`MessageType`), written `export const Message: MessageType = {...}`. A new entity type goes in `AppEntity`, `AppState` and `AppEvents`; see the [store skill](../store/SKILL.md).

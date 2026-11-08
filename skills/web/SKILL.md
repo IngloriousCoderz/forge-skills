@@ -1,590 +1,40 @@
 ---
 name: web
-description: Web UI architecture reference for @inglorious/web, including render patterns and routing.
+description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, analytics, push, testing."
 ---
 
-# @inglorious/web - Complete Reference
+# @inglorious/web
 
-## Installation
+Conventions: [web-best-practices](../web-best-practices/SKILL.md). Store, events and handlers: [store](../store/SKILL.md).
 
-```bash
-npm install @inglorious/web
-```
-
-## Companion Guide
-
-- For file structure, styling, theming, stories, and test conventions for web UI types, see [`skills/web-best-practices/SKILL.md`](../web-best-practices/SKILL.md).
-
-## Core Concepts
-
-**Architecture:** Re-render everything → let lit-html update only what changed.
-
-- No signals, proxies, or compilers
-- Explicit state transitions
-- All state lives in the store, never in components
-
-**Rules:**
-
-- ALWAYS use `api.notify()` for state changes - Direct mutations won't trigger re-renders
-- NEVER store state in component closures - All state must be in entities
-- Event handlers are called with `(entity, payload, api)` - You can omit unused parameters in the function definition
-- Mutations inside handlers are safe - Store uses Mutative for immutability
-
-## Basic Setup
-
-### Store Definition
+The whole tree re-renders; lit-html patches the DOM. All state lives in entities; change it only in handlers via `api.notify`. Prefer `#id:event` with a bare event name.
 
 ```javascript
 import { createStore } from "@inglorious/store";
-import { html } from "@inglorious/web";
+import { html, mount } from "@inglorious/web";
 
 const types = {
   Counter: {
-    // Handler with only entity (payload and api are passed but can be omitted)
     increment(entity) {
       entity.value++;
     },
-
-    // Handler with entity and payload
-    set(entity, newValue) {
-      entity.value = newValue;
-    },
-
-    // Handler with all three parameters
-    reset(entity, _, api) {
-      api.notify(`#${entity.id}:set`, 0);
-    },
-
     render(entity, api) {
-      return html`
-        <div>
-          <span>Count: ${entity.value}</span>
-          <button @click=${() => api.notify(`#${entity.id}:increment`)}>
-            +1
-          </button>
-        </div>
-      `;
+      return html`<button @click=${() => api.notify(`#${entity.id}:increment`)}>${entity.value}</button>`;
     },
   },
 };
 
-const entities = {
-  counter1: { type: "Counter", value: 0 },
-};
-
-export const store = createStore({ types, entities });
+const store = createStore({ types, entities: { counter1: { type: "Counter", value: 0 } } });
+mount(store, (api) => html`${api.render("counter1")}`, document.getElementById("root"));
 ```
 
-## Event Scopes
-
-Event names determine which entities receive a handler:
-
-- `"event"` - broadcast to all entities with that handler
-- `"type:event"` - only entities of that type
-- `"#entityId:event"` - only the entity with that id
+- `mount(store, renderFn, element)` returns an unsubscribe.
+- `autoCreateEntities: true` creates one entity per type (init in `create`); list several instances in `entities`.
+- `api`: `render(id)`, `getEntity(id)`, `getEntities()`, `select(fn)`, `notify(event, payload)`, `dispatch`, `getTypes`, `getType`.
+- `withDebounce(delay, ["saveData"])` from `@inglorious/web/decorators/with-debounce`: the debounced handler gets a read-only snapshot; write by notifying a non-debounced event.
 
 ```javascript
-api.notify("formSave"); // broadcast
-api.notify("Chart:refresh"); // only chart entities
-api.notify("#chart1:refresh"); // only chart1
-```
-
-In a web app an event usually concerns only the component that raised it, so prefer
-`#<id>:<event>` and keep the event name bare — the scope already says which component it came
-from, so `#chart1:refresh` needs no `chart` in the event name. Broadcast unscoped only when you
-want other components listening; then the name has to describe the event on its own. See
-[`skills/store/SKILL.md`](../store/SKILL.md) for the naming rules.
-
-### Mounting
-
-```javascript
-import { mount, html } from "@inglorious/web";
-import { store } from "./store.js";
-
-const renderApp = (api) => {
-  return html`
-    <h1>App</h1>
-    ${api.render("counter1")}
-  `;
-};
-
-mount(store, renderApp, document.getElementById("root"));
-```
-
-## Auto-Creating Entities
-
-`autoCreateEntities: true` creates one entity per type automatically, so you can omit the `entities` object for most apps. Optional initialization happens in the `create()` handler.
-
-```javascript
-const types = {
-  Header: {
-    create(entity) {
-      entity.title = "Welcome";
-    },
-    render(entity) {
-      return html`<header>${entity.title}</header>`;
-    },
-  },
-};
-
-const store = createStore({
-  types,
-  autoCreateEntities: true,
-});
-```
-
-If you need multiple instances of the same component (e.g., four charts), define them explicitly in `entities`:
-
-```javascript
-const entities = {
-  chart1: { type: "Chart" },
-  chart2: { type: "Chart" },
-  chart3: { type: "Chart" },
-  chart4: { type: "Chart" },
-};
-
-const store = createStore({ types, entities });
-```
-
-## Type Composition
-
-Types are composable as arrays of behaviors:
-
-```javascript
-const logging = (type) => ({
-  render(entity, api) {
-    console.log(`Rendering ${entity.id}`);
-    return type.render(entity, api);
-  },
-});
-
-const types = {
-  LoggingCounter: [Counter, logging],
-};
-```
-
-`withDebounce(delay, ["saveData"])` (from `@inglorious/web/decorators/with-debounce`) runs a handler after the event's draft is gone, so it gets the read-only `api.getEntity(id)` snapshot instead: a write to `entity` there changes state behind the store's back, and nothing re-renders. Read in the debounced handler and write with `api.notify` to one that isn't debounced.
-
-## Built-in Components
-
-### Compass
-
-```javascript
-import { Compass } from "@inglorious/web/sensors/compass";
-
-const types = { Compass };
-const entities = { compass: { type: "Compass" } };
-```
-
-The `Compass` type keeps device orientation and heading state in the store.
-
-**Entity state:**
-
-- `isSupported` — whether device orientation sensors are available
-- `isLoading` — whether permission or heading data is pending
-- `isCompassPermissionGranted` — whether permission has been granted
-- `isCompassActive` — whether a valid heading is currently active
-- `heading` — latest heading in degrees, or `null`
-- `error` — latest normalized `{ code, message }`
-- `manualOffset` — optional heading offset in degrees
-
-**Events:**
-
-- `compassPermissionsRequest` — request compass permission when needed
-- `compassWatch` — start listening for orientation events
-- `compassUnwatch` — stop listening
-
-```javascript
-api.notify("compassPermissionsRequest");
-api.notify("compassWatch");
-api.notify("compassUnwatch");
-```
-
-### Form
-
-```javascript
-import {
-  Form,
-  getFieldValue,
-  getFieldError,
-  isFieldTouched,
-} from "@inglorious/web/form";
-
-const types = { Form };
-const entities = {
-  loginForm: {
-    type: "Form",
-    initialValues: { username: "", password: "" },
-  },
-};
-```
-
-**Events:**
-
-- `#<id>:fieldChange` - Set field value (payload: `{ path, value, validate? }`)
-- `#<id>:fieldBlur` - Mark field touched (payload: `{ path, validate? }`)
-- `#<id>:fieldArrayAppend|fieldArrayRemove|fieldArrayInsert|fieldArrayMove` - Manipulate array fields
-- `#<id>:reset` - Reset to `initialValues`
-- `#<id>:validate` - Sync validation (payload: `{ validate }`)
-- `#<id>:validateAsync` - Async validation (payload: `{ validate }`)
-- `#<id>:submit` - Typically handled by your own `submit` handler (if you add one)
-
-### Geolocation
-
-```javascript
-import { Geolocation } from "@inglorious/web/sensors/geolocation";
-
-const types = { Geolocation };
-const entities = { geolocation: { type: "Geolocation" } };
-```
-
-The `Geolocation` type keeps browser location state in the store.
-
-**Entity state:**
-
-- `isSupported` — whether `navigator.geolocation` is available
-- `isLoading` — whether a current request or first watch result is pending
-- `isWatching` — whether a geolocation watch is active
-- `position` — latest normalized `{ coords, timestamp }`
-- `error` — latest normalized `{ code, message }`
-- `watchId` — active browser watch ID or `null`
-
-**Events:**
-
-- `geolocationRequest` — request the current position once
-- `geolocationWatch` — start watching position updates
-- `geolocationUnwatch` — stop the active watch
-
-```javascript
-api.notify("geolocationRequest", {
-  enableHighAccuracy: true,
-  timeout: 5000,
-});
-api.notify("geolocationWatch");
-api.notify("geolocationUnwatch");
-```
-
-### PWA Updates
-
-```javascript
-import { isNative } from "@inglorious/web/mobile";
-import { PwaUpdate, watchPwaUpdate } from "@inglorious/web/pwa";
-import { registerSW } from "virtual:pwa-register";
-
-const types = { PwaUpdate };
-const entities = { pwaUpdate: { type: "PwaUpdate" } };
-
-if (!isNative()) {
-  registerSW({
-    onRegisteredSW(url, registration) {
-      if (registration) watchPwaUpdate(registration, store);
-    },
-  });
-}
-```
-
-`watchPwaUpdate` keeps an installed PWA on its latest version, with the worker `vite-plugin-pwa` generates under `registerType: "prompt"` and `injectRegister: false`. Updates are not optional: it checks hourly and on every return to the foreground, and applies a downloaded version with a reload at launch and on each trip to or from the background. The store argument is optional: without it updates are applied silently. The third argument takes `{ id, checkEveryMs }`, and it returns a function that stops watching.
-
-**Entity state:**
-
-- `isUpdateReady` — a version landed mid-session and waits for the next reload
-
-**Events:**
-
-- `pwaUpdateReady` — sent by `watchPwaUpdate` when a version lands mid-session
-- `pwaUpdateApply` — move over now, reloading the page (an "Update now" button)
-
-`applyPwaUpdate(registration?)` does the same outside the store.
-
-### Analytics
-
-```javascript
-import { createAnalytics } from "@inglorious/web/analytics";
-
-const types = { Analytics: [createAnalytics({ adapter }), template] }; // renders the consent prompt while entity.isAsking
-const entities = { analytics: { type: "Analytics" } };
-
-api.notify("#analytics:analyticsTrack", {
-  name: "sign_up",
-  params: { method: "email" },
-});
-```
-
-`createAnalytics({ adapter, consentKey })` returns the type that measures how an app is used, only after the user agrees. Nothing reaches the adapter before consent. Once granted, each router `routeChange` is a page view.
-
-**Adapter:** `setConsent(isGranted)`, `pageView({ route, path })` and `event(name, params)`. Failures never reach the app.
-
-**Entity state:**
-
-- `consent` — `"granted"`, `"denied"` or `null` (not asked yet), kept in localStorage
-- `isAsking` — the app's consent prompt is showing
-
-**Events:**
-
-- `analyticsConsent` — the prompt's answer, `true` or `false`; a yes measures the current page first
-- `analyticsAsk` — brings the prompt back (a settings page)
-- `analyticsTrack` — `{ name, params }`, ignored without consent
-
-### Push
-
-```javascript
-import { createPushPrompt } from "@inglorious/web/push";
-
-const prompt = createPushPrompt({ adapter });
-const types = {
-  PushPrompt: {
-    ...prompt,
-    ...template, // renders the prompt while entity.isOpen
-    sessionStart: prompt.pushStart,
-    sessionEnd: prompt.pushStop,
-  },
-};
-```
-
-`createPushPrompt({ adapter, declineKey, onTap })` returns the type that asks a device for pushes and keeps it registered. It asks in the app's own words before the system's dialog, because a refusal there may be for good, and remembers a "not now" on the device.
-
-**Adapter** (everything vendor-specific): `isSupported()`, `permission()` and `request()` resolving to `"granted" | "denied" | "prompt"`, `register()` storing the device's token for the signed-in user, and optional `onTap(listener)` for pushes the system showed. In a browser, `request` must call `Notification.requestPermission()` before awaiting anything. Unregistering is the app's, at sign-out, before the session ends.
-
-**Entity state:**
-
-- `isOpen` — the app's prompt is showing
-- `isActive` — between `pushStart` and `pushStop`
-
-**Events:**
-
-- `pushStart` — at sign-in: registers if granted, else opens the prompt
-- `pushStop` — at sign-out: closes the prompt
-- `pushAsk` — the prompt's yes, notified from the tap itself
-- `pushDecline` — the prompt's no, kept under `declineKey` in localStorage
-
-A tapped push's URL opens with `#router:navigate` unless `onTap(url, api)` says otherwise.
-
-### Router
-
-```javascript
-import { Router, setRoutes } from "@inglorious/web/router";
-
-const types = { Router, HomePage, UserPage, NotFoundPage };
-const entities = { router: { type: "Router" } };
-
-setRoutes({
-  "/": "homePage",
-  "/users/:id": "userPage",
-  "*": "notFoundPage",
-});
-
-const renderApp = (api) => {
-  const { route } = api.getEntity("router");
-  return html`
-    <nav><a href="/">Home</a></nav>
-    <main>${route ? api.render(route) : ""}</main>
-  `;
-};
-
-// Navigation
-api.notify("#router:navigate", "/users/456");
-api.notify("#router:navigate", { to: "/users/456", replace: true });
-```
-
-**Lazy routes:** `"/clients": () => import("./pages/clients.js")`. The router registers every named export that an entity is of (a page with its grid and form), and routes to the default export's entity, or else the first export that renders. While loading, the router has `isLoading` and `loadingPath`. The same path isn't loaded twice, and a navigation elsewhere meanwhile wins. A lazy page missed every broadcast sent before it loaded: read what it needs (the session, say) in `create` instead of waiting for an event.
-
-With the `Router` type, `mount` announces each navigation to screen readers and moves focus to the top of the new page, with nothing to set up. Links that only change part of the page (tabs, filters) keep focus with `data-is-focus-kept`, or `state: { isFocusKept: true }` from code. Pass `getPageName` to `mount` when the title is known only after data loads; `hasAccessibleNavigation: false` turns it off.
-
-### Page entities
-
-Every entity hears `routeChange`. `pageRouteChange({ select, open, close })`, each optional, writes the handler of a page that loads when it opens and clears when it closes:
-
-```javascript
-import { pageRouteChange } from "@inglorious/web/router";
-
-export const EventPage = {
-  routeChange: pageRouteChange({
-    select: (payload) => payload.params.eventId,
-    open: (entity, eventId, api) => api.notify(`#${entity.id}:fetch`, eventId),
-    close: (entity) => {
-      entity.event = null;
-    },
-  }),
-};;
-```
-
-Inside `routeChange`, read the route from the payload: the router entity still names the route being left.
-
-### Route Guards
-
-```javascript
-import { safePath } from "@inglorious/web/router";
-
-const requireAuth = (type) => ({
-  routeChange(entity, payload, api) {
-    if (payload.route !== entity.id) return;
-    const user = localStorage.getItem("user");
-    if (!user) {
-      api.notify("#router:navigate", {
-        to: `/login?from=${encodeURIComponent(payload.path)}`,
-        replace: true,
-      });
-      return;
-    }
-    type.routeChange?.(entity, payload, api);
-  },
-});
-
-const types = {
-  AdminPage: [AdminPageBase, requireAuth],
-};
-
-// After signing in: only a path on this site, never //evil.com or /\evil.com
-api.notify("#router:navigate", safePath(router.query.from) ?? "/");
-```
-
-A guard that checks a session entity rather than `localStorage` must keep its own copy: `api.getEntity("session")` returns the state from before the current update, so a sign-in earlier in the same chain (sign in, then navigate) is not there yet and the guard sends the user back to `/login`. Have the session notify `sessionChange` with the user, and give the guard a `sessionChange(entity, user) { entity.user = user }` handler to check in `routeChange`. See the store skill's Common Pitfalls.
-
-## Selectors
-
-Use `api.select(selector)` to run selector functions against the current state. This allows selectors to be named naturally and facilitates access to data from any entity during render.
-
-```javascript
-// 1. Define selectors (pure functions)
-const count = (state) => state.counter1.value;
-const userRole = (state) => state.session.role; // Accessing a different entity ('session')
-
-// 2. Use in render
-const page = {
-  render(entity, api) {
-    const currentCount = api.select(count);
-    const role = api.select(userRole);
-
-    return html`
-      <div>
-        <p>Count: ${currentCount}</p>
-
-        ${when(
-          role === "admin",
-          () =>
-            html`<button @click=${() => api.notify("AdminPage:panelOpen")}>
-              Admin Panel
-            </button>`,
-          () => html`<span>Standard User</span>`,
-        )}
-      </div>
-    `;
-  },
-};
-```
-
-`api.select(fn)` replaces `fn(api.getEntities())`, so a selector can be named `value`
-rather than `selectValue`.
-
-### Derived state with `compute`
-
-Use `compute(fn, inputs)` when your derived value depends on one or more state selectors.
-
-```javascript
-import { compute } from "@inglorious/store/select";
-
-const fullName = compute(
-  (firstName, lastName) => `${firstName} ${lastName}`,
-  [({ user }) => user.firstName, ({ user }) => user.lastName],
-);
-
-const page = {
-  render(entity, api) {
-    const displayName = api.select(fullName);
-    return html`<div>Hello ${displayName}</div>`;
-  },
-};
-```
-
-## Testing
-
-```javascript
-import { html } from "@inglorious/web";
-import { trigger, render } from "@inglorious/web/test";
-
-const Counter = {
-  increment(entity, payload) {
-    entity.value += payload.amount;
-  },
-  render(entity) {
-    return html`<div>Count: ${entity.value}</div>`;
-  },
-};
-
-// Test handlers
-const { entity, events } = trigger(
-  { type: "Counter", id: "counter1", value: 10 },
-  Counter.increment,
-  { amount: 5 },
-);
-expect(entity.value).toBe(15);
-
-// Test rendering
-const template = Counter.render(
-  { id: "counter1", value: 42 },
-  { notify: jest.fn() },
-);
-const root = document.createElement("div");
-render(template, root);
-expect(root.textContent).toContain("Count: 42");
-```
-
-## Redux DevTools
-
-```javascript
-import { createDevtools } from "@inglorious/store/client/devtools";
-
-const middlewares = [];
-if (import.meta.env.DEV) {
-  middlewares.push(createDevtools().middleware);
-}
-
-export const store = createStore({ types, entities, middlewares });
-```
-
-## API Reference
-
-### `mount(store, renderFn, element)`
-
-Connect store to DOM. Returns unsubscribe function.
-
-### `api` Object Methods
-
-- `api.render(id)` - Render entity by id
-- `api.getEntity(id)` - Get entity state (read-only snapshot)
-- `api.getEntities()` - Get all entities (read-only snapshot)
-- `api.select(selector)` - Run selector function against current state
-- `api.notify(event, payload)` - Dispatch event (preferred method)
-- `api.dispatch(action)` - Dispatch raw event object (Redux-compatible)
-- `api.getTypes()` - Get all type definitions
-- `api.getType(name)` - Get specific type
-
-**Rules:**
-
-- ALWAYS use `api.notify()` for state changes - Format: `api.notify("#id:event", payload)`
-- `api.getEntity()` returns read-only - Mutations won't trigger re-renders
-- In a handler, `api.getEntity()` reads the state from before the current update: be told a change by an event, don't look for it
-- `entity` is a draft revoked when the update ends: never use it after an `await`, and pass a copy (`{ ...entity.values }`) as a payload an async handler reads
-- Event targeting: `"event"` (all), `"type:event"` (type), `"#id:event"` (specific entity)
-- Mutations inside event handlers are safe - Store handles immutability automatically
-
-### Exports
-
-```javascript
-// store
-import { createStore } from "@inglorious/store";
-
-// store extras
-import { createDevtools } from "@inglorious/store/client/devtools";
-import { compute, createSelector } from "@inglorious/store/select";
-export { createMockApi, trigger } from "@inglorious/store/test";
-
-// web
-import { mount, html, nothing, svg } from "@inglorious/web";
-// `nothing` leaves an attribute off: id=${id || nothing} renders no id at all
-// rather than an invalid id=""
-
-// web directives
+import { html, nothing, svg } from "@inglorious/web"; // id=${id || nothing} omits the attribute
 import { choose } from "@inglorious/web/directives/choose";
 import { classMap } from "@inglorious/web/directives/class-map";
 import { ref } from "@inglorious/web/directives/ref";
@@ -592,82 +42,86 @@ import { repeat } from "@inglorious/web/directives/repeat";
 import { styleMap } from "@inglorious/web/directives/style-map";
 import { unsafeHTML } from "@inglorious/web/directives/unsafe-html";
 import { when } from "@inglorious/web/directives/when";
+```
 
-// built-in primitives
-import { Compass } from "@inglorious/web/sensors/compass";
-import {
-  Form,
-  getFieldError,
-  getFieldValue,
-  isFieldTouched,
-} from "@inglorious/web/form";
-import { Geolocation } from "@inglorious/web/sensors/geolocation";
+## Router
+
+```javascript
+import { Router, setRoutes, pageRouteChange, safePath } from "@inglorious/web/router";
+
+const entities = { router: { type: "Router" } };
+setRoutes({ "/": "homePage", "/users/:id": "userPage", "/clients": () => import("./pages/clients.js"), "*": "notFoundPage" });
+
+const renderApp = (api) => {
+  const { route } = api.getEntity("router");
+  return html`<main>${route ? api.render(route) : ""}</main>`;
+};
+
+api.notify("#router:navigate", "/users/456"); // or { to, replace: true }
+```
+
+- Lazy routes register every named export with an entity and route to the default (or first rendering) export; `isLoading`, `loadingPath`. Lazy pages missed earlier broadcasts: read what they need in `create`.
+- `mount` announces navigation and moves focus; `data-is-focus-kept` or `state: { isFocusKept: true }` keeps it; `getPageName`, `hasAccessibleNavigation: false` options.
+- In `routeChange` read the route from the payload; the router entity still names the old one.
+- Page loads: `routeChange: pageRouteChange({ select: (p) => p.params.jobId, open: (entity, id, api) => ..., close: (entity) => ... })`.
+- Guards: a decorator whose `routeChange` checks `payload.route !== entity.id`, redirects with `replace: true`, else calls `type.routeChange?.(...)`. Keep the user in the guard's own entity via a `sessionChange` event (getEntity reads pre-update state). Redirect back with `safePath(router.query.from) ?? "/"`.
+
+## Form
+
+```javascript
+import { Form, getFieldValue, getFieldError, isFieldTouched } from "@inglorious/web/form";
+const entities = { loginForm: { type: "Form", initialValues: { username: "", password: "" } } };
+```
+
+Events: `fieldChange` `{ path, value, validate? }`, `fieldBlur` `{ path, validate? }`, `fieldArrayAppend|Remove|Insert|Move`, `reset`, `validate`/`validateAsync` `{ validate }`, your own `submit`.
+
+## Sensors
+
+- `Compass` (`@inglorious/web/sensors/compass`): `isSupported`, `isLoading`, `isCompassPermissionGranted`, `isCompassActive`, `heading`, `error`, `manualOffset`; events `compassPermissionsRequest`, `compassWatch`, `compassUnwatch`.
+- `Geolocation` (`@inglorious/web/sensors/geolocation`): `isSupported`, `isLoading`, `isWatching`, `position`, `error`, `watchId`; events `geolocationRequest` (options), `geolocationWatch`, `geolocationUnwatch`.
+- `NetworkStatus` tells when the device is offline.
+
+## PWA updates
+
+```javascript
+import { isNative } from "@inglorious/web/mobile";
 import { applyPwaUpdate, PwaUpdate, watchPwaUpdate } from "@inglorious/web/pwa";
-import { Router } from "@inglorious/web/router";
+import { registerSW } from "virtual:pwa-register";
 
-// web extras
-import { render } from "@inglorious/web/test";
+if (!isNative()) registerSW({ onRegisteredSW: (url, reg) => reg && watchPwaUpdate(reg, store) });
 ```
 
-## Common Pitfalls
+Needs `registerType: "prompt"`, `injectRegister: false`. Checks hourly and on foreground; applies at launch and background transitions. Optional store, `{ id, checkEveryMs }`; returns a stop function. Entity `isUpdateReady`; events `pwaUpdateReady`, `pwaUpdateApply`.
 
-### ❌ Wrong: Direct mutation outside handler
+## Analytics
 
 ```javascript
-const types = {
-  Counter: {
-    render(entity, api) {
-      // Wrong - mutation outside handler won't trigger re-render
-      entity.value++;
-      return html`<div>${entity.value}</div>`;
-    },
-  },
-};
+import { createAnalytics } from "@inglorious/web/analytics";
+const types = { Analytics: [createAnalytics({ adapter, consentKey }), template] };
+api.notify("#analytics:analyticsTrack", { name: "sign_up", params: { method: "email" } });
 ```
 
-### ✅ Correct: Use api.notify() in event handlers
+Adapter: `setConsent(isGranted)`, `pageView({ route, path })`, `event(name, params)`. Nothing before consent; `routeChange` is a page view. Entity `consent` (`granted|denied|null`), `isAsking`. Events `analyticsConsent` (boolean), `analyticsAsk`, `analyticsTrack`.
+
+## Push
 
 ```javascript
-const types = {
-  Counter: {
-    increment(entity) {
-      entity.value++; // Correct - mutation in handler
-    },
-    render(entity, api) {
-      return html`
-        <div>${entity.value}</div>
-        <button @click=${() => api.notify(`#${entity.id}:increment`)}>+</button>
-      `;
-    },
-  },
-};
+import { createPushPrompt } from "@inglorious/web/push";
+const prompt = createPushPrompt({ adapter, declineKey, onTap });
+const types = { PushPrompt: { ...prompt, ...template, sessionStart: prompt.pushStart, sessionEnd: prompt.pushStop } };
 ```
 
-### ❌ Wrong: Storing state in closures
+Adapter: `isSupported()`, `permission()`/`request()` → `granted|denied|prompt` (browser `request` calls `Notification.requestPermission()` before any await), `register()`, optional `onTap(listener)`. App unregisters at sign-out. Entity `isOpen`, `isActive`; events `pushStart`, `pushStop`, `pushAsk` (from the tap), `pushDecline`. Taps navigate unless `onTap(url, api)`.
+
+## Testing
 
 ```javascript
-// Wrong - state in closure, not in entity
-let count = 0;
-const types = {
-  Counter: {
-    render() {
-      return html`<div>${count}</div>`; // Wrong - won't trigger re-render
-    },
-  },
-};
+import { trigger, render } from "@inglorious/web/test";
+
+const { entity, events } = trigger({ type: "Counter", id: "c", value: 10 }, Counter.increment, { amount: 5 });
+
+const root = document.createElement("div");
+render(Counter.render({ id: "c", value: 42 }, api), root);
 ```
 
-### ✅ Correct: Store state in entities
-
-```javascript
-const entities = {
-  counter1: { type: "Counter", value: 0 }, // Correct - state in entity
-};
-const types = {
-  Counter: {
-    render(entity) {
-      return html`<div>${entity.value}</div>`; // Correct - triggers re-render
-    },
-  },
-};
-```
+DevTools: `createDevtools().middleware` from `@inglorious/store/client/devtools` in dev.

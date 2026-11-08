@@ -1,245 +1,74 @@
 ---
 name: charts
-description: High-performance chart engine designed for both config-driven and primitive-driven visualizations.
+description: "@inglorious/charts: SVG charts driven by entity config or composed primitives, with realtime streaming."
 ---
 
 # @inglorious/charts
 
-## Architecture Overview
-
-`@inglorious/charts` follows a unified engine principle. Instead of managing separate engines for each chart type, a single core handles visual rendering by analyzing either:
-
-- the entity configuration in config mode
-- the primitives passed in `children` during composition mode
-
-### Core Pieces
-
-- `Chart`: the chart type, its event handlers and `render`, which standardizes the input and draws SVG
-- primitives: pure building blocks such as `XAxis`, `Line` and `Tooltip`, exported separately
-- `withRealtime`: a decorator that makes a chart follow a stream of data the app pushes
-
-### Rendering only reads
-
-`render` never writes to the entity it draws. Interaction state lives in the chart's entity and changes through events:
-
-- dragging the brush dispatches `brushChange`
-- hovering a datum dispatches `tooltipShow`, leaving it `tooltipHide`; the tooltip overlay is drawn from `entity.tooltip`
-
-So a composition chart that keeps state needs an `entity`: a `Brush` without one throws. Without one, tooltips fall back to native SVG `<title>`s.
-
-## Public API
-
 ```js
 import {
-  Area,
-  Bar,
-  Brush,
-  CartesianGrid,
-  Chart,
-  Dots,
-  Legend,
-  Line,
-  Pie,
-  PolarAngleAxis,
-  PolarGrid,
-  Radar,
-  RadialBar,
-  Scatter,
-  streamSlide,
-  Tooltip,
-  XAxis,
-  YAxis,
+  Area, Bar, Brush, CartesianGrid, Chart, Dots, Legend, Line, Pie, PolarAngleAxis,
+  PolarGrid, Radar, RadialBar, Scatter, streamSlide, Tooltip, XAxis, YAxis,
 } from "@inglorious/charts";
 import { withRealtime } from "@inglorious/charts/realtime";
-```
-
-### Optional Styles
-
-```js
 import "@inglorious/charts/base.css";
-import "@inglorious/charts/theme.css";
+import "@inglorious/charts/theme.css"; // maps --iw-chart-* to Inglorious UI tokens
 ```
 
-`theme.css` maps the `--iw-chart-*` custom properties (text, text-muted, axis, grid, surface, border, accent) to an Inglorious UI theme's tokens. The renderers read colors only through them, with the default look as fallback.
+`render` never writes to the entity. Brush and tooltip state change through `brushChange`, `tooltipShow`, `tooltipHide`, so stateful composition charts need an `entity` (`Brush` throws without one; tooltips fall back to `<title>`).
 
-## Rendering Modes
+## Config mode
 
-### 1. Config Mode
-
-In config mode, the visual chart type comes from `entity.type`. The store maps those types to `Chart`.
+The visual type comes from the type name (`LiveLine` → line):
 
 ```js
-import { Chart } from "@inglorious/charts";
-import { withRealtime } from "@inglorious/charts/realtime";
-import { createStore } from "@inglorious/store";
-
-export const store = createStore({
-  types: {
-    Line: Chart,
-    Bar: Chart,
-    Area: Chart,
-    Composed: Chart,
-    Pie: Chart,
-    Donut: Chart,
-
-    LiveLine: [Chart, withRealtime],
-  },
+const store = createStore({
+  types: { Line: Chart, Bar: Chart, Area: Chart, Composed: Chart, Pie: Chart, Donut: Chart, LiveLine: [Chart, withRealtime] },
   entities,
 });
 ```
 
-Notes:
-
-- A type name containing a visual type, such as `LiveLine`, resolves to it (`line`)
-- `Chart` holds only event handlers and `render`, so it fits the store's `types` in TypeScript without a cast
-- Functions such as `xTickFormatter`, `yTickFormatter` and `tooltipFormatter` never go in the entity. A type wrapping `Chart` passes them in its own `render`, as Inglorious UI's `DataGrid` passes its callbacks:
+Entity options: `isStacked`, `orientation: "horizontal"`, `curve`, `xAxisLabel`, `yAxisLabel`, `startAngle`, `endAngle`, `hasLegend`, `hasLabel`; types also `"Scatter"`, `"Radar"`, `"Radial"`. Functions never go in the entity; wrap `render`:
 
 ```js
 const PercentLine = {
   ...Chart,
   render(entity, api) {
-    return Chart.render(
-      {
-        ...entity,
-        yTickFormatter: (value) => `${value}%`,
-        tooltipFormatter: (value) => `${value}%`,
-      },
-      api,
-    );
+    return Chart.render({ ...entity, yTickFormatter: (v) => `${v}%`, tooltipFormatter: (v) => `${v}%` }, api);
   },
 };
 ```
 
-### 2. Composition Mode
+## Composition mode
 
-In composition mode, the visual type is inferred from the primitives passed in `children`. Explicit `type` values are usually unnecessary.
+The type is inferred from the children:
 
 ```js
 Chart.render(
-  {
-    entity: "sales",
-    width: 800,
-    height: 400,
-    children: [
-      CartesianGrid(),
-      XAxis({ dataKey: "name" }),
-      YAxis({ tickFormatter: (value) => `${value}%` }),
-      Line({ dataKey: "value" }),
-      Tooltip(),
-    ],
-  },
+  { entity: "sales", width: 800, height: 400, children: [CartesianGrid(), XAxis({ dataKey: "name" }), YAxis(), Line({ dataKey: "value" }), Tooltip()] },
   api,
 );
 ```
 
-In the example above, the visual type is inferred as `line` from `Line(...)`, and `entity: "sales"` provides the data and holds the tooltip state.
+Primitives:
+
+- `XAxis`/`YAxis`: `tickFormatter`, `label`; `XAxis` `interval`.
+- `Line`/`Area`: `curve` `linear|natural|monotone|step`; `Area`/`Bar` stack by `stackId`.
+- `Tooltip`: `formatter(value, name)`. `Legend`, `Dots`, `CartesianGrid`, `Brush`.
+- `Scatter`: data `[{ name, points: [{ x, y, z }] }]`.
+- `Pie`: `hasLabel`, `startAngle`/`endAngle` (degrees clockwise from 12).
+- `PolarGrid`, `PolarAngleAxis`, `Radar` (row data); `RadialBar` (slice data).
 
 ## Realtime
 
-`withRealtime` adds events to a chart type; it runs no timers and makes up no data. The app pushes points:
-
-- `streamPush`: a number, put at the next index, or a whole data point
-- `streamPause`: freezes the chart and shows the brush; points pushed meanwhile wait in `realtime.pending`
-- `streamPlay`: adds the waiting points and follows the newest again
-
-Configured by `entity.realtime`: `visibleWindow` (default 30) and `maxHistory` (default 2000). `entity.realtime.isPaused` tells whether it is paused.
+`withRealtime` adds `streamPush` (number or data point), `streamPause` (queues into `realtime.pending`, shows brush), `streamPlay`. Options `entity.realtime.visibleWindow` (30), `maxHistory` (2000); state `isPaused`.
 
 ```js
 api.notify("#temperature:streamPush", 21.5);
-api.notify("#temperature:streamPush", { time: "12:00", value: 21.5 });
 ```
 
-## Available Primitives
+## Working on the package
 
-### Cartesian
-
-- `CartesianGrid()`
-- `Tooltip()`: takes a `formatter(value, name)` for the value; a pie slice keeps its percentage after it
-- `XAxis()`, `YAxis()`: both take a `tickFormatter` and a `label`, a title beside the axis; `XAxis` shows as many labels as fit by default, or every `interval + 1`th
-- `Line()`: `curve` is `"linear"` (default), `"natural"`, `"monotone"` or `"step"`
-- `Area()`: `curve` as `Line`'s; areas with the same `stackId` stack
-- `Bar()`: bars with the same `stackId` stack in one place per category
-- `Dots()`
-- `Tooltip()`
-- `Legend()`: one item per series, or per slice in a pie or radial chart; it wraps onto more rows when they do not fit on one
-- `Scatter()`: one series of a scatter chart by its `dataKey`, the series' name; both axes are numbers, and a point's `z` sets its size
-- `Brush()`: needs the chart's entity
-
-### Polar
-
-- `Pie()`: `hasLabel` turns labels on; `startAngle` and `endAngle`, in degrees clockwise from twelve o'clock, draw part of a circle (`-90` to `90` is the top half)
-- `PolarGrid()`, `PolarAngleAxis()`, `Radar()`: a radar chart's rings and spokes, its categories' names, and one shape per series (`dataKey`); its data are rows, as a bar chart's
-- `RadialBar()`: a ring per row, filled as far round as its value is of the largest; three quarters round by default, the names (`hasLabel`) in the open quarter; its data are slices, as a pie's
-
-Horizontal bars: `orientation: "horizontal"` on the chart runs the bars sideways, the categories down the left (`YAxis` names them) and the values along the bottom (`XAxis`).
-
-Scatter data are series of points: `data: [{ name: "Cars", points: [{ x: 1200, y: 15, z: 3 }] }]`.
-
-In config mode the same go on the entity: `isStacked: true` for areas and bars, `orientation`, `curve`, `xAxisLabel`, `yAxisLabel`, `startAngle`, `endAngle`. The `type` picks the chart, as `"Scatter"`, `"Radar"` or `"Radial"` do. A pie or donut with `hasLegend: true` lists its slices above it and leaves them unlabelled, unless `hasLabel: true`.
-
-## Naming Conventions
-
-### Best Practices
-
-- Use `has...` or `is...` for booleans:
-  - `hasTooltip`
-  - `hasDots`
-  - `hasGrid`
-  - `isTooltipEnabled`
-  - `isPaused`
-- Avoid `show...`
-- Prefer the term `primitives`, not `components`
-
-## Internal Structure
-
-### Standardizer
-
-`core/standardizer/`
-
-Responsibilities:
-
-- merge input, without writing to it
-- infer visual type
-- normalize data shapes
-- build the render frame, with the `entityId` events go to
-
-### Engine
-
-`core/engine/`
-
-Responsibilities:
-
-- render SVG output
-- organize cartesian, polar, and overlay renderers
-- read theme colors through `theme.js`
-
-### Defaults
-
-`core/defaults.js` holds the default size, brush height and palette. Use it rather than repeating them.
-
-### Realtime Utilities
-
-`src/realtime/`
-
-Responsibilities:
-
-- stream-slide helpers
-
-### Decorators
-
-`src/decorators/`
-
-Responsibilities:
-
-- optional behaviors layered on top of the base chart engine
-
-## Testing
-
-When modifying `charts`, run at least:
-
-```bash
-pnpm -C packages/charts test
-pnpm -C packages/charts lint
-```
-
-Tests render with `@lit-labs/ssr` and assert on the markup, rather than on template internals.
+- Booleans `isX`/`hasX`, never `showX`; say "primitives", not "components".
+- `core/standardizer/` merges input and infers type; `core/engine/` renders SVG, colors via `theme.js`; defaults in `core/defaults.js`.
+- Tests render with `@lit-labs/ssr`: `pnpm -C packages/charts test` and `lint`.

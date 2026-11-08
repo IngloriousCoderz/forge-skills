@@ -1,657 +1,90 @@
 ---
 name: ui
-description: Design system guidance for components, theming, and UI primitives with Inglorious UI.
+description: "@inglorious/ui: props-first components, Iconify icons, themes (Inglorious, Material UI, Material 3, Bootstrap, iOS 18/26) with light/dark, CSS tokens, page transitions."
 ---
 
-# @inglorious/ui - Complete Reference
+# @inglorious/ui
 
-## Installation
-
-```bash
-npm install @inglorious/ui
-```
-
-## Core Concepts
-
-**Architecture:**
-
-- Components are props-first: `Button.render(props)` returns markup, and interactions are callbacks (`onClick`, `onChange`) passed as props
-- To bind a component to an entity, a type wraps its `render(entity, api)`, spreads the entity into props and turns callbacks into `api.notify()` calls
-- Components are objects of render methods with overridable sub-renderers (`renderCell`, `renderHeader`, ...), so customizing one step is an object spread
-- All styling via CSS custom properties (tokens)
-- Multiple themes with light/dark variants
-
-**Rules:**
-
-- Components are stateless - state lives in entities via `@inglorious/store`
-- Entities are pure data - no functions, just values
-- Components never call `api.notify()` themselves; the type that wraps them does
-- Handler logic lives in type definitions, not entities
-- Import the base styles and a theme before component styles
-- UI primitive conventions: [`skills/ui-best-practices/SKILL.md`](../ui-best-practices/SKILL.md)
-
-## Basic Setup
-
-### Import Base Styles and Theme
+Conventions: [ui-best-practices](../ui-best-practices/SKILL.md), [web-best-practices](../web-best-practices/SKILL.md).
 
 ```javascript
-import "@inglorious/ui/base.css"; // reset + tokens + safe-area insets
-import "@inglorious/ui/themes/inglorious.css"; // or material-ui.css, material-3.css, bootstrap.css, ios-18.css, ios-26.css
-import "@inglorious/ui/button.css"; // one stylesheet per component...
-import "@inglorious/ui/input.css";
-// ...or everything at once: import "@inglorious/ui/all.css";
+import "@inglorious/ui/base.css"; // reset, tokens, safe areas
+import "@inglorious/ui/themes/inglorious.css"; // material-ui, material-3, bootstrap, ios-18, ios-26
+import "@inglorious/ui/button.css"; // per component, per category (controls.css, layout.css, ...), or all.css
 ```
 
-Every component has a matching `@inglorious/ui/<component>.css`, and each category has one too (`controls.css`, `data-display.css`, `feedback.css`, `layout.css`, `navigation.css`, `surfaces.css`). `tokens.css` alone is available, but `base.css` already includes it.
+`<body class="iw-theme-inglorious iw-theme-light">` (or `iw-theme-dark`).
 
-### Apply Theme Class
-
-```html
-<body class="iw-theme-inglorious">
-  <!-- or iw-theme-material-ui, iw-theme-material-3, iw-theme-bootstrap, iw-theme-ios-18, iw-theme-ios-26 -->
-  <!-- add iw-theme-dark or iw-theme-light for variant -->
-</body>
-```
-
-## Component Usage
-
-### Button
+Components are stateless objects of render methods: `Button.render(props)`, events as `onX` callbacks, overridable sub-renderers. Entities hold data only; a type wraps the render and turns callbacks into notifies:
 
 ```javascript
 import { Button } from "@inglorious/ui/button";
 
-// Stateless: direct render
-Button.render({
-  children: "Click me",
-  color: "primary",
-  size: "lg",
-  onClick: () => api.notify("save"),
-});
-
-// Bound to an entity: a type wraps the render and passes the callbacks,
-// since functions never go in the entity
-const types = {
-  SubmitButton: {
-    render(entity, api) {
-      return Button.render({
-        ...entity,
-        onClick: () => api.notify(`#${entity.id}:click`),
-      });
-    },
-    click(entity) {
-      entity.isPressed = !entity.isPressed;
-    },
+const SubmitButton = {
+  render(entity, api) {
+    return Button.render({ ...entity, onClick: () => api.notify(`#${entity.id}:click`) });
   },
-};
-
-const entities = {
-  submitBtn: {
-    type: "SubmitButton",
-    children: "Submit",
-    color: "primary",
+  click(entity) {
+    entity.isPressed = !entity.isPressed;
   },
 };
 ```
 
-**Button Properties:**
+## Components
 
-| Property       | Type                                                                                               | Default       | Description             |
-| -------------- | -------------------------------------------------------------------------------------------------- | ------------- | ----------------------- |
-| `children`     | `TemplateResult` \| `string` \| `number`                                                           | -             | Button content          |
-| `variant`      | `"default"` \| `"outline"` \| `"ghost"`                                                            | `"default"`   | Visual style            |
-| `color`        | `"default"` \| `"primary"` \| `"secondary"` \| `"success"` \| `"warning"` \| `"error"` \| `"info"` | `"default"`   | Color variant           |
-| `size`         | `"sm"` \| `"md"` \| `"lg"`                                                                         | `"md"`        | Size                    |
-| `shape`        | `"rectangle"` \| `"pill"` \| `"round"` \| `"square"`                                               | `"rectangle"` | Shape                   |
-| `isDisabled`   | `boolean`                                                                                          | `false`       | Disabled state          |
-| `isPressed`    | `boolean`                                                                                          | `false`       | Pressed state           |
-| `isFullWidth`  | `boolean`                                                                                          | `false`       | Full width              |
-| `buttonType`   | `"button"` \| `"submit"` \| `"reset"` \| `"menu"`                                                  | `"button"`    | The `<button>`'s `type` |
-| `href`         | `string`                                                                                           | -             | Renders a link instead  |
-| `onClick`      | `(event: MouseEvent) => void`                                                                      | -             | Click callback          |
-| `onFileSelect` | `(files: FileList) => void`                                                                        | -             | Makes it a file picker  |
-| `accept`       | `string`                                                                                           | -             | Picker's file types     |
-| `isMultiple`   | `boolean`                                                                                          | `false`       | Picker takes many files |
+- **Button**: `children`, `variant` `default|outline|ghost`, `color` `default|primary|secondary|success|warning|error|info`, `size` `xs|sm|md|lg`, `shape` `rectangle|pill|round|square`, `isDisabled`, `isPressed`, `isFullWidth`, `buttonType`, `href` (renders `<a>`), `onClick`, `onFileSelect(files)` + `accept`, `isMultiple` (file picker; never overlay an `<input type="file">`). `IconButton`, `ButtonGroup`, `Fab` share `color`. Default color comes from the theme; set `color` only to depart from it.
+- **Input**: `id`, `name`, `label`, `inputType` (`type` is the entity's), `value`, `placeholder`, `hint`, `error`, `size`, `isDisabled`, `isReadOnly`, `isRequired`, `isFullWidth`, `icon`, `iconAfter`, `ariaLabel`, `onChange(value)`.
+- **Card**: `title`, `subtitle`, `header`, `children`/`body`, `footer`, `headerPadding`/`bodyPadding`/`footerPadding`, `element` (`article`), `variant` `default|sunk|clear`, `isHoverable`, `isClickable`, `isFullWidth`, `onClick`; override `renderHeader`/`renderBody`/`renderFooter`.
+- **Table**: columns `{ id, label, align }`, rows keyed by column id, scrolls unless `isWrapping`. Override `renderCell(props, { column, row })`.
+- **DataGrid**: `isEditable` columns (edits in `edits`; `cellChange`, `editsReset`, `editsSave`; props `onCellChange`, `onEditsReset`, `onEditsSave`; `getEditCount`, `getEditedRows`). Server mode: set `totalRows` and wrap `pageChange`, `pageNext`, `pagePrev`, `pageSizeChange`, `sortChange`, `filterChange`, `searchChange` to fetch after calling `DataGrid.<handler>`. ARIA grid with keyboard selection; name it with `ariaLabel`.
+- **Combobox** (entity): grouped options `{ label, options }` (never disabled options as headings), themed via `--iw-input-*`; `changeEvent` + `changePayload` notify `{ ...changePayload, value }`; events `valueSet`, `optionsSet`, `errorSet`.
+- **Chat** (`@inglorious/ui/chat`): messages `{ id, role, content }` or `{ id, role, entity }`; events `draftChange`, `messageSend`, `messageAdd`, `replyStart`, `replyEnd`, `replyFail`, `messagesClear`; answer via `Chat: [Chat, withAssistant]` wrapping `messageSend`; `suggestions`, `isBusy`.
+- **ConfirmDialog**: `message`, `confirmLabel`, `cancelLabel`, `busyLabel`, `tone` `danger|primary`, `isBusy`, `children`.
+- **LoadStatus**: `isError`+`error`, `isLoading` (`loadingLabel`, `loader`), `isEmpty`+`emptyText`, else `content()`.
+- **ChipPicker**: `label`, `options`, `value`, `onToggle(value)`.
+- **CropDialog**: `cropperId`, `onApply(rect)`, `error`, `loadErrorText`; `render(props, api)`.
+- **Lightbox**: `images`, `index`, `onStep(±1)`, `onClose`.
+- **Dialog**: `size`, `variant` `dialog|sheet`, `closeLabel`. **Drawer**: `closeLabel`, `collapseLabel`, `expandLabel`.
+- **Snackbar**: `position` (`bottom-left` default, `top-*`, `bottom-*`); close button only with `onClose`; lift above bottom bars with `--iw-snackbar-offset-bottom`.
+- **Slider**: `[low, high]` for ranges, `hasMarks`. **Progress**: `linear|circular`, indeterminate without `value`. **Tabs**: `value` (`null` for none).
+- **Chip**: `icon`, `isSelected` toggles. **RadioGroup**/**Checkbox**: `variant: "card"`, `media`, `description` (also Switch). **Alert**: `neutral` severity. **Divider**: `isDecorative`. **Textarea**: `onKeyDown`, `ariaLabel`.
+- All visible/announced text is a prop with an English default; counts are `format…(…)` functions (1-based).
 
-With `onFileSelect`, the button opens a file picker on click (after `onClick`) and calls `onFileSelect` with the chosen files. Use it instead of laying an invisible `<input type="file">` over a button.
+## Form controls
 
-With `href`, the button is an `<a>` that looks like one: use it for navigation, such as a dashboard's shortcuts, instead of styling a link. A disabled one loses its `href`.
+- Checkbox, Switch, RadioGroup wrap their input in the label.
+- Input, Select, Textarea, Slider, FileUpload, Combobox need an `id` (or `name`) to tie the label; otherwise the label becomes `aria-label`.
+- Messages get `<id>-message` and `aria-describedby`; `aria-invalid` is always set.
+- RadioGroup needs `name` or `id`.
 
-In a `ButtonGroup`, an item with `children` keeps its `label` as the button's accessible name, and a group with a `value` or `isMultiple` sets `aria-pressed` on every button, `"false"` included.
-
-`IconButton`, `ButtonGroup` and `Fab` are built on `Button` and share its `color`, including `"default"`.
-
-The default color is neutral, unless the theme gives it its own tokens (`--iw-button-default-color`, `-bg`, `-bg-hover`, `-bg-active`, `-border`, `-text`). The Material UI theme makes it primary, as Material UI does, the Material 3 theme a filled tonal button, the iOS 18 theme a gray button and the iOS 26 theme a glass one, so set `color` only to depart from it.
-
-### Other components worth knowing
-
-- **Progress**: `variant` is `"linear"` or `"circular"`; both take `color`. Without a `value` it is indeterminate.
-- **Tabs**: `value` picks the selected tab and defaults to the first; `value: null` selects none.
-- **Table**: wide tables scroll horizontally by default. `isWrapping` wraps cell content to fit the container instead. Columns take `id`, `label` and `align`; rows are plain objects keyed by column id. To format or replace cells, override a step. Like every sub-renderer, `renderCell` takes the table's props, then the cell's own (`{ column, row }`), then optionally the api:
-
-  ```javascript
-  const MoneyTable = {
-    ...Table,
-    renderCell(props, ownProps) {
-      const { column, row } = ownProps;
-      if (!column.isMoney) return Table.renderCell(props, ownProps);
-
-      return Table.renderCell(props, {
-        ...ownProps,
-        row: { ...row, [column.id]: formatMoney(row[column.id]) },
-      });
-    },
-  };
-  ```
-
-- **Snackbar**: `position` is `"bottom-left"` (default), `"bottom-center"`, `"bottom-right"`, `"top-left"`, `"top-center"` or `"top-right"`; it stays clear of the system bars. Without `onClose` there is no close button. To keep a bottom snackbar above a bar the app keeps at the bottom (a `BottomNavigation`), set `--iw-snackbar-offset-bottom` to the bar's height on an ancestor while the bar shows.
-- **Tooltip**: `onClick` is optional.
-- **Slider**: a `[low, high]` value draws a range with two thumbs, and `onChange` gets the pair back; `hasMarks` draws a tick per step.
-- **Checkbox**, **Switch** and each **RadioGroup** option take a `description`, shown under the label.
-- **Chip** takes an `icon`, shown before the label, and with `isSelected` becomes a toggle button (`aria-pressed`) for picking options. **RadioGroup** and **Checkbox** take `variant: "card"`, drawing each option as a card outlined while checked, and a `media` (an icon or image) shown above the label. **Alert** has a `"neutral"` severity. **Button** has an `"xs"` size. **Dialog** takes a `size` (`"sm"`, `"md"`, `"lg"`), `variant` (`"dialog"`, or `"sheet"`: a bottom sheet below 48rem, the centred dialog above) and `closeLabel` (the close button's accessible name, for the app's language). **Drawer** takes `closeLabel`, `collapseLabel` and `expandLabel`, the accessible names of its buttons. **Divider** takes `isDecorative`. **Flex** gaps include `"xs"` and `"2xl"`.
-- **ConfirmDialog** (`@inglorious/ui/confirm-dialog`): a sheet asking to confirm, with `message`, `confirmLabel` (required), `cancelLabel`, `busyLabel` and `tone` (`"danger"`, the default, or `"primary"`). While `isBusy` nothing can be pressed or dismissed. `children` goes under the message, such as an error.
-- **LoadStatus** (`@inglorious/ui/load-status`): where a load stands, shown instead of what it loads: `isError` with `error`, `isLoading` (a circular Progress named `loadingLabel`, or the `loader` given), `isEmpty` with `emptyText`, in that order. Otherwise it renders `content`, a function, so it runs only when the data is there: `` LoadStatus.render({ isLoading: !event, content: () => html`<h1>${event.title}</h1>` }) ``.
-- **ChipPicker** (`@inglorious/ui/chip-picker`): toggle chips in a fieldset, for picking several options. `label` is the legend; `options` as in Combobox; `value` the picked values; `onToggle(value)`.
-- **CropDialog** (`@inglorious/ui/crop-dialog`): an ImageCropper entity (`cropperId`) in a dialog with cancel and apply; apply waits for the image and passes the cropper's `rect` to `onApply`. `error` shows the caller's error, `loadErrorText` a failed load. `render(props, api)`.
-- **Lightbox** (`@inglorious/ui/lightbox`): images full screen in a modal dialog. `images` are URLs or `{ src, alt }`; `index` wraps around; `onStep(1 | -1)` from the arrows, arrow keys and swipes, following the writing direction; `onClose` from the button, Esc and a press outside the image.
-- **Combobox** as an entity: an entry `{ label, options }` in `options` lists those options under a heading, which is not an option; a search keeps only the groups with a match. Group options this way, never with disabled options standing in for headings. Disabled options are skipped by the keyboard and cannot be chosen. It looks right stock: theme it through the `--iw-input-*` tokens and `size`, not by restyling its classes. `changeEvent` (such as `"#form:fieldChange"`) is notified with `{ ...changePayload, value }` when the user picks or clears, so a form hears it without holding a function in state: `changePayload: { path: "country" }`. Events `valueSet` (from outside, silent; `""` is no value), `optionsSet` and `errorSet`.
-- **Chat** (`@inglorious/ui/chat`): a conversation and a box to write in. Messages are `{ id, role, content }`, or `{ id, role, entity }` to render another entity (such as an OpenUI answer). Events: `draftChange`, `messageSend` (from the box, Enter, or a suggestion), `messageAdd`, `replyStart`, `replyEnd`, `replyFail`, `messagesClear`. The app answers by composing a behaviour that wraps `messageSend`: `Chat: [Chat, withAssistant]`. It shows `suggestions` while empty, three dots while `isBusy`, and keeps scrolled to the latest unless the user scrolled up. **Textarea** takes `onKeyDown` and `ariaLabel`.
-- **DataGrid**: a column with `isEditable` gets an editor per cell (text, number or date by `type`, a checkbox for booleans, a drop-down with `options`). Edits stay in `edits`, apart from `rows`, via `cellChange`; the footer counts them and resets (`editsReset`) or saves them into `rows` (`editsSave`). Rendered from props, it takes `onCellChange`, `onEditsReset`, `onEditsSave`; `getEditCount` and `getEditedRows` read the edits. Server-loaded: set `totalRows` (the server's count; `0` before the first load) and `rows` is taken as the page the server already filtered, sorted and sliced, while the footer and page handlers go by `totalRows`. The app's type only wraps the handlers that change the query to fetch after them: `` pageChange(entity, page, api) { DataGrid.pageChange(entity, page); api.notify(`#${entity.id}:fetch`) } ``, and likewise `pageNext`, `pagePrev`, `pageSizeChange`, `sortChange`, `filterChange`, `searchChange` (debounced). Sortable headers are buttons. The search and filter fields have English accessible names by default; give the app's own with `search.ariaLabel` and a column's `filter.ariaLabel` (or `filter.minLabel` and `filter.maxLabel` for a range). The grid is an ARIA grid: name it with `ariaLabel`. Rows are focusable, one in the tab order (the selection anchor, or else the first row): the arrows, Home and End move between rows, Enter selects a row alone, Space toggles it like Ctrl+click, and Shift with either extends the selection. The grid's other text is props too: `resetLabel`, `formatEditCount(count)`, `formatRange({ start, end, total })` (the footer count, `total` 0 when empty), `pageLabel`, `pageSizeLabel` and `formatPageLabel(page)`. **Input** takes an `ariaLabel` for a field with no visible label.
-- **Text for the app's language**: no component hard-codes English. Every text it shows or announces is a prop with an English default, and a text that holds a number is a `format…` function. Beyond the grid's: **Breadcrumbs** and **Pagination** `ariaLabel` (Pagination also `formatPageLabel(page)`); **Alert** and **Snackbar** `dismissLabel`; **FileUpload** `title`, `description` and `emptyLabel`; **List** `toggleLabel`; **SpeedDial** `ariaLabel` and `formatActionLabel(index)` for an action with no `label`; **Carousel** `label`, `roleDescription`, `slideRoleDescription`, `formatSlideLabel(index, total)`, `formatIndicatorLabel(index)`, `previousLabel` and `nextLabel`; **ImageCropper** `label` and `roleDescription`. Indexes count from 1.
-
-### Input
-
-```javascript
-import { Input } from "@inglorious/ui/input";
-
-// Stateless
-Input.render({
-  label: "Email",
-  inputType: "email",
-  placeholder: "you@example.com",
-  hint: "We'll never share your email",
-  onChange: (value) => api.notify("#signup:emailChange", value),
-});
-
-// Bound to an entity, with validation
-const types = {
-  EmailInput: {
-    render(entity, api) {
-      return Input.render({
-        ...entity,
-        onChange: (value) => api.notify(`#${entity.id}:change`, value),
-      });
-    },
-    change(entity, value) {
-      entity.value = value;
-      entity.error = value.includes("@") ? null : "Invalid email";
-    },
-  },
-};
-
-const entities = {
-  emailInput: {
-    type: "EmailInput",
-    label: "Email",
-    inputType: "email",
-    value: "",
-    error: null,
-  },
-};
-```
-
-**Input Properties:**
-
-| Property      | Type                                                                    | Default  | Description                                                                                          |
-| ------------- | ----------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------- |
-| `id`          | `string`                                                                | -        | Ties the label and message to the input; see [Form Controls](#form-controls-labels-ids-and-messages) |
-| `name`        | `string`                                                                | -        | Form field name; used as id if no `id`                                                               |
-| `label`       | `string`                                                                | -        | Label text                                                                                           |
-| `inputType`   | `"text"` \| `"email"` \| `"password"` \| `"number"` \| `"date"` \| etc. | `"text"` | The `<input>`'s `type`                                                                               |
-| `value`       | `string`                                                                | `""`     | Current value                                                                                        |
-| `placeholder` | `string`                                                                | -        | Placeholder text                                                                                     |
-| `hint`        | `string`                                                                | -        | Helper text                                                                                          |
-| `error`       | `string`                                                                | -        | Error message; sets `aria-invalid`                                                                   |
-| `size`        | `"sm"` \| `"md"` \| `"lg"`                                              | `"md"`   | Size                                                                                                 |
-| `isDisabled`  | `boolean`                                                               | `false`  | Disabled state                                                                                       |
-| `isReadOnly`  | `boolean`                                                               | `false`  | Read-only state                                                                                      |
-| `isRequired`  | `boolean`                                                               | `false`  | Required field                                                                                       |
-| `isFullWidth` | `boolean`                                                               | `false`  | Full width                                                                                           |
-| `icon`        | `string`                                                                | -        | Icon before input                                                                                    |
-| `iconAfter`   | `string`                                                                | -        | Icon after input                                                                                     |
-| `onChange`    | `(value: string) => void`                                               | -        | Called on every keystroke                                                                            |
-
-`type` is reserved for the entity's type, which is why the input's own type is `inputType`.
-
-### Form Controls: Labels, Ids and Messages
-
-Every form control works without an `id`, but an `id` gets you more:
-
-- **Checkbox, Switch, RadioGroup** wrap their input in its label, so clicking the label always works, with or without an `id`.
-- **Input, Select, Textarea, Slider, FileUpload, Combobox** put the label beside the control. With an `id` (or a `name`, for all but Combobox) the label is tied to the control: clicking it focuses the control. Without one, the control takes a plain-text label as its `aria-label`, so it is still announced, but clicking the label does nothing.
-- With an `id`, the hint or error gets the id `<id>-message` and the control points at it with `aria-describedby`.
-- `aria-invalid` is always stated, `"true"` or `"false"`, rather than left out.
-- **RadioGroup** needs a `name` or an `id`. Radios are grouped by their shared name, falling back to the `id`; each option gets the id `<name-or-id>-<index>`.
-
-A control bound to an entity (`...entity` in the props) always has the entity's id, so this matters mostly for stateless renders.
-
-### Card
-
-```javascript
-import { Card } from "@inglorious/ui/card";
-
-// Basic card
-Card.render({
-  title: "Card Title",
-  subtitle: "Card description",
-  children: html`<p>Body content</p>`,
-  footer: Button.render({ children: "Open" }),
-});
-
-// Interactive card bound to an entity
-const types = {
-  ProductCard: {
-    render(entity, api) {
-      return Card.render({
-        ...entity,
-        isHoverable: true,
-        isClickable: true,
-        onClick: () => api.notify(`#${entity.id}:click`),
-      });
-    },
-    click(entity, payload, api) {
-      api.notify("#router:navigate", `/products/${entity.productId}`);
-    },
-  },
-};
-
-const entities = {
-  productCard: {
-    type: "ProductCard",
-    productId: 123,
-    title: "Product Name",
-    subtitle: "$99.99",
-  },
-};
-```
-
-**Card Properties:**
-
-| Property                                        | Type                                             | Default       | Description                                   |
-| ----------------------------------------------- | ------------------------------------------------ | ------------- | --------------------------------------------- |
-| `title`                                         | `TemplateResult` \| `string` \| `number`         | -             | Card title                                    |
-| `subtitle`                                      | `TemplateResult` \| `string` \| `number`         | -             | Card subtitle                                 |
-| `header`                                        | `TemplateResult` \| `string` \| `number`         | -             | Custom header, in place of title and subtitle |
-| `children` / `body`                             | `TemplateResult` \| `string` \| `number`         | -             | Body content                                  |
-| `footer`                                        | `TemplateResult` \| `string` \| `number`         | -             | Footer content                                |
-| `headerPadding`, `bodyPadding`, `footerPadding` | `"none"` \| `"sm"` \| `"md"` \| `"lg"` \| `"xl"` | -             | Section padding                               |
-| `element`                                       | `"article"` \| `"section"` \| `"div"` \| ...     | `"article"`   | Root element                                  |
-| `variant`                                       | `\"default\"` \| `\"sunk\"` \| `\"clear\"`       | `\"default\"` | Raised surface, set into the page, or none    |
-| `isHoverable`                                   | `boolean`                                        | `false`       | Hover effects                                 |
-| `isClickable`                                   | `boolean`                                        | `false`       | Clickable cursor                              |
-| `isFullWidth`                                   | `boolean`                                        | `false`       | Full width                                    |
-| `onClick`                                       | `() => void`                                     | -             | Click callback                                |
-
-`Card` is a composite: override `renderHeader`, `renderBody` or `renderFooter` with an object spread to change one section.
-
-### Icon
-
-Icons come from any [Iconify](https://icon-sets.iconify.design/) set, drawn as inline SVG: no icon font, and only imported icons are bundled.
+## Icon
 
 ```javascript
 import { Icon } from "@inglorious/ui/icon";
 import arrowBack from "@iconify-icons/material-symbols/arrow-back";
-import settingsOutline from "@iconify-icons/material-symbols/settings-outline";
-import user from "@iconify-icons/fa7-solid/user";
 
-Icon.render({ icon: settingsOutline, size: "lg" });
-Icon.render({ icon: arrowBack, direction: api.getEntity("i18n").dir }); // mirrored in RTL
-Icon.render({ icon: user, label: "Account" }); // meaningful on its own
-Icon.render({ children: "★" }); // a glyph instead
+Icon.render({ icon: arrowBack, size: "lg", direction: api.getEntity("i18n").dir, label: "Back" });
 ```
 
-- Install the set in the app (`@iconify-icons/material-symbols`, `@iconify-icons/fa7-solid` / `fa7-regular` / `fa7-brands`, `@iconify-icons/lucide`, …).
-- The variant is in the name: Material Symbols' plain name is filled, `-outline` outlined, plus `-rounded` / `-sharp`.
-- Icon data (`{ width, height, body }`) is plain data, fine in entities and option lists.
-- Decorative unless `label` is set. There is no `MaterialIcon` and no icon font to load.
+Any Iconify set, inline SVG. Material Symbols: plain name filled, `-outline`, `-rounded`, `-sharp`. Icon data is plain data. Decorative unless `label`.
 
-### Page Transitions
-
-`withTransitions` is a store middleware that runs the render after each navigation inside a view transition, and `view-transitions.css` (included in `all.css`) turns it into a slide: a push arrives from the right, going back from the left, a replacement cross-fades. It needs the `Router` type from `@inglorious/web`, whose history index tells the direction, and it is skipped under `prefers-reduced-motion`.
+## Page transitions
 
 ```javascript
 import { withTransitions } from "@inglorious/ui/view-transitions";
 
-const tabs = ["home", "search", "profile"];
-
-createStore({
-  types,
-  entities,
-  middlewares: [
-    withTransitions({
-      // Which navigations animate: route names (into or out of them) or a predicate.
-      routes: ["eventDetail", ...tabs],
-      // Which way they slide; defaults to the history's `type`. Every tab tap is a
-      // push, so slide towards the tapped tab instead.
-      direction: ({ type, from, to }) => {
-        const [a, b] = [tabs.indexOf(from.route), tabs.indexOf(to.route)];
-        if (a < 0 || b < 0 || a === b) return type;
-        return b > a ? "forward" : "back";
-      },
-    }),
-  ],
-});
+middlewares: [withTransitions({ routes: ["jobDetail", ...tabs], direction: ({ type, from, to }) => type })];
 ```
 
-Both options get `{ type, from, to }`, each side with `path`, `index` and `route`. Without `routes` every navigation animates.
-
-- To keep bars still while the page slides, give each one its own `view-transition-name` (`app-bar`, `tab-bar`, `drawer`, `fab`).
-- Every name must be unique on the page: if two elements share one, the browser aborts **every** transition and the pages just swap, with only a console warning ("Unexpected duplicate view-transition-name"). Name an app's element by its own class, never a component class like `.iw-drawer` that other instances share.
+Needs the web `Router`; skipped under reduced motion. `from`/`to` have `path`, `index`, `route`. Give fixed bars unique `view-transition-name`s; a duplicate name aborts every transition.
 
 ## Theming
 
-### Available Themes
+- Tokens: `--iw-color-*`, `--iw-space-*`, `--iw-radius-*`, `--iw-font-*`, and per component (`--iw-button-*`, `--iw-input-*`, `--iw-card-*`).
+- Labels: `--iw-label-text-transform`, `--iw-label-letter-spacing`, `--iw-label-font-weight`. Chips: `--iw-chip-bg`.
 
-| Theme         | Description                                                                                                                   |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `inglorious`  | Neon/videogame aesthetic (default dark)                                                                                       |
-| `material-ui` | Material UI inspired: Roboto, 4px corners, raised buttons with capitalized labels, outlined text fields, filled chips         |
-| `material-3`  | Material Design 3 inspired: the baseline purple scheme, pill buttons, tonal surfaces, filled text fields, outlined chips      |
-| `bootstrap`   | Bootstrap inspired                                                                                                            |
-| `ios-18`      | Flat iOS (7 to 18) inspired: grouped cards on grey, the green switch, segmented-control tabs, alerts with text-button actions |
-| `ios-26`      | Liquid Glass inspired: glass bars, menus, dialogs and a floating tab bar, capsule buttons and switch, larger corners          |
+## Writing components
 
-### Theme Variants
-
-```html
-<!-- Inglorious theme (dark by default) -->
-<body class="iw-theme-inglorious">
-  <!-- Inglorious light variant -->
-  <body class="iw-theme-inglorious iw-theme-light">
-    <!-- Material 3 dark variant -->
-    <body class="iw-theme-material-3 iw-theme-dark"></body>
-  </body>
-</body>
-```
-
-### CSS Tokens
-
-```css
-:root {
-  /* Colors */
-  --iw-color-primary: ...;
-  --iw-color-bg: ...;
-  --iw-color-text: ...;
-
-  /* Spacing */
-  --iw-space-1: 0.25rem;
-  --iw-space-2: 0.5rem;
-  /* ... */
-
-  /* Radii */
-  --iw-radius-sm: 2px;
-  --iw-radius-md: 4px;
-  /* ... */
-
-  /* Typography */
-  --iw-font-size-base: 1rem;
-  --iw-font-weight-medium: 500;
-  /* ... */
-}
-```
-
-### Label Tokens
-
-Buttons (and everything built on them) and tabs read three tokens for their labels. They default to `none`, `normal` and the normal font weight; the Material UI theme sets them as Material UI does:
-
-```css
-.iw-theme-material-ui {
-  --iw-label-text-transform: uppercase;
-  --iw-label-letter-spacing: 0.02857em;
-  --iw-label-font-weight: var(--iw-font-weight-medium);
-}
-```
-
-Override them on a theme class, or on any ancestor, to change it. Bottom-navigation labels, menu items and accordion headers do not read them.
-
-### Chip Token
-
-A default `Chip`'s background is `--iw-chip-bg`, falling back to `--iw-color-bg-secondary`. The Material UI theme sets it to a tint of the text color, so chips show on white cards and tables; the Material 3 theme makes it transparent, as its chips are outlined.
-
-### Component Tokens
-
-Each theme defines component-specific tokens:
-
-```css
-:root {
-  /* Button tokens */
-  --iw-button-bg: var(--iw-color-primary);
-  --iw-button-radius: var(--iw-radius-none);
-  --iw-button-shadow: none;
-  --iw-button-shadow-hover: 0 0 10px var(--iw-color-primary);
-
-  /* Input tokens */
-  --iw-input-bg: var(--iw-color-bg);
-  --iw-input-border: var(--iw-color-border);
-  --iw-input-radius: var(--iw-radius-none);
-  --iw-input-shadow-focus: 0 0 10px rgba(0, 255, 136, 0.3);
-
-  /* Card tokens */
-  --iw-card-bg: var(--iw-color-surface);
-  --iw-card-radius: var(--iw-radius-none);
-  --iw-card-shadow: var(--iw-shadow-lg);
-}
-```
-
-## Creating Custom Types
-
-Types are the building blocks of Inglorious Web. What makes a type a "component" is the presence of a `render` method.
-
-Follow the component convention in `web-best-practices` (files and shape): a component is an object of render methods, never arrows, calling its siblings through `this`; a presentational component lives in `index.js`, and `template.js` (exporting `template`) appears only once the type has logic.
-
-### Directory Structure
-
-```
-src/app/my-component/        # Where it belongs: see web-best-practices' App structure
-├── index.js                 # The component; once it has logic, composes template.js
-├── template.js              # Only with logic: exports `template`, the render methods
-├── style.css                # Component styles
-├── my-component.stories.js  # Storybook stories
-├── my-component.test.js     # Vitest tests (optional)
-├── handlers.js              # Event handlers (optional)
-└── helpers.js               # Helper functions (optional)
-```
-
-### index.js (presentational)
-
-```javascript
-/** @typedef {import('../../../types/my-component').MyComponentProps} MyComponentProps */
-/** @typedef {import('@inglorious/web').TemplateResult} TemplateResult */
-
-import { html, nothing } from "@inglorious/web";
-import { classMap } from "@inglorious/web/directives/class-map";
-
-export const MyComponent = {
-  /**
-   * @param {MyComponentProps} props
-   * @returns {TemplateResult}
-   */
-  render(props) {
-    const { id, title, variant = "default", onClick } = props;
-
-    const classes = {
-      "iw-my-component": true,
-      [`iw-my-component-${variant}`]: variant !== "default",
-    };
-
-    return html`
-      <div id=${id || nothing} class=${classMap(classes)} @click=${onClick}>
-        ${title}
-      </div>
-    `;
-  },
-};
-```
-
-Bind an optional attribute to `nothing` when it has no value, so it is left off. An empty `id=""` is invalid HTML, and an empty `for=""` on a label points at nothing, which breaks even a label that wraps its input.
-
-### style.css
-
-Use CSS custom properties for all theming, flat `iw-` class names, and nest everything under the root class:
-
-```css
-.iw-my-component {
-  padding: var(--iw-space-2) var(--iw-space-4);
-  background-color: var(--iw-color-primary);
-  border-radius: var(--iw-radius-md);
-
-  &.iw-my-component-secondary {
-    background-color: var(--iw-color-secondary);
-  }
-}
-```
-
-Give child elements their own class (`iw-my-component-input`) rather than reusing the root's. A child that also matches the root rule picks up the root's custom properties too, which silently overrides whatever a modifier set on the root.
-
-### index.js (with logic)
-
-Once the type has handlers, the render methods move to `template.js` as `template`, with a base renderer named after the component:
-
-```javascript
-// template.js
-export const template = {
-  render(props) {
-    return this.renderMyComponent(props);
-  },
-  renderMyComponent(props) {
-    // the markup above
-  },
-};
-```
-
-```javascript
-// index.js
-import * as handlers from "./handlers.js";
-import * as helpers from "./helpers.js";
-import { template } from "./template.js";
-
-export const MyComponent = {
-  ...handlers,
-  ...template,
-  render(entity, api) {
-    return this.renderMyComponent({
-      ...entity,
-      onClick: () => api.notify(`#${entity.id}:click`),
-    });
-  },
-};
-
-export const { helper1, helper2 } = helpers;
-```
-
-### my-component.test.js
-
-Use `@inglorious/web/test` for testing:
-
-```javascript
-import { describe, it, expect } from "vitest";
-import { render } from "@inglorious/web/test";
-import { MyComponent } from "./index.js";
-
-describe("MyComponent", () => {
-  describe("render", () => {
-    it("renders with title", () => {
-      const container = document.createElement("div");
-
-      render(MyComponent.render({ title: "Hello" }), container);
-
-      expect(container.textContent).toContain("Hello");
-    });
-
-    it("leaves off an id it was not given", () => {
-      const container = document.createElement("div");
-
-      render(MyComponent.render({ title: "Hello" }), container);
-
-      const div = container.querySelector(".iw-my-component");
-      expect(div.hasAttribute("id")).toBe(false);
-    });
-  });
-
-  describe("click handler", () => {
-    it("calls onClick", () => {
-      let clicked = false;
-      const container = document.createElement("div");
-
-      render(
-        MyComponent.render({
-          title: "Click me",
-          onClick: () => (clicked = true),
-        }),
-        container,
-      );
-      container.querySelector(".iw-my-component").click();
-
-      expect(clicked).toBe(true);
-    });
-  });
-});
-```
-
-jsdom only runs a label's click-through to its control when the label is in the document, so append the container to `document.body` before testing it (and remove it afterwards).
-
-To test the store wiring of a type that wraps the component, render the type with `createMockApi` from `@inglorious/web/test` and assert on `api.getEvents()`.
-
-### \*.stories.js
-
-Use `@inglorious/web/test` for Storybook stories:
-
-```javascript
-import { render } from "@inglorious/web/test";
-import { MyComponent } from "./index.js";
-
-export default {
-  title: "Components/MyComponent",
-  tags: ["autodocs"],
-  argTypes: {
-    title: { control: "text" },
-    variant: {
-      control: "select",
-      options: ["default", "primary", "secondary"],
-    },
-  },
-};
-
-const Template = (args) => {
-  const container = document.createElement("div");
-  render(MyComponent.render(args), container);
-  return container;
-};
-
-export const Default = Template.bind({});
-Default.args = {
-  title: "My Component",
-  variant: "default",
-};
-```
-
-## Exports
-
-```javascript
-// Components
-import { Button } from "@inglorious/ui/button";
-import { Input } from "@inglorious/ui/input";
-import { Card } from "@inglorious/ui/card";
-
-// CSS (import in your app)
-import "@inglorious/ui/base.css";
-import "@inglorious/ui/themes/inglorious.css";
-import "@inglorious/ui/themes/material-ui.css";
-import "@inglorious/ui/themes/material-3.css";
-import "@inglorious/ui/themes/bootstrap.css";
-import "@inglorious/ui/themes/ios-18.css";
-import "@inglorious/ui/themes/ios-26.css";
-import "@inglorious/ui/all.css"; // every component
-import "@inglorious/ui/button.css";
-import "@inglorious/ui/input.css";
-import "@inglorious/ui/card.css";
-```
+- `id=${id || nothing}`: never render empty `id`/`for`.
+- Flat `iw-` classes nested under the root; children get their own class.
+- Tests: `render` from `@inglorious/web/test`; append to `document.body` for label clicks in jsdom; store wiring via `createMockApi` and `api.getEvents()`.

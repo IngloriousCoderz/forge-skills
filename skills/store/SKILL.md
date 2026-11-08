@@ -1,62 +1,15 @@
 ---
 name: store
-description: Entity-based state management reference for @inglorious/store.
+description: "@inglorious/store: entity-based, Redux-compatible state - types, events, handleAsync, optimistic, fsm, scenes, systems, middlewares, testing, TypeScript, RTK migration."
 ---
 
-# @inglorious/store - Complete Reference
+# @inglorious/store
 
-## Installation
-
-```bash
-npm install @inglorious/store
-```
-
-## Core Concepts
-
-A Redux-compatible, ECS-inspired state library that eliminates boilerplate while keeping state transitions explicit and predictable.
-
-**Redux Compatibility:**
-
-- ✅ Compatible with `react-redux` Provider/useSelector/useDispatch
-- ✅ Compatible with Redux DevTools
-- ✅ Compatible with Redux-style `dispatch({ type, payload })`
-- ⚠️ Redux middlewares (Redux-Saga, Redux-Thunk) may require adaptation
-- ⚠️ Prefer `api.notify()` for event-driven updates (cleaner API)
-
-### Where the store runs
-
-`@inglorious/store` is a standalone state library. Use it on its own, or in a React application
-just like Redux. `@inglorious/react-store` provides native bindings (`useEntity`, `useNotify`)
-if you'd rather not go through `react-redux`.
-
-It is also the backbone of `@inglorious/web`, `@inglorious/engine` and `@inglorious/server`, so
-building on one of those gets you a store without asking for one.
-
-## Basic Setup
+Redux-compatible (react-redux, DevTools, `dispatch({ type, payload })`); prefer `notify`. Standalone, with [react-store](../react-store/SKILL.md), or under web/engine/server.
 
 ```javascript
 import { createStore } from "@inglorious/store";
 
-const types = {
-  Counter: {
-    increment(entity) {
-      entity.value++;
-    },
-  },
-};
-
-const entities = {
-  counter1: { type: "Counter", value: 0 },
-};
-
-const store = createStore({ types, entities });
-```
-
-## Event Handlers
-
-Handlers are called with: `entity`, `payload`, `api` (you can omit unused parameters).
-
-```javascript
 const types = {
   Tasks: {
     taskAdd(entity, text, api) {
@@ -64,423 +17,73 @@ const types = {
       api.notify("taskCountChange", { count: entity.items.length });
     },
   },
-
-  // Two unrelated types listening to the same fact
   TaskBadge: {
     taskCountChange(entity, { count }) {
       entity.count = count;
     },
   },
-
-  Logger: {
-    taskCountChange(entity, { count }) {
-      console.log(`task count is now ${count}`);
-    },
-  },
 };
+
+const store = createStore({ types, entities: { tasks: { type: "Tasks", items: [] } } });
+store.notify("Tasks:taskAdd", "Buy milk");
 ```
 
-```javascript
-api.notify("Tasks:taskAdd", "Buy milk"); // scoped — the target names the type
-api.notify("taskCountChange", { count }); // broadcast — the name must name the subject
-```
+`createStore({ types, entities, systems, autoCreateEntities, updateMode: "auto" | "manual", middlewares })`. Manual mode queues until `store.update()`.
 
-### Naming: name handlers after the event
+Store: `notify`, `dispatch`, `getState`, `setState` (bypasses handlers), `update`. Handler `api`: `getEntities`, `getEntity`, `select`, `notify`, `dispatch`, `getTypes`, `getType`, `setType`.
 
-**Why events and not commands.** A command-style name (`closeOverlays`) implies a known actor
-issuing a known instruction, so the only sensible responder is whatever code issued it. An
-event-style name (`overlaysClose`) names a single observable occurrence, and every type then
-decides independently whether and how to react — which is what `TaskBadge` and `Logger` are doing
-above. Neither knows `Tasks` exists, and adding a third listener never means editing `taskAdd`.
-This is the same reasoning behind Redux's rule that reducers react to actions without dispatching
-their own action type.
+## Events
 
-**Match the name to the scope.** The scope is part of the description, so the two must agree:
+- Handlers get `(entity, payload, api)` and may mutate `entity` (Mutative).
+- Targets: `"event"` (all), `"Type:event"`, `"#id:event"`, `"Type#id:event"`.
+- Name handlers as events, not commands: `overlaysClose`, not `closeOverlays`. No `handle` prefix; base-verb tense.
+- Broadcasts name the subject (`playerShoot`); scoped events stay bare (`#form1:submit`). Don't scope to rescue a vague name. Engine broadcasts by default, web scopes.
+- Never notify a handler's own name (infinite loop).
+- Payloads carry the least available: `remove` an id, `add` the entity; nothing derivable from the store.
+- Exception: `convertSlice` keeps RTK reducer names.
 
-- **Broadcast unscoped** — the name is the _only_ description, so it carries the subject: `playerShoot`, `enemyDestroy`, `itemsLoad`, `taskCountChange`.
-- **Scoped** (`Type:event`, `#id:event`) — the target already names the subject, so keep the name bare: `#form1:submit`, `Form:reset`, not `#form1:formSubmit`.
-- **Don't scope to rescue a vague name.** `#player:shoot` looks tidy but silently limits the event to `Player` entities — exactly the listeners a broadcast event exists to reach. Name the subject and stay unscoped instead.
-- **Inner subjects still get named when scoped:** `#form1:fieldChange` is the field _inside_ the form that changed.
+## Pitfalls
 
-The rule is the same wherever the store runs; what differs is the default. `@inglorious/engine` broadcasts by default, so its events name the
-subject; `@inglorious/web` scopes to the emitting component, so its event names stay bare. Each
-package documents its own default — see [`skills/engine/SKILL.md`](../engine/SKILL.md) and [`skills/web/SKILL.md`](../web/SKILL.md).
+- `api.getEntity`/`getEntities` are read-only snapshots from before the current update; a handler can't see changes earlier in the same chain. Announce the change (`sessionChange`) and keep a copy on the listener.
+- Never mutate another entity; notify it.
+- `entity` is a draft revoked when the update ends: write only before the first `await`, then notify. Payloads read after an `await` must be copies (`{ ...entity.values }`).
 
-- A single-word verb is fine when it's unambiguous for that entity: `increment`, `reset`, `click`.
-- Never notify a handler's own name — it re-enters every matching entity and never terminates; announce something else as its own event.
-- Keep one tense. Past tense (`taskAdded`) is defensible, but base verbs are the house style; pick one and stay on it.
-- Drop a `handle` prefix — it reads as "on handle click".
+## Built-in events
 
-**Exception — RTK migration.** `convertSlice()` preserves `caseReducers` names verbatim, so
-migrated slices keep their imperative RTK names (`addTodo`, `toggleTodo`, `fetchTodoPending`).
-Don't rename these: they have to match the RTK action types they are bridged from.
+- `add` (entity; runs `create`), `remove` (id; runs `destroy`). `create`/`destroy` reach only their entity; `add`/`remove` broadcast. Entities added before their type get `create` at `setType`; replacing a type sends none.
+- `patch` (merges named fields) and `replace` (whole entity): no `create`/`destroy`; `undefined` clears a field; a new `type` moves handlers.
+- `pause`/`resume`: stops `update` events; other events flow. Entities opt out with `updatesWhilePaused: true` (on the entity). Engine's `game()` keeps `paused` on the game entity.
+- `stateChange` from `fsm()`.
 
-## Lifecycle Events
-
-The four ways a thing can change in the world, which are the four the web settled on long
-ago for the same reason:
-
-| | |
-| --- | --- |
-| `add` | **POST** -- a new thing enters the world. |
-| `remove` | **DELETE** -- a thing leaves it. |
-| `patch` | **PATCH** -- some of a standing thing changes. |
-| `replace` | **PUT** -- all of it is said to be different. |
-
-```javascript
-const types = {
-  Logger: {
-    create(entity) {
-      entity.startTime = Date.now();
-    },
-    destroy(entity) {
-      entity.endTime = Date.now();
-    },
-  },
-};
-```
-
-`create` and `destroy` reach only the thing they are about, so they read as a constructor
-and a destructor rather than as handlers that first check whether they are the one being
-talked about. `add` and `remove` are broadcast: something counting down what it put up
-needs to hear about each of them going.
-
-A thing added before its type exists, as with a lazily loaded page, gets its `create` when
-`setType` first registers that type. Replacing a type, as hot reload does, sends no `create`.
-
-### Changing what is already there
-
-`patch` and `replace` cover what `add` and `remove` do not: changing a thing without taking
-it out of the world.
-
-```javascript
-// A patch touches only what it names. Anything else the thing already had survives.
-notify("patch", { id: "keyboard", mapping: { ArrowUp: "up" } });
-
-// A replace installs all of it, so anything it does not name is gone.
-notify("replace", { id: "counter", type: "Counter", value: 0 });
-```
-
-A field named as `undefined` is set to **nothing** in either, rather than being left
-alone -- which is how a key is taken off a mapping:
-
-```javascript
-notify("patch", { id: "keyboard", mapping: { ArrowUp: undefined } });
-```
-
-That is not the same as saying nothing about the field, which would leave whatever it was
-last time standing.
-
-Neither runs `create` or `destroy`: the thing never stopped standing, and something that
-was never removed cannot have been destroyed. Naming a different `type` in either moves it
-onto that type's handlers.
-
-The usual reason for either is a world whose rules change with its state -- one keyboard
-whose keys mean one thing on a menu and another in play. That is the whole argument for
-`patch`: a thing can be *told* something different without being torn down and rebuilt, so
-whatever the world has already done to it survives. See `scenes` in the engine skill, which
-is where a state's own keys get put up.
-
-
-### Payload: the least that can be had
-
-A payload carries the minimum that is **available**, which is not the same as the minimum
-possible. Name the thing when it exists and can be looked up; carry the thing when it
-cannot.
-
-`remove` carries the id. Everything else about the entity can still be found by that id, so
-the rest would be redundant.
-
-`add` carries the entity itself. An observer of an arrival has nothing to look it up by --
-it does not exist yet -- so the entity is the floor, not a convenience.
-
-The asymmetry is the same one REST settled on: `removeUser(id)` against
-`updateUser(patchedUserWithId)`. Anything else follows from the rule rather than needing to
-be remembered case by case: a `move` carries the id and the delta, because both halves of
-the new position exist already.
-
-The same reasoning says what a payload should *not* carry: a whole entity where an id will
-do, a computed value the recipient can derive, or anything the recipient could have got
-from the store.
-
-## Pausing the World
-
-`pause` halts the store: it stops handing out `update` events. `resume` starts it again.
-
-```javascript
-store.notify("pause");
-store.notify("update");
-store.update(); // nothing updated
-
-store.notify("resume");
-```
-
-Anything that moves by integrating a delta time stops without being told about it. Every
-other event still flows, which is what lets a pause menu take itself back off:
-
-```javascript
-pauseMenu.pause(entity, _, api) {
-  api.notify("resume");
-}
-```
-
-An entity opts out with `updatesWhilePaused`, which is for overlays and menus:
-
-```javascript
-const Overlay = [{ update(entity, dt) { entity.ticks++; } }];
-
-// in entities
-overlay: { type: "Overlay", updatesWhilePaused: true },
-```
-
-It belongs on the entity, not the type, so a type stays an index signature of handlers
-and stays callable from TypeScript.
-
-**Default is to stop.** Anything that keeps updating must say so, so a forgotten flag
-pauses the gameplay rather than freezing the menu.
-
-Unlike `add` and `remove`, `pause` and `resume` still dispatch to types that handle
-them, so one notification can halt the world and let the game record why.
-
-The store has no opinion about **who** is paused. `@inglorious/engine`'s `game()`
-behaviour keeps a readable `paused` flag on the game entity, so anything toggling a
-pause reads that flag rather than its own entity:
-
-```javascript
-press(entity, _, api) {
-  const game = api.getEntity("game"); // not `entity`
-  api.notify(game.paused ? "resume" : "pause");
-}
-```
-
-## Event Targeting
-
-```javascript
-store.notify("event"); // All entities with handler
-store.notify("type:event"); // Only entities of type
-store.notify("#id:event"); // Only entity with id
-store.notify("type#id:event"); // Specific type and id
-```
-
-## Dynamic Entities
-
-```javascript
-store.notify("add", { id: "counter4", type: "Counter", value: 0 });
-store.notify("remove", "counter4");
-```
-
-## Async Operations
-
-```javascript
-const types = {
-  Todos: {
-    async itemsLoad(entity, _, api) {
-      entity.loading = true;
-      const response = await fetch("/api/todos");
-      const data = await response.json();
-      api.notify("itemsLoadSuccess", data);
-    },
-    itemsLoadSuccess(entity, items) {
-      entity.items = items;
-      entity.loading = false;
-    },
-  },
-};
-```
-
-`entity` and everything read from it are drafts of the current update, revoked when it ends, and the update does not wait for `await`. Write to `entity` only before the first `await`, then notify an event that does the rest, as `itemsLoadSuccess` does. Anything kept past an `await`, including a payload passed to an async handler, must be a copy: `api.notify("signIn", { ...entity.values })`, never `entity.values`.
-
-### handleAsync Helper
+## Async
 
 ```javascript
 import { handleAsync } from "@inglorious/store/async";
+import { optimistic } from "@inglorious/store/optimistic";
 
-const types = {
-  Todos: {
-    ...handleAsync("fetchTodos", {
-      start(entity) {
-        entity.loading = true;
-      },
-      async run(payload, api) {
-        const res = await fetch("/api/todos");
-        return res.json();
-      },
-      success(entity, todos) {
-        entity.todos = todos;
-      },
-      error(entity, error) {
-        entity.error = error.message;
-      },
-      finally(entity) {
-        entity.loading = false;
-      },
-    }),
-  },
+const Todos = {
+  ...handleAsync("fetchTodos", {
+    start(entity) { entity.isLoading = true; },
+    async run(payload, api) { return (await fetch("/api/todos")).json(); },
+    success(entity, todos) { entity.todos = todos; },
+    error(entity, error) { entity.error = error.message; },
+    finally(entity) { entity.isLoading = false; },
+  }),
 };
 ```
 
-**Lifecycle events generated:**
+- Generates `fetchTodos`, `fetchTodosStart` (if given), `Run`, `Success`, `Error`, `Finally`. `run` gets `(payload, api)`, not the entity.
+- `optimistic(handleAsync(...), patch, { rollback })`: patch (object or function) applied on start, rolled back on error per call. Events carry `callId`.
 
-- `fetchTodos` → triggers the operation
-- `fetchTodosStart` → (if `start` handler provided)
-- `fetchTodosRun` → executes async operation
-- `fetchTodosSuccess` → on success
-- `fetchTodosError` → on error
-- `fetchTodosFinally` → always
+## Composition
 
-**Important notes:**
+A type is an object or an array applied left to right: objects are mixins; functions are decorators `(typeSoFar) => additions`. A later handler of the same name replaces the earlier; a decorator calls `type.event?.(entity, payload, api)` to keep it.
 
-- Use `...handleAsync(...)` to spread handlers into the type
-- `run` receives `(payload, api)` — **not** `entity`
-- All handlers receive `api` as the last parameter
-- `start` is optional
-- Wrap the result in `optimistic(handleAsync(...), patch)` from `@inglorious/store/optimistic` for optimistic updates: `patch` is an object or `(entity, payload, api) => patch`, applied on start and rolled back on error. Each call keeps its own snapshot, so calls can overlap; for a patch built on the current value (a list with a temporary item), pass `{ rollback(entity, payload, api) }` as the third argument to undo just that call. Every async event carries the call's `callId`: `Start`/`Run` get `{ payload, callId }`, `Success` `{ result, callId }`, `Error` `{ error, callId }`, `Finally` `{ callId }`, while the `start`/`run`/`success`/`error`/`finally` handlers still get the bare value
-- In TypeScript, see `AsyncEvents` in the TypeScript section
+Systems: `systems: [{ taskComplete(state, payload) {...} }]` run after entity handlers.
 
-## Systems
+Middlewares: `(store) => store`, usually wrapping `store.dispatch`; the first wraps the rest.
 
-Global logic that runs after all entity handlers for the same event:
-
-```javascript
-const systems = [
-  {
-    taskComplete(state, taskId) {
-      const allTodos = Object.values(state)
-        .filter((e) => e.type === "TodoList")
-        .flatMap((e) => e.todos);
-
-      state.stats.total = allTodos.length;
-      state.stats.completed = allTodos.filter((t) => t.completed).length;
-    },
-  },
-];
-
-const store = createStore({ types, entities, systems });
-```
-
-## Behavior Composition
-
-A type may be an object, or an array of behaviors. Entries are applied **left to right** onto an
-empty object, so later entries see what earlier ones added:
-
-- **Object entry** — a mixin. Its properties are extended onto the type as-is.
-- **Function entry** — a decorator. It is called with the type composed _so far_ and returns what
-  to extend onto it, so it can read, wrap or replace existing handlers.
-
-```javascript
-const incrementable = {
-  increment(entity) {
-    entity.value++;
-  },
-};
-
-const resettable = {
-  reset(entity) {
-    entity.value = 0;
-  },
-};
-
-const types = {
-  Counter: [incrementable, resettable],
-};
-```
-
-### Decorator Pattern
-
-Because a decorator receives the accumulated type, it can wrap a handler that a later mixin adds
-by placing it last:
-
-```javascript
-const withValidation = (type) => ({
-  ...type,
-  submit(entity, value, api) {
-    if (!value.trim()) return;
-    type.submit?.(entity, value, api);
-  },
-});
-
-const types = {
-  Form: [withValidation],
-};
-```
-
-`withValidation` sits after any mixin providing `submit`, so `type.submit` resolves to it. Order
-is the only thing that makes decorator vs. mixin work — putting the decorator first would wrap an
-empty type.
-
-A later entry naming the same event **replaces** the earlier handler; it does not run after it.
-A decorator that wants both must call `type.<event>?.(...)` itself, with all three arguments.
-
-## State Machines
-
-`fsm()` turns a type into a finite state machine in the manner of the OOP State pattern: each
-state names the events it answers, and the entity's `state` field says which state is in charge.
-Reach for it when the same event must mean different things depending on a mode — request or
-connection status, wizards, editors that are viewing/editing/saving, players, game screens —
-instead of `if (entity.status === ...)` in every handler.
-
-```javascript
-import { fsm } from "@inglorious/store/fsm";
-
-const types = {
-  Door: [
-    {
-      // The default: what every state does unless it says otherwise
-      knock(entity) {
-        entity.knocks++;
-      },
-    },
-    fsm({
-      closed: {
-        open(entity) {
-          entity.state = "open";
-        },
-        lock(entity) {
-          entity.state = "locked";
-        },
-      },
-      open: {
-        close(entity) {
-          entity.state = "closed";
-        },
-      },
-      locked: {
-        knock(entity, _, api) {
-          api.notify("bark"); // replaces the default while locked
-        },
-        unlock(entity) {
-          entity.state = "closed";
-        },
-      },
-    }),
-  ],
-};
-
-const entities = { door: { type: "Door", state: "closed", knocks: 0 } };
-```
-
-**Rules:**
-
-- `fsm()` is a decorator: put it **after** the behaviors whose handlers it falls back to.
-- A state's handler replaces the type's handler for the same event. An event neither the current
-  state nor the type answers is ignored.
-- Move by assigning `entity.state`. An entity with no `state` starts in `"default"`.
-- The field is called `state` on purpose. The store is about entities; `getState()` exists only
-  for Redux compatibility, so there is no clash worth renaming around.
-- When the state actually changes, `fsm` broadcasts `stateChange` with `{ entityId, from, to }`.
-  It is broadcast, so a listener checks `entityId` — the one built-in event where that check is
-  right.
-- In TypeScript, declaring `state: "closed" | "open" | "locked"` on the entity checks state names
-  in both the states object and the assignments; entity and api are inferred inside a typed
-  store's `types`. Outside one, pass them: `fsm<DoorEntity, AppApi>({...})`. The payload type is
-  `StateChangePayload` from `@inglorious/store/fsm`.
-
-### Scenes
-
-`scenes()` pairs with `fsm()`: the machine says when it moves, `scenes()` says which entities stand
-in each state. On `create` and on its own `stateChange` it compares the new state's entities with
-the old ones **by `id`**: it `add`s what is new, `remove`s what is gone, and `patch`es what both
-have but configure differently, so shared entities survive the move untouched.
+## fsm and scenes
 
 ```javascript
 import { fsm } from "@inglorious/store/fsm";
@@ -488,494 +91,85 @@ import { scenes } from "@inglorious/store/scenes";
 
 const types = {
   Wizard: [
+    { knock(entity) { entity.knocks++; } }, // default for every state
     scenes({
       account: () => [{ id: "accountForm", type: "AccountForm" }],
-      billing: (wizard) => [
-        { id: "billingForm", type: "BillingForm", plan: wizard.plan },
-      ],
+      billing: (wizard) => [{ id: "billingForm", type: "BillingForm", plan: wizard.plan }],
     }),
     fsm({
-      account: {
-        next(entity) {
-          entity.state = "billing";
-        },
-      },
+      account: { next(entity) { entity.state = "billing"; } },
     }),
   ],
 };
 ```
 
-Each state is a function of the entity running the machine; that entity keeps what is up in
-`scene`. The name is game vocabulary on purpose (like the multiplayer middleware), but it
-is general: in web apps use it for page-scoped entities (created on entering a page, destroyed on
-leaving, so `create`/`destroy` can manage subscriptions), wizard steps, and auth or edit modes. The engine adds `mappings()` (in `@inglorious/engine/behaviors/input/mappings.js`) for
-per-state input — see the engine skill.
+- `fsm` goes after the behaviors it falls back to. State handlers replace type handlers; unanswered events are ignored. Move by assigning `entity.state` (default `"default"`). Broadcasts `stateChange` `{ entityId, from, to }`. TS: declare `state` as a union; outside a typed store, `fsm<E, AppApi>(...)`; payload `StateChangePayload`.
+- `scenes` adds/removes/patches entities by `id` on entering each state; current list in `scene`. Use for page-scoped entities, wizard steps, modes.
 
-## Batched Mode
+## Selectors
 
 ```javascript
-const store = createStore({
-  types,
-  entities,
-  updateMode: "manual",
-});
-
-store.notify("playerMove", { x: 100, y: 50 });
-store.notify("enemyAttack", { damage: 10 });
-store.update(); // Process batch
+import { compute } from "@inglorious/store/select"; // alias createSelector
+const total = compute((count, mult) => count * mult, [(e) => e.counter1.value, (e) => e.settings.multiplier]);
+api.select(total);
 ```
-
-## Derived State
-
-**Using `compute` (memoized selectors):**
-
-`compute` is exported from `@inglorious/store/select`, alongside the alias `createSelector`. It
-returns a selector you can either call with state yourself, or hand to `api.select()`.
-
-```javascript
-import { compute } from "@inglorious/store/select";
-
-const value = (entities) => entities.counter1.value;
-const multiplier = (entities) => entities.settings.multiplier;
-
-const result = compute((count, mult) => count * mult, [value, multiplier]);
-
-// Later:
-const total = result(store.getState());
-```
-
-**Using `api.select()` (direct selectors):**
-
-```javascript
-const value = (entities) => entities.counter1.value;
-const multiplier = (entities) => entities.settings.multiplier;
-
-const types = {
-  Stats: {
-    recalc(entity, _, api) {
-      const count = api.select(value);
-      const mult = api.select(multiplier);
-      entity.result = count * mult;
-    },
-  },
-};
-```
-
-## API Reference
-
-### `createStore(options)`
-
-```javascript
-const store = createStore({
-  types, // Entity behaviors
-  entities, // Initial entities
-  systems, // Optional: global handlers
-  autoCreateEntities, // Optional: boolean (default false)
-  updateMode, // Optional: 'auto' | 'manual'
-  middlewares, // Optional: middleware array
-});
-```
-
-Middlewares take the store and return it, changed or wrapped: `(store) => store`. One that only
-cares about events replaces `store.dispatch` with a function that calls the previous one and
-returns its result; `notify` goes through `dispatch`, so it sees every event. The first middleware
-wraps all the others, so events pass through them in the order listed. Middlewares with options are
-factories, such as `multiplayerMiddleware(config)` (see [`skills/server/SKILL.md`](../server/SKILL.md))
-and `withTransitions({ routes })` from `@inglorious/ui/view-transitions`.
-
-```javascript
-const logger = (store) => {
-  const next = store.dispatch;
-  store.dispatch = (event) => {
-    console.log(event.type);
-    return next(event);
-  };
-  return store;
-};
-```
-
-### Store Instance Methods
-
-The store itself exposes the same event surface as a handler's `api`, plus state access:
-
-- `notify(type, payload)` - Trigger an event (preferred over `dispatch`)
-- `dispatch(event)` - Redux-style dispatch, `{ type, payload }`
-- `getState()` - Current entities map (read-only)
-- `setState(state)` - Replace the whole state map, bypassing events
-- `update()` - Process the queued events; only needed when `updateMode: "manual"`
-
-`setState` is the escape hatch for wholesale state replacement — merging a server's `stateInit`
-into an existing client store, for example. It does not run handlers, so it will not fire
-lifecycle events.
-
-### Handler API (`api` parameter)
-
-- `getEntities()` - Read all state (read-only)
-- `getEntity(id)` - Read entity (read-only)
-- `select(selector)` - Run selector against current state
-- `notify(type, payload)` - Trigger events (preferred over dispatch)
-- `dispatch(action)` - Redux-style dispatch (for compatibility)
-- `getTypes()` - Access type definitions
-- `getType(name)` - Access specific type
-- `setType(name, type)` - Modify type
-
-**Rules:**
-
-- Mutations inside handlers are safe (store uses Mutative)
-- `api.getEntity()` and `api.getEntities()` return read-only snapshots of the state from **before** the current update: a handler cannot see what an earlier handler in the same chain changed (see Common Pitfalls)
-- Events triggered via `api.notify()` are queued and processed in order
-- `entity` is a draft revoked when the update ends: never use it after an `await`, and pass copies, not drafts, as payloads that are read later
-
-### Built-in Events
-
-- `add` - Add entity (triggers `create`)
-- `remove` - Remove entity (triggers `destroy`)
-- `pause` - Halt the world, see [Pausing the World](#pausing-the-world)
-- `resume` - Unhalt it
-- `stateChange` - Broadcast by `fsm()` when an entity moves, carries `{ entityId, from, to }` — see [State Machines](#state-machines)
-
-## Migration from Redux Toolkit (RTK)
-
-The package exposes migration helpers at `@inglorious/store/migration/rtk`:
-
-```javascript
-import {
-  convertSlice,
-  convertAsyncThunk,
-  createRTKCompatDispatch,
-} from "@inglorious/store/migration/rtk";
-```
-
-### What `convertSlice()` does
-
-- Converts `slice.caseReducers` into Inglorious handlers with the same names.
-- Wraps RTK reducers with an RTK-like action object: `{ type, payload }`.
-- Generates a `create(entity)` handler that copies `slice.getInitialState()` into the entity.
-- Detects RTK `create.asyncThunk` reducers and maps lifecycle handlers automatically.
-- Can merge async thunk mappings via `options.asyncThunks`.
-- Can merge custom handlers via `options.extraHandlers`.
-
-### What `convertAsyncThunk()` does
-
-Maps RTK lifecycle handlers to `handleAsync` lifecycle:
-
-- `onPending` -> `start`
-- `payloadCreator` -> `run`
-- `onFulfilled` -> `success`
-- `onRejected` -> `error`
-- `onSettled` -> `finally`
-- Adapts thunk API dispatch to `api.dispatch` (with `notify` fallback) when calling `payloadCreator(arg, thunkAPI)`.
-- Supports `scope: "entity" | "type" | "global"` (default: `"entity"`).
-- If `onPending` is omitted, no `*Start` handler is generated.
-
-### `buildCreateSlice` + `create.asyncThunk`
-
-`convertSlice()` supports slices created with:
-
-```javascript
-import { buildCreateSlice, asyncThunkCreator } from "@reduxjs/toolkit";
-
-const createAppSlice = buildCreateSlice({
-  creators: { asyncThunk: asyncThunkCreator },
-});
-```
-
-For a reducer like `fetchTodo: create.asyncThunk(...)`:
-
-- Without `options.asyncThunks.fetchTodo.payloadCreator`, lifecycle handlers are generated from RTK case reducers:
-- `fetchTodoPending`, `fetchTodoFulfilled`, `fetchTodoRejected`, `fetchTodoSettled` (when defined)
-- With `options.asyncThunks.fetchTodo.payloadCreator`, runnable async handlers are generated:
-- `fetchTodo`, `fetchTodoStart`, `fetchTodoRun`, `fetchTodoSuccess`, `fetchTodoError`, `fetchTodoFinally`
-- Pending/fulfilled/rejected/settled reducers from the RTK slice are reused as defaults.
-
-Use the second mode when you want full trigger-and-run migration behavior.
-
-### Quick migration pattern
-
-```javascript
-import { createStore } from "@inglorious/store";
-import { convertSlice } from "@inglorious/store/migration/rtk";
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-
-const fetchTodos = createAsyncThunk("todos/fetchTodos", async () => {
-  const res = await fetch("/api/todos");
-  return res.json();
-});
-
-const todosSlice = createSlice({
-  name: "todos",
-  initialState: { items: [], status: "idle", error: null },
-  reducers: {
-    addTodo(state, action) {
-      state.items.push({
-        id: Date.now(),
-        text: action.payload,
-        completed: false,
-      });
-    },
-    toggleTodo(state, action) {
-      const todo = state.items.find((t) => t.id === action.payload);
-      if (todo) todo.completed = !todo.completed;
-    },
-  },
-});
-
-const TodoList = convertSlice(todosSlice, {
-  asyncThunks: {
-    fetchTodos: {
-      payloadCreator: fetchTodos.payloadCreator,
-      onPending: (entity) => {
-        entity.status = "loading";
-      },
-      onFulfilled: (entity, todos) => {
-        entity.status = "success";
-        entity.items = todos;
-      },
-      onRejected: (entity, error) => {
-        entity.status = "error";
-        entity.error = error.message;
-      },
-    },
-  },
-});
-
-const store = createStore({
-  types: { TodoList },
-  autoCreateEntities: true,
-});
-
-store.notify("#todoList:addTodo", "Buy milk");
-store.notify("#todoList:toggleTodo", 1);
-store.notify("#todoList:fetchTodos");
-```
-
-`convertSlice()` expects a slice object with `name`, `getInitialState()`, and `caseReducers` (the object returned by `createSlice()` provides these).
-
-### RTK dispatch compatibility layer
-
-Use `createRTKCompatDispatch(api, entityId)` to keep RTK-style action calls while migrating:
-
-```javascript
-const dispatch = createRTKCompatDispatch(api, "todos");
-
-dispatch({ type: "todos/addTodo", payload: "Buy milk" });
-// -> api.notify("#todos:addTodo", "Buy milk")
-```
-
-Notes:
-
-- Function thunks are not supported in compat mode (it logs a warning).
-- Non-standard action types fall back to `#<entityId>:<type>`.
-
-### Mapping cheatsheet
-
-- `dispatch(addTodo(payload))` -> `api.notify("#todos:addTodo", payload)`
-- `dispatch(toggleTodo(id))` -> `api.notify("#todos:toggleTodo", id)`
-- `addCase(thunk.pending)` -> `onPending` / `fetchXStart`
-- `addCase(thunk.fulfilled)` -> `onFulfilled` / `fetchXSuccess`
-- `addCase(thunk.rejected)` -> `onRejected` / `fetchXError`
 
 ## Testing
 
 ```javascript
 import { trigger, createMockApi } from "@inglorious/store/test";
 
-// Test handlers
-const { entity, events } = trigger({ value: 99 }, increment, {
-  amount: 5,
-});
-expect(entity.value).toBe(104);
-
-// With mock API
-const valueCopy = (entity, { sourceId }, api) => {
-  entity.value = api.getEntity(sourceId).value;
-};
-
-const api = createMockApi({
-  counter1: { type: "Counter", value: 10 },
-});
-const { entity: copied } = trigger(
-  { id: "counter2", type: "Counter", value: 20 },
-  valueCopy,
-  { sourceId: "counter1" },
-  api,
-);
-expect(copied.value).toBe(10);
-```
-
-`createMockApi` takes a state map (entities keyed by id) and returns a mock of the handler API:
-
-```typescript
-interface MockApi {
-  getEntities(): TState;
-  getEntities(typeName: string): TEntity[];
-  getEntity(id: string): TEntity | undefined;
-  select<TResult>(selector: (state: TState) => TResult): TResult;
-  dispatch(event: Event): void;
-  notify(type: string, payload?: any): void;
-  getEvents(): Event[];
-}
-```
-
-`getEvents()` returns every event passed through, which is how you assert that a handler
-notified the right thing:
-
-```javascript
+const api = createMockApi({ counter1: { type: "Counter", value: 10 } });
+const { entity, events } = trigger({ id: "counter2", type: "Counter", value: 20 }, valueCopy, { sourceId: "counter1" }, api);
 expect(api.getEvents()).toEqual([{ type: "#counter2:valueIncrement" }]);
 ```
 
 ## TypeScript
 
-Describe the entities and the state, declare each type's events and payloads with a `type` alias, and write the type against it. Handler parameters are inferred and `createStore` checks each type against its entities. Never cast `types`. In an app, these declarations live in `types/*.d.ts` and the code imports them with `import type` (see forge-best-practices); the example keeps them together only to fit on one page.
-
 ```typescript
-import type { Api, BaseEntity, EntitiesState, EntityType } from "@inglorious/store";
+import type { Api, BaseEntity, EntitiesState } from "@inglorious/store";
 
 interface FormEntity extends BaseEntity {
   type: "Form";
   value: string;
 }
-
-type AppEntity = FormEntity; // a union of all the entities
-
+type AppEntity = FormEntity;
 interface AppState extends EntitiesState<AppEntity> {
   form: FormEntity;
 }
+type AppEvents = EventsOf<FormType | RouterType>;
+type AppApi = Api<AppEntity, AppState, AppEvents>; // from @inglorious/web in web apps
 
-type AppApi = Api<AppEntity, AppState>; // from @inglorious/web in a web app: the same type, with render
-
-// The events and their payloads: `type`, never `interface`, which does not fit `types`
 type FormType = {
   inputChange: (entity: FormEntity, value: string) => void;
   submit: (entity: FormEntity, payload: void, api: AppApi) => void;
 };
 
-export const Form: FormType = {
-  inputChange(entity, value) {
-    entity.value = value;
-  },
-  submit(entity, _payload, api) {
-    api.notify("formSubmitted", entity.value);
-  },
-};
+export const Form: FormType = { inputChange(entity, value) { entity.value = value; }, submit(entity, _, api) {} };
 
-const store = createStore<AppEntity, AppState>({
-  types: { Form },
-  entities: { form: { type: "Form", value: "" } },
+const store = createStore<AppEntity, AppState, AppEvents>({ types: { Form }, entities: { form: { type: "Form", value: "" } } });
+```
+
+- Declarations live in `types/*.d.ts`. Never cast `types`.
+- Type aliases (`type`, not `interface`) by default. `satisfies EntityType<E, AppApi>` (create-app's `AppType<E>`) is the looser shorthand; never annotate with it.
+- `handleAsync` events in aliases: `& AsyncEvents<"fetch", E, Payload, Result, AppApi>`. Prefer inference to explicit type args.
+- `BaseEntity` is only `type`, `id`, `updatesWhilePaused`. Handlers get `id: string`; omit `id` in initial entities.
+- Library entities: `interface AppRouterEntity extends RouterEntity { type: "Router" }`, never `Omit`.
+- Typed `notify` checks name (after any target) and payload; built-in events always allowed. Libraries export `RouterType`, `ChatType`, `AnalyticsType`, `PushPromptType`.
+- Prop-taking sub-renderers: `defineType<ChatEntity, AppApi>()({ ...template, render(props, api) {...} })`; usable in behavior arrays.
+
+## RTK migration
+
+```javascript
+import { convertSlice, convertAsyncThunk, createRTKCompatDispatch } from "@inglorious/store/migration/rtk";
+
+const TodoList = convertSlice(todosSlice, {
+  asyncThunks: { fetchTodos: { payloadCreator: fetchTodos.payloadCreator, onPending, onFulfilled, onRejected } },
+  extraHandlers,
 });
+const dispatch = createRTKCompatDispatch(api, "todos"); // "todos/addTodo" → "#todos:addTodo"
 ```
 
-- The alias is the default: a misspelled or missing handler is an error, and so is a wrong payload, in `Form.inputChange(form, 42)` or `trigger(form, Form.inputChange, 42)`.
-- Shorthand, less rigorous: `export const Form = { ... } satisfies EntityType<FormEntity, AppApi>` (create-app exports it as `AppType<FormEntity>`). It infers the entity and the api but accepts any handler name, and payloads are `any` unless annotated. Never annotate with it (`const Form: AppType<FormEntity>`): that hides the type's members.
-- `handleAsync` names and types its events. In an alias, list them with `AsyncEvents<"fetch", UserEntity, Payload, Result, AppApi>` (from `@inglorious/store/async`): `type UserType = { rename: ... } & AsyncEvents<...>`, then spread `...handleAsync("fetch", { run: async (id: string) => ..., success(entity: UserEntity, name: string) { ... } })`. With `satisfies EntityType<TodoListEntity, AppApi>`, the handlers get the entity and the api, and `success` gets what `run` returns. `optimistic` keeps the names and types and always adds `fetchStart`. Prefer inference over explicit type arguments (`handleAsync<E, P, R>(...)`), which make the event names plain strings.
-- `BaseEntity` holds only `type`, `id` and `updatesWhilePaused`: declare every other field, and a typo is an error.
-- Handlers and `render` receive the entity with `id: string`; leave `id` out of the initial entities.
-- An entity drawn by a library type extends its entity interface: `interface AppRouterEntity extends RouterEntity { type: "Router" }`, `interface SalesEntity extends ChartEntity { type: "Sales" }`. Never `Omit<RouterEntity, "id">`.
-- A type name no entity has, such as a page, takes any type. Behavior arrays type too: `Live: [Chart, withRealtime]`.
-- Selectors infer: `compute((tasks, filter) => ..., [selectTasks, selectFilter])` needs no type arguments.
-- Typed events: read the app's events from the type aliases, `type AppEvents = EventsOf<FormType | RouterType>`, and tell the api, `type AppApi = Api<AppEntity, AppState, AppEvents>`. Then `notify` checks the event's name after any target (`` `#${entity.id}:submit` ``, `"Form:submit"`, `"submit"`) and its payload; an event with no payload takes none. Renderers are not events; the store's own (`add`, `remove`, `patch`, `replace`, `pause`, `resume`, `update`) are always allowed. Pass the same third type argument to `createStore`. Library types export their aliases for this: `RouterType`, `ChatType`, `AnalyticsType`, `PushPromptType`. A typed api is still an `Api`. In a web app import `Api` from `@inglorious/web`: it is the same interface, with `render`.
-- A type whose template splits into sub-renderers that take props (`renderLine(props, line)`) does not fit `EntityType`, which reads every member as a handler taking the entity. Write it with `defineType<ChatEntity, AppApi>()({ ...template, render(props, api) { ... } })`: it checks members by name (`render(props, api)` takes the entity as its props, sub-renderers keep their own `(props, ownProps, api)`, the rest are handlers, inferred) and types `this` as the object. It returns an `EntityType`, so it also goes in a list of behaviors: `[Chat, handlers, fsm(states), defineType<…>()({ ...template, render })]`. Never cast instead, and never make props optional just to fit.
-
-## Common Pitfalls
-
-### ❌ Wrong: Direct mutation outside handler
-
-```javascript
-const entity = store.getState().counter1;
-entity.value++; // Wrong - no event
-```
-
-### ✅ Correct: Use notify() or dispatch()
-
-```javascript
-store.notify("#counter1:increment");
-store.dispatch({ type: "increment", payload: null });
-```
-
-### ❌ Wrong: Mutating read-only entity from api.getEntity()
-
-```javascript
-const types = {
-  Counter: {
-    increment(entity, _, api) {
-      const other = api.getEntity("counter2");
-      other.value++; // Wrong - read-only
-    },
-  },
-};
-```
-
-### ✅ Correct: Notify event to target entity
-
-```javascript
-const types = {
-  Counter: {
-    increment(entity, _, api) {
-      api.notify("#counter2:increment");
-    },
-  },
-};
-```
-
-### ❌ Wrong: Reading a change made earlier in the same chain
-
-`api.getEntity()` returns the state from before the current update, and every event a chain notifies runs in that one update. A guard that asks the session cannot see a sign-in that just happened:
-
-```javascript
-const types = {
-  Session: {
-    signIn(entity, user, api) {
-      entity.user = user;
-      api.notify("navigate", "/account");
-    },
-  },
-  AccountPage: {
-    routeChange(entity, payload, api) {
-      const { user } = api.getEntity("session"); // Wrong - no user yet
-      if (!user) api.notify("navigate", "/login");
-    },
-  },
-};
-```
-
-### ✅ Correct: Announce the change and keep a copy
-
-```javascript
-const types = {
-  Session: {
-    signIn(entity, user, api) {
-      entity.user = user;
-      api.notify("sessionChange", user);
-      api.notify("navigate", "/account");
-    },
-  },
-  AccountPage: {
-    sessionChange(entity, user) {
-      entity.user = user;
-    },
-    routeChange(entity, payload, api) {
-      if (!entity.user) api.notify("navigate", "/login");
-    },
-  },
-};
-```
-
-### ❌ Wrong: Passing a draft to an async handler
-
-```javascript
-submit(entity, _, api) {
-  api.notify("signIn", entity.values); // Wrong - revoked when this update ends
-},
-async signIn(entity, values, api) {
-  await auth.ready;
-  await auth.signIn(values.email, values.password); // Throws: proxy revoked
-},
-```
-
-### ✅ Correct: Pass a copy
-
-```javascript
-submit(entity, _, api) {
-  api.notify("signIn", { ...entity.values }); // copy nested objects too
-},
-```
+- `convertSlice` keeps `caseReducers` names, wraps them with `{ type, payload }`, generates `create` from `getInitialState()`, detects `create.asyncThunk`.
+- `convertAsyncThunk`: `onPending`→`start`, `payloadCreator`→`run`, `onFulfilled`→`success`, `onRejected`→`error`, `onSettled`→`finally`; `scope: "entity" | "type" | "global"`.
+- Compat dispatch doesn't support function thunks.

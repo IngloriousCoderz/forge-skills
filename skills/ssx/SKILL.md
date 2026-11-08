@@ -1,310 +1,61 @@
 ---
 name: ssx
-description: Static site generation, server-side rendering on request and hydration for Inglorious Web with SSX.
+description: "@inglorious/ssx: file-based static generation, on-request SSR and hydration for Inglorious Web."
 ---
 
-# @inglorious/ssx - Complete Reference
+# @inglorious/ssx
 
-## Installation
+`npx @inglorious/create-app my-site --template ssx-js`.
 
-```bash
-npm install @inglorious/ssx @inglorious/web
-```
+## Routing
 
-## Core Concepts
+`src/pages/`: `index.js` → `/`, `posts/_slug.js` → `/posts/:slug`, `__path.js` → `*`. `.md` pages work too (frontmatter → metadata; highlight.js, KaTeX, Mermaid).
 
-Static Site Xecution (SSX) renders @inglorious/web apps to HTML on the server, at build time or on each request, then hydrates on the client with lit-html.
-
-**Architecture:**
-
-- File-based routing from `src/pages/`
-- Server-side rendering at build time (static pages) or on request (pages that export `ssr`)
-- Client-side hydration via @inglorious/web
-- Entity-based state (same model as @inglorious/web)
-
-## Quick Start
-
-```bash
-npx @inglorious/create-app my-site --template ssx-js
-cd my-site
-npm run dev
-```
-
-## File-Based Routing
-
-Pages live in `src/pages/` (relative to the SSX root directory):
-
-```
-src/pages/
-├── index.js          → /
-├── about.js          → /about
-├── blog.js           → /blog
-└── posts/
-    └── _slug.js      → /posts/:slug
-```
-
-**Dynamic routes** use an underscore prefix: `_id.js`, `_slug.js`.
-**Catch-all routes** use double underscores: `__path.js` → `*`.
-
-## Page Exports
-
-### `render(entity, api)`
-
-Required. Returns a lit-html template.
+## Page exports
 
 ```javascript
 import { html } from "@inglorious/web";
 
-export const Index = {
+export const Post = {
   render(entity, api) {
-    return html`<h1>${entity.title}</h1>`;
+    return html`<h1>${entity.post.title}</h1>`;
   },
 };
-```
 
-### `metadata`
+export const metadata = (entity) => ({ title: entity.post.title, meta: { description: entity.post.summary } }); // or a plain object
 
-Optional. Controls the HTML `<head>`. Either a plain object:
-
-```javascript
-export const metadata = {
-  title: "Home",
-  meta: {
-    description: "Welcome",
-    "og:image": "/og-image.png",
-  },
-};
-```
-
-…or a function of the entity, for values derived from page state:
-
-```javascript
-export const metadata = (entity) => ({
-  title: `${entity.user.name}'s Profile`,
-  meta: {
-    description: entity.user.bio,
-  },
-});
-```
-
-### `load(entity, page)`
-
-Optional. Runs on the server before the page renders: at build time for a static page, on every request for one that exports `ssr`.
-
-```javascript
 export async function load(entity, page) {
-  const response = await fetch("https://api.example.com/posts");
-  entity.posts = await response.json();
+  entity.post = await fetch(`https://api.example.com/posts/${page.params.slug}`).then((r) => r.json());
 }
-```
 
-Pages are static by default: `ssx build` renders them once and writes them to `dist/`. A page that needs fresh data on every visit exports `ssr`, and is rendered on each request instead, with its `load` run for that request:
-
-```javascript
-export const ssr = true;
-
-export async function load(entity) {
-  entity.stock = await getStockLevels();
-}
-```
-
-Each request gets a store of its own. `load` receives the entity and the page: `page.params`, `page.locale`, and `page.request`, a Web Fetch API `Request` to read headers and cookies from. A dynamic route that exports `ssr` needs no `staticPaths()`: any path its pattern matches is rendered, with `page.params` from the URL.
-
-`ssx build` skips pages that export `ssr`, and `ssx serve` only serves what the build wrote, so a site with such pages runs on `ssx ssr`, which renders every page on request (static ones too) and serves the API routes. `ssx dev` renders every page on request as well.
-
-For dynamic routes, use `page.params`:
-
-```javascript
-export async function load(entity, page) {
-  const response = await fetch(
-    `https://api.example.com/posts/${page.params.slug}`,
-  );
-  entity.post = await response.json();
-}
-```
-
-### `staticPaths()`
-
-Required for dynamic routes. Returns the paths to generate.
-
-```javascript
 export async function staticPaths() {
-  const posts = await fetch("https://api.example.com/posts").then((r) =>
-    r.json(),
-  );
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-    path: `/posts/${post.slug}`,
-  }));
+  const posts = await fetch("https://api.example.com/posts").then((r) => r.json());
+  return posts.map((post) => ({ params: { slug: post.slug }, path: `/posts/${post.slug}` }));
 }
 ```
 
-## Entity-Based State
+- Pages are static: `load` runs at build time. Dynamic routes need `staticPaths()`.
+- `export const ssr = true` renders on every request (own store per request, no `staticPaths`); `page` has `params`, `locale`, `request` (Fetch `Request`).
+- Entities go in `src/store/entities.js` as in Inglorious Web. Navigate with `api.notify("#router:navigate", "/posts")` or `{ to, replace: true }`.
 
-Pages can use entity state like @inglorious/web:
-
-```javascript
-// src/pages/about.js
-import { html } from "@inglorious/web";
-
-export const About = {
-  click(entity) {
-    entity.count++;
-  },
-  render(entity, api) {
-    return html`
-      <h1>About</h1>
-      <p>Count: ${entity.count}</p>
-      <button @click=${() => api.notify(`#${entity.id}:click`)}>
-        Increment
-      </button>
-    `;
-  },
-};
-```
-
-```javascript
-// src/store/entities.js
-export const entities = {
-  about: { type: "About", count: 0 },
-};
-```
-
-## Client-Side Hydration & Navigation
-
-SSX hydrates the pre-rendered HTML and wires up the @inglorious/web router.
-
-```javascript
-// Programmatic navigation
-api.notify("#router:navigate", "/posts");
-api.notify("#router:navigate", { to: "/posts/123", replace: true });
-```
-
-## Site Configuration
-
-Configure SSX in `site.config.js` (or `site.config.ts`) at the project root:
+## site.config.js
 
 ```javascript
 export default {
   title: "My Site",
-  meta: { description: "A site built with SSX" },
-
-  sitemap: {
-    hostname: "https://mysite.com",
-    filter: (page) => !page.path.startsWith("/admin"),
-  },
-
-  rss: {
-    title: "My Blog",
-    description: "Latest posts",
-    link: "https://mysite.com",
-    feedPath: "/feed.xml",
-    filter: (page) => page.path.startsWith("/posts"),
-  },
-
-  markdown: {
-    theme: "github-dark",
-  },
+  meta: { description: "..." },
+  sitemap: { hostname: "https://mysite.com", filter: (page) => !page.path.startsWith("/admin") },
+  rss: { title, description, link, feedPath: "/feed.xml", filter },
+  markdown: { theme: "github-dark" },
+  vite: { plugins: [jsx()] },
 };
 ```
 
-## Markdown Pages
+JSX pages are `.jsx`/`.tsx` ([vite-plugin-jsx](../vite-plugin-jsx/SKILL.md)). Vue ([vite-plugin-vue](../vite-plugin-vue/SKILL.md)): `.vue` isn't routed; re-export from a `.js` page next to `metadata` (`export { About } from "./about.vue"`, with `// @ts-expect-error - Handled by @inglorious/vite-plugin-vue` in TS).
 
-`.md` files in `src/pages/` become pages. Frontmatter becomes `metadata`.
+## CLI
 
-Example:
-
-```markdown
----
-title: My Post
----
-
-# Hello World
-
-This is a markdown page.
-```
-
-Features:
-
-- Code highlighting with `highlight.js`
-- LaTeX math via `katex`
-- Mermaid diagrams (requires client-side mermaid)
-
-## JSX and Vue Pages
-
-Pages can use JSX or Vue-like templates instead of lit-html: add the plugin to `vite.plugins` in `site.config.js`, and SSX applies it both to build-time rendering and to the hydrated client.
-
-```js
-import { jsx } from "@inglorious/vite-plugin-jsx";
-
-export default {
-  vite: {
-    plugins: [jsx()],
-  },
-};
-```
-
-- **JSX** ([`skills/vite-plugin-jsx/SKILL.md`](../vite-plugin-jsx/SKILL.md)): pages are `.jsx`/`.tsx` files, exporting their type and `metadata` as usual.
-- **Vue** ([`skills/vite-plugin-vue/SKILL.md`](../vite-plugin-vue/SKILL.md)): a `.vue` file exports only its type, and SSX does not route `.vue` files. Each page is a `.js`/`.ts` module re-exporting the type from its `.vue` file, next to its `metadata`:
-
-```js
-// src/pages/about.js
-export { About } from "./about.vue";
-
-export const metadata = { title: "About" };
-```
-
-In TypeScript, put `// @ts-expect-error - Handled by @inglorious/vite-plugin-vue` above the re-export.
-
-## Image Optimization
-
-SSX integrates `vite-plugin-image-optimizer` with `sharp`/`svgo` to compress static images at build time.
-
-## CLI Commands
-
-### Development
-
-```bash
-npm run dev
-```
-
-Options:
-
-- `-c, --config <file>` (default: `site.config.js`)
-- `-r, --root <dir>` (default: `.`)
-- `-p, --port <port>` (default: `3000`)
-
-### Build
-
-```bash
-npm run build
-```
-
-Options:
-
-- `-c, --config <file>`
-- `-r, --root <dir>`
-- `-o, --out <dir>` (default: `dist`)
-- `-i, --incremental` (default: `true`)
-- `-f, --force` (default: `false`)
-
-### Preview
-
-```bash
-npm run preview
-```
-
-Serves `dist/` using `serve`. `ssx serve` does the same and also serves `src/api/`. Neither renders pages that export `ssr`.
-
-### SSR Runtime
-
-```bash
-npx ssx ssr
-```
-
-Starts the server for a site with pages that export `ssr`: it renders every page on request from the sources, through Vite, with no build step, and serves the API routes and assets. Options: `-c, --config`, `-r, --root`, `-p, --port`. Programmatically: `import { ssr } from "@inglorious/ssx/ssr"`.
-
-## Rules & Constraints
-
-1. **Static dynamic routes require `staticPaths()`**; ones that export `ssr` do not.
-2. **Entity state works the same as `@inglorious/web`.**
+- `ssx dev` (`-c`, `-r`, `-p 3000`): renders on request.
+- `ssx build` (`-o dist`, `-i`, `-f`): skips `ssr` pages; optimizes images.
+- `ssx serve` / `preview`: serves `dist/` (+ `src/api/`), no `ssr` pages.
+- `ssx ssr` (`-c`, `-r`, `-p`): renders every page on request, no build; or `import { ssr } from "@inglorious/ssx/ssr"`.
