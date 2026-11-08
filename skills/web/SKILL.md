@@ -105,6 +105,17 @@ watchNativeUpdate(App, store); // launch and every resume; no-op outside native
 
 Adapter: `requirement(platform)` → `{ minBuild, storeUrl }` or `null` (`supabaseNativeUpdate` from [supabase](../supabase/SKILL.md)). Entity `isUpdateRequired`, `storeUrl`; events `nativeUpdateCheck` `{ platform, build }`, `nativeUpdateApply` (opens the store). Failed checks keep the last answer. Render only the update page while `isUpdateRequired`.
 
+## App links
+
+```javascript
+import { App } from "@capacitor/app";
+import { watchAppLinks } from "@inglorious/web/app-links";
+
+watchAppLinks(App, store); // launch URL and appUrlOpen → #router:navigate; no-op outside native
+```
+
+`{ id }` names another router; returns a stop function. The domain must vouch for the app: `/.well-known/apple-app-site-association` (iOS, plus the Associated Domains capability) or `/.well-known/assetlinks.json` (Android). Exclude links carrying auth tokens so sign-in stays in the browser.
+
 ## Analytics
 
 ```javascript
