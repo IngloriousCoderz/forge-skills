@@ -1,6 +1,6 @@
 ---
 name: web
-description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, analytics, push, testing."
+description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA and native updates, analytics, push, testing."
 ---
 
 # @inglorious/web
@@ -92,6 +92,18 @@ if (!isNative()) registerSW({ onRegisteredSW: (url, reg) => reg && watchPwaUpdat
 ```
 
 Needs `registerType: "prompt"`, `injectRegister: false`. Checks hourly and on foreground; applies at launch and background transitions. Optional store, `{ id, checkEveryMs }`; returns a stop function. Entity `isUpdateReady`; events `pwaUpdateReady`, `pwaUpdateApply`.
+
+## Native updates
+
+```javascript
+import { App } from "@capacitor/app";
+import { createNativeUpdate, watchNativeUpdate } from "@inglorious/web/native-update";
+
+const types = { NativeUpdate: [createNativeUpdate({ adapter }), template] };
+watchNativeUpdate(App, store); // launch and every resume; no-op outside native
+```
+
+Adapter: `requirement(platform)` → `{ minBuild, storeUrl }` or `null` (`supabaseNativeUpdate` from [supabase](../supabase/SKILL.md)). Entity `isUpdateRequired`, `storeUrl`; events `nativeUpdateCheck` `{ platform, build }`, `nativeUpdateApply` (opens the store). Failed checks keep the last answer. Render only the update page while `isUpdateRequired`.
 
 ## Analytics
 

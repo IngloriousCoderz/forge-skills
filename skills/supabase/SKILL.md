@@ -1,6 +1,6 @@
 ---
 name: supabase
-description: "@inglorious/supabase: realtimeSource for withLiveReload (entities reload when their tables change), createCaptcha for Auth's Turnstile, isNetworkError, and Edge Function helpers in /edge (CORS, errors, caller, IP, Resend)."
+description: "@inglorious/supabase: realtimeSource for withLiveReload (entities reload when their tables change), createCaptcha for Auth's Turnstile, isNetworkError, supabaseNativeUpdate for mandatory native updates, and Edge Function helpers in /edge (CORS, errors, caller, IP, Resend)."
 ---
 
 # @inglorious/supabase
@@ -35,6 +35,10 @@ const types = {
 - Don't overwrite a dirty form on reload: check `entity.isPristine`.
 - `alter publication supabase_realtime add table public.<table>;`
 - `isNetworkError(error)`: the call never reached the server (any client). Show "offline", not "Failed to fetch".
+
+## Native updates
+
+`createNativeUpdate({ adapter: supabaseNativeUpdate(supabase, { table, timeoutMs }) })` reads `min_build`, `store_url` by `platform` from `app_versions` (RLS select for `anon, authenticated`). Raise a platform's `min_build` only once its build is live in that store.
 
 ## CAPTCHA
 

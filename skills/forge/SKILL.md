@@ -11,6 +11,7 @@ Load only the skills the task needs. When writing or reviewing code, also load [
 
 | Goal | Skill |
 | --- | --- |
+| Start, deploy or release an app | [app-recipe](../app-recipe/SKILL.md) |
 | State, events, async, fsm, scenes | [store](../store/SKILL.md) |
 | Web UI, forms, router, tests | [web](../web/SKILL.md), [web-best-practices](../web-best-practices/SKILL.md) |
 | Components, themes | [ui](../ui/SKILL.md), [ui-best-practices](../ui-best-practices/SKILL.md) |
