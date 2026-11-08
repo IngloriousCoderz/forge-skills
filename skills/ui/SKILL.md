@@ -66,7 +66,7 @@ import arrowBack from "@iconify-icons/material-symbols/arrow-back";
 Icon.render({ icon: arrowBack, size: "lg", direction: api.getEntity("i18n").dir, label: "Back" });
 ```
 
-Any Iconify set, inline SVG. Material Symbols: plain name filled, `-outline`, `-rounded`, `-sharp`. Icon data is plain data. Decorative unless `label`.
+Any Iconify set, inline SVG. `size` `sm|md|lg|xl|2xl`. Material Symbols: plain name filled, `-outline`, `-rounded`, `-sharp`. Icon data is plain data. Decorative unless `label`.
 
 ## Page transitions
 
@@ -81,6 +81,7 @@ Needs the web `Router`; skipped under reduced motion. `from`/`to` have `path`, `
 ## Theming
 
 - Tokens: `--iw-color-*`, `--iw-space-*`, `--iw-radius-*`, `--iw-font-*`, and per component (`--iw-button-*`, `--iw-input-*`, `--iw-card-*`).
+- Roles (`primary`, `secondary`, `success`, `warning`, `error`, `info`): `--iw-color-{role}` fill, `-hover`/`-active`, `-text` (text on the fill), `-emphasis` (the role as text or outline on the page). A custom theme overriding a role sets all of them, each pair at AA (4.5:1).
 - Labels: `--iw-label-text-transform`, `--iw-label-letter-spacing`, `--iw-label-font-weight`. Chips: `--iw-chip-bg`.
 
 ## Writing components
