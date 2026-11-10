@@ -1,6 +1,6 @@
 ---
 name: i18n
-description: "@inglorious/i18n: i18next for Inglorious Web with the locale in a store entity - translations, plurals, Intl formatting, markup via trans."
+description: "@inglorious/i18n: i18next for Inglorious Web with the locale in a store entity - translations, plurals, Intl formatting, markup via trans, content's own translations via localized."
 ---
 
 # @inglorious/i18n
@@ -8,7 +8,7 @@ description: "@inglorious/i18n: i18next for Inglorious Web with the locale in a 
 ```javascript
 import { createI18n } from "@inglorious/i18n";
 
-export const { I18n, t, trans, ready, currentLocale } = createI18n({
+export const { I18n, t, trans, localized, ready, currentLocale } = createI18n({
   catalogues: import.meta.glob("./locales/*.json"),
   defaultLocale: "en",
   storageKey: "my-app-locale", // optional
@@ -35,6 +35,8 @@ trans("loggedInAs", { values: { email }, components: { strong: (children) => htm
 ```
 
 Only tags in `components` render; values are text.
+
+`localized(record.labels)`: content's own translations (`{ en, it, … }` from a DB/CMS), active locale else `defaultLocale`, else `undefined`. Call it at render, keep the record in state.
 
 ## Rules
 
