@@ -1,6 +1,6 @@
 ---
 name: supabase
-description: "@inglorious/supabase: realtimeSource for withLiveReload (entities reload when their tables change), createCaptcha for Auth's Turnstile, isNetworkError, supabaseNativeUpdate for mandatory native updates, and Edge Function helpers in /edge (CORS, errors, caller, IP, Resend)."
+description: "@inglorious/supabase: realtimeSource for withLiveReload (entities reload when their tables change), createCaptcha for Auth's Turnstile, isNetworkError, supabaseNativeUpdate for mandatory native updates, publishLiveUpdate for signed live updates, and Edge Function helpers in /edge (CORS, errors, caller, IP, Resend)."
 ---
 
 # @inglorious/supabase
@@ -39,6 +39,10 @@ const types = {
 ## Native updates
 
 `createNativeUpdate({ adapter: supabaseNativeUpdate(supabase, { table, timeoutMs }) })` reads `min_build`, `store_url` by `platform` from `app_versions` (RLS select for `anon, authenticated`). Raise a platform's `min_build` only once its build is live in that store.
+
+## Live updates
+
+`@inglorious/supabase/live-update` (Node): `publishLiveUpdate({ dist, release, minBuild, privateKey, projectUrl, serviceKey, bucket })` zips, signs (RSA-SHA256, base64) and uploads `bundles/<release>.zip` and `manifest.json` to a public bucket (`live-updates`). `generateLiveUpdateKeys()` → PEM pair; keep the private key off CI and Vercel. `liveUpdateManifestUrl(projectUrl)` from the main entry, for `watchLiveUpdate`.
 
 ## CAPTCHA
 

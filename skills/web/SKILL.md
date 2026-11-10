@@ -1,6 +1,6 @@
 ---
 name: web
-description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA and native updates, analytics, push, testing."
+description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, analytics, push, testing."
 ---
 
 # @inglorious/web
@@ -104,6 +104,19 @@ watchNativeUpdate(App, store); // launch and every resume; no-op outside native
 ```
 
 Adapter: `requirement(platform)` → `{ minBuild, storeUrl }` or `null` (`supabaseNativeUpdate` from [supabase](../supabase/SKILL.md)). Entity `isUpdateRequired`, `storeUrl`; events `nativeUpdateCheck` `{ platform, build }`, `nativeUpdateApply` (opens the store). Failed checks keep the last answer. Render only the update page while `isUpdateRequired`.
+
+## Live updates
+
+```javascript
+import { LiveUpdate } from "@capawesome/capacitor-live-update";
+import { createLiveUpdate, watchLiveUpdate } from "@inglorious/web/live-update";
+
+const types = { LiveUpdate: createLiveUpdate({ plugin: LiveUpdate }) };
+const release = Number(import.meta.env.VITE_LIVE_UPDATE_RELEASE);
+if (release) watchLiveUpdate({ plugin: LiveUpdate, app: App, store, manifestUrl, release });
+```
+
+Replaces a Capacitor app's web code without the stores. Manifest `{ release, minBuild, url, checksum, signature }` (published by `publishLiveUpdate`, [supabase](../supabase/SKILL.md)); wanted when `release` is newer than the running one and the build ≥ `minBuild`. Downloads in the background, applies on pause; entity `isUpdateReady`, events `liveUpdateReady`, `liveUpdateApply`. Stamp only release builds with `release` (a timestamp). Plugin config: `publicKey` (one line), `readyTimeout`, `autoBlockRolledBackBundles`. Raise `minBuild` when anything native changes.
 
 ## App links
 
