@@ -1,6 +1,6 @@
 ---
 name: web
-description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, analytics, push, testing."
+description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, app links, back button, analytics, push, testing."
 ---
 
 # @inglorious/web
@@ -128,6 +128,16 @@ watchAppLinks(App, store); // launch URL and appUrlOpen → #router:navigate; no
 ```
 
 `{ id }` names another router; returns a stop function. The domain must vouch for the app: `/.well-known/apple-app-site-association` (iOS, plus the Associated Domains capability) or `/.well-known/assetlinks.json` (Android). Exclude links carrying auth tokens so sign-in stays in the browser.
+
+## Back button
+
+```javascript
+import { watchBackButton } from "@inglorious/web/back-button";
+
+watchBackButton(App, { rootPaths: ["/", "/profile"] }); // Android back: history.back(), or exitApp() on a root path or empty history
+```
+
+Navigate between root paths (tabs, drawer) with `{ to, replace: true }` so they don't pile up history. No-op outside native; iOS has no back button.
 
 ## Analytics
 
