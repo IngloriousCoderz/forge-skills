@@ -158,7 +158,7 @@ import { watchKeyboard } from "@inglorious/web/keyboard";
 watchKeyboard(); // --iw-keyboard-height on <html>, .iw-keyboard-open while up
 ```
 
-From `visualViewport`, no plugin, browser and native alike; `0px` where the page shrinks for the keyboard. Inglorious UI sheets, snackbars and toasts move above it, bottom navigation hides. Own fixed elements: `bottom: var(--iw-keyboard-height, 0px)`. Opens only with a text field focused, closes only when the viewport grows back (not on blur, so a tapped button doesn't move before its click). Returns a stop function.
+From `visualViewport`, no plugin, browser and native alike. Where the page shrinks for the keyboard (Android app), the class is set and the height is `0px`: hide bottom chrome on `.iw-keyboard-open`. Inglorious UI sheets, snackbars and toasts move above it, bottom navigation hides. Own fixed elements: `bottom: var(--iw-keyboard-height, 0px)`. Opens only with a text field focused, closes only when the viewport grows back (not on blur, so a tapped button doesn't move before its click). Returns a stop function.
 
 ## Haptics
 
