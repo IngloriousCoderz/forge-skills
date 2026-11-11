@@ -1,6 +1,6 @@
 ---
 name: web
-description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, app links, back button, system bars, analytics, push, testing."
+description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, app links, back button, system bars, keyboard, haptics, analytics, push, testing."
 ---
 
 # @inglorious/web
@@ -149,6 +149,30 @@ watchSystemBars(SystemBars); // bar style from the app's color-scheme, follows t
 ```
 
 Without it, Android's bars follow the device's dark mode: white icons on a light app. `color-scheme: light dark` keeps the device's style. Returns a stop function; no-op outside native.
+
+## Keyboard
+
+```javascript
+import { watchKeyboard } from "@inglorious/web/keyboard";
+
+watchKeyboard(); // --iw-keyboard-height on <html>, .iw-keyboard-open while up
+```
+
+From `visualViewport`, no plugin, browser and native alike; `0px` where the page shrinks for the keyboard. Inglorious UI sheets, snackbars and toasts move above it, bottom navigation hides. Own fixed elements: `bottom: var(--iw-keyboard-height, 0px)`. Opens only with a text field focused, closes only when the viewport grows back (not on blur, so a tapped button doesn't move before its click). Returns a stop function.
+
+## Haptics
+
+```javascript
+import { Haptics } from "@capacitor/haptics";
+import { haptics } from "@inglorious/web/haptics";
+
+haptics.use(Haptics); // native app: system haptics
+haptics.selection(); // toggle flipped, threshold crossed
+haptics.impact("heavy"); // light | medium (default) | heavy
+haptics.notification("error"); // success (default) | warning | error
+```
+
+Each call returns whether it played. Without the plugin: `navigator.vibrate` (Chrome on Android, after the user's first tap); iOS browsers stay silent. Plugin failures are swallowed. `PullToRefresh` ticks via `haptics.selection()` when it arms.
 
 ## Analytics
 
