@@ -1,6 +1,6 @@
 ---
 name: web
-description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, app links, back button, analytics, push, testing."
+description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, app links, back button, system bars, analytics, push, testing."
 ---
 
 # @inglorious/web
@@ -127,7 +127,7 @@ import { watchAppLinks } from "@inglorious/web/app-links";
 watchAppLinks(App, store); // launch URL and appUrlOpen → #router:navigate; no-op outside native
 ```
 
-`{ id }` names another router; returns a stop function. The domain must vouch for the app: `/.well-known/apple-app-site-association` (iOS, plus the Associated Domains capability) or `/.well-known/assetlinks.json` (Android). Exclude links carrying auth tokens so sign-in stays in the browser.
+`{ id }` names another router; returns a stop function. The domain must vouch for the app with `/.well-known/apple-app-site-association` (iOS) and `/.well-known/assetlinks.json` (Android): `native.appLinks` in `package.json` generates both, plus the Associated Domains entitlement and the intent filter ([create-app](../create-app/SKILL.md)). Exclude links carrying auth tokens so sign-in stays in the browser.
 
 ## Back button
 
@@ -138,6 +138,17 @@ watchBackButton(App, { rootPaths: ["/", "/profile"] }); // Android back: history
 ```
 
 Navigate between root paths (tabs, drawer) with `{ to, replace: true }` so they don't pile up history. No-op outside native; iOS has no back button.
+
+## System bars
+
+```javascript
+import { SystemBars } from "@capacitor/core";
+import { watchSystemBars } from "@inglorious/web/system-bars";
+
+watchSystemBars(SystemBars); // bar style from the app's color-scheme, follows theme class changes
+```
+
+Without it, Android's bars follow the device's dark mode: white icons on a light app. `color-scheme: light dark` keeps the device's style. Returns a stop function; no-op outside native.
 
 ## Analytics
 

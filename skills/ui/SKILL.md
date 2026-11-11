@@ -44,7 +44,9 @@ const SubmitButton = {
 - **ChipPicker**: `label`, `options`, `value`, `onToggle(value)`.
 - **CropDialog**: `cropperId`, `onApply(rect)`, `error`, `loadErrorText`; `render(props, api)`.
 - **Lightbox**: `images`, `index`, `onStep(±1)`, `onClose`.
-- **Dialog**: `size`, `variant` `dialog|sheet`, `closeLabel`. **Drawer**: `closeLabel`, `collapseLabel`, `expandLabel`.
+- **Dialog**: `size`, `variant` `dialog|sheet`, `closeLabel`. Below 48rem a sheet with `onClose` gets a handle and closes when dragged down (past 30% or flicked) from the handle or header.
+- **ActionSheet**: `title`, `message`, `actions` `[{ label, icon?, color?, isDisabled?, onClick }]` (`color: "error"` for destructive), `cancelLabel`, `onClose`; picking an action runs `onClick` then `onClose`.
+- **PullToRefresh**: wraps content; `onRefresh` when pulled past 64px from scroll top and released, `isRefreshing` holds the spinner, `isDisabled`, `refreshingLabel`. Touch only: offer a button on desktop. **Drawer**: `closeLabel`, `collapseLabel`, `expandLabel`.
 - **Snackbar**: `position` (`bottom-left` default, `top-*`, `bottom-*`); close button only with `onClose`; lift above bottom bars with `--iw-snackbar-offset-bottom`.
 - **Toast**: entity type `{ type: "Toast", max? }` (default 3); `api.notify("#toasts:show", { message, title?, color?, icon?, duration?, ...extra })` (newest on top, id assigned), `close(id)`, `clear()`. Extend with an `open(entity, id, api)` handler to make toasts clickable (extra fields like a path stay on the toast). Props mode: `Toast.renderToaster({ toasts, position, duration, onClose, onClick })`; `onClose(id)` fires after the exit animation (button or timeout; hover pauses).
 - **Slider**: `[low, high]` for ranges, `hasMarks`. **Progress**: `linear|circular`, indeterminate without `value`. **Tabs**: `value` (`null` for none).

@@ -11,7 +11,7 @@ pnpm add @capacitor-firebase/messaging   # push
 pnpm add @capacitor-firebase/analytics   # analytics
 ```
 
-Keep `firebase` on 12.x. Native apps read `android/app/google-services.json` and `ios/App/GoogleService-Info.plist`; browsers take the `firebase` option (web config, not secret).
+Keep `firebase` on 12.x. Native apps read `google-services.json` and `GoogleService-Info.plist`: keep both in the project root, and `inglorious-capacitor configure` copies them into `android/app/` and the iOS target on `cap sync`; browsers take the `firebase` option (web config, not secret).
 
 ## Push
 
