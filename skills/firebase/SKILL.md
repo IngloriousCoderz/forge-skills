@@ -52,5 +52,5 @@ const types = {
 - `firebaseConfig` needs `measurementId`. No gtag snippet in `index.html`.
 - Nothing loads before consent.
 - Native collection starts off: `<meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />` in `AndroidManifest.xml`, `FIREBASE_ANALYTICS_COLLECTION_ENABLED` = `false` in `Info.plist`.
-- Advertising consents stay denied.
+- Advertising consents stay denied. `inglorious-capacitor configure` removes the `AD_ID` permissions Firebase merges into the Android app, so Play Console's advertising ID declaration is "No".
 - `pageView` is a no-op in browsers; native logs a screen view per route.

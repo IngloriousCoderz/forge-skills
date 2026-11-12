@@ -33,6 +33,7 @@ Never hand-edit `android/` or `ios/` for something `native` in `package.json` co
 - Detected from dependencies: `@capacitor-firebase/messaging` → push entitlement, `remote-notification`, AppDelegate methods; `@capacitor-firebase/analytics` → collection off until consent.
 - `google-services.json` and `GoogleService-Info.plist` live in the project root; the hook copies them in (and adds the plist to the Xcode target).
 - `pnpm mobile:assets` (`inglorious-capacitor assets [--ios] [--android]`) makes icons and light/dark splash screens from `public/logo.svg`/`.png`; `mobile:init:*` run it after `cap add`.
+- `pnpm mobile:listing-assets` (`inglorious-capacitor listing-assets`) captures the running app's screens from `listing.config.js` at every store size and locale into `listing-assets/`, plus the promo images (`promo`: feature graphic, header, search results card) per locale and Play's 512px icon. It needs Chrome installed.
 
 ## Generated layout
 

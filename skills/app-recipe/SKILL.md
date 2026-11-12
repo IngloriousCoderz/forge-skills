@@ -98,6 +98,8 @@ create-app sets this up; keep to it.
 - Describe each change with `pnpm changeset`; `pnpm release:version` bumps the version and writes `CHANGELOG.md` (also the stores' "What's New").
 - Web and PWA update themselves (`watchPwaUpdate`).
 - Native: `pnpm mobile:release` copies the version into both native projects, raises their shared build number and builds with `.env` (not `.env.local`). Commit what it changed, then upload with that build number.
+- Store listing: seed the local backend with demo data, start the app, and run `pnpm mobile:listing-assets` (`listing.config.js`: screens, locales, demo sign-in, prompts answered through `storage`) for every screenshot size, the promo images (feature graphic, header, search results card, from `promo`) in each locale, and Play's 512px icon.
+- First review: App Review wants a screen recording from launch on a physical device (sign-up, login, account deletion, reporting and blocking for user content), demo credentials for each account type, the external services and any regional differences in the Notes. Play Console: with Firebase Analytics the advertising ID permission is removed, so declare "No".
 - Mandatory native updates (`--mobile --push` generates them): `createNativeUpdate` with `supabaseNativeUpdate` blocks builds below `app_versions.min_build`; raise it only after the build is live in that store, and set `store_url`.
 
 ## 9. Docs
