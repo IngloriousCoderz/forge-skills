@@ -43,7 +43,7 @@ Test first throughout: write the failing test, then the code.
 1. **Authorization tests**: an integration test that signs in an owner, a counterpart and a stranger, stating what each may read, write and call.
 2. **Schema** that makes them pass: tables, constraints, RLS policies, column grants and security definer functions for anything crossing users, all in one initial migration. Seed test accounts (shared password, documented in the README) and realistic rows.
 3. **API layer**: `src/api/` wraps Supabase calls, with integration tests; the client lives in `src/api/client.js`.
-4. **Logic**: handler tests with `trigger`, then entities with `handleAsync`, `withLiveReload` + `realtimeSource` for data others change, `fsm` for flows.
+4. **Logic**: handler tests with `trigger`, then entities with `handleRequest` (`handleAsync` for what the screen doesn't show), `withLiveReload` + `realtimeSource` for data others change, `fsm` for flows.
 5. **UI**: render tests, then screens with Inglorious UI on seed data, following [web-best-practices](../web-best-practices/SKILL.md).
 6. **Edge functions**: anything needing the service role or a third-party key.
 7. **Notifications and email**: bell table, push via Firebase, Resend emails with unsubscribe links.

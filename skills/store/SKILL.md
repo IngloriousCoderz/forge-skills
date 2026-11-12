@@ -1,6 +1,6 @@
 ---
 name: store
-description: "@inglorious/store: entity-based, Redux-compatible state - types, events, handleAsync, optimistic, fsm, scenes, systems, middlewares, testing, TypeScript, RTK migration."
+description: "@inglorious/store: entity-based, Redux-compatible state - types, events, handleRequest, handleAsync, optimistic, fsm, scenes, systems, middlewares, testing, TypeScript, RTK migration."
 ---
 
 # @inglorious/store
@@ -58,22 +58,22 @@ Store: `notify`, `dispatch`, `getState`, `setState` (bypasses handlers), `update
 ## Async
 
 ```javascript
-import { handleAsync } from "@inglorious/store/async";
+import { handleAsync, handleRequest } from "@inglorious/store/async";
 import { optimistic } from "@inglorious/store/optimistic";
 
 const Todos = {
-  ...handleAsync("fetchTodos", {
-    start(entity) { entity.isLoading = true; },
+  create(entity) { entity.status = "idle"; },
+  ...handleRequest("fetchTodos", {
     async run(payload, api) { return (await fetch("/api/todos")).json(); },
     success(entity, todos) { entity.todos = todos; },
-    error(entity, error) { entity.error = error.message; },
-    finally(entity) { entity.isLoading = false; },
-  }),
+  }, { toError: (error) => errorKey(error) }),
 };
 ```
 
-- Generates `fetchTodos`, `fetchTodosStart` (if given), `Run`, `Success`, `Error`, `Finally`. `run` gets `(payload, api)`, not the entity.
-- `optimistic(handleAsync(...), patch, { rollback })`: patch (object or function) applied on start, rolled back on error per call. Events carry `callId`.
+- Prefer `handleRequest`: `status` `"loading"` → `"success"`/`"error"`, `error` cleared on start and set to `toError(error)` (default the message), latest call only (an answer from a replaced call is dropped). `error(entity, value)` runs after the field is set and may override it. Options: `status`/`error` field names (several requests per entity), `toError`, `isLatestOnly: false` (every call counts). Debounce with `[Type, withDebounce(300, ["fetchTodos"])]` from web.
+- `handleAsync` is the lower level, same events, no status, every answer kept: background saves, failures only logged, checks that keep their last answer. `scope` (both helpers): `"entity"` (default, `#id:event`), `"type"` (`Type:event`), `"global"` (`event`, common in games).
+- Generates `fetchTodos`, `fetchTodosStart` (always for `handleRequest`, else only if given), `Run`, `Success`, `Error`, `Finally`. `run` gets `(payload, api)`, not the entity.
+- `optimistic(handleRequest(...) or handleAsync(...), patch, { rollback })`: patch (object or function) applied on start, rolled back on error per call. Events carry `callId`.
 
 ## Composition
 
@@ -152,7 +152,7 @@ const store = createStore<AppEntity, AppState, AppEvents>({ types: { Form }, ent
 
 - Declarations live in `types/*.d.ts`. Never cast `types`.
 - Type aliases (`type`, not `interface`) by default. `satisfies EntityType<E, AppApi>` (create-app's `AppType<E>`) is the looser shorthand; never annotate with it.
-- `handleAsync` events in aliases: `& AsyncEvents<"fetch", E, Payload, Result, AppApi>`. Prefer inference to explicit type args.
+- `handleRequest`/`handleAsync` events in aliases: `& AsyncEvents<"fetch", E, Payload, Result, AppApi>`. Prefer inference to explicit type args.
 - `BaseEntity` is only `type`, `id`, `updatesWhilePaused`. Handlers get `id: string`; omit `id` in initial entities.
 - Library entities: `interface AppRouterEntity extends RouterEntity { type: "Router" }`, never `Omit`.
 - Typed `notify` checks name (after any target) and payload; built-in events always allowed. Libraries export `RouterType`, `ChatType`, `AnalyticsType`, `PushPromptType`.

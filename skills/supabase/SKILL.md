@@ -1,6 +1,6 @@
 ---
 name: supabase
-description: "@inglorious/supabase: realtimeSource for withLiveReload (entities reload when their tables change), createCaptcha for Auth's Turnstile, isNetworkError, supabaseNativeUpdate for mandatory native updates, publishLiveUpdate for signed live updates, and Edge Function helpers in /edge (CORS, errors, caller, IP, Resend)."
+description: "@inglorious/supabase: supabaseAuth for createAuth (passwords, email codes, reset, account erasure), realtimeSource for withLiveReload (entities reload when their tables change), createCaptcha for Auth's Turnstile, isNetworkError, supabaseNativeUpdate for mandatory native updates, publishLiveUpdate for signed live updates, and Edge Function helpers in /edge (CORS, errors, caller, IP, Resend, eraseUser)."
 ---
 
 # @inglorious/supabase
@@ -43,6 +43,10 @@ const types = {
 ## Live updates
 
 `@inglorious/supabase/live-update` (Node): `publishLiveUpdate({ dist, release, minBuild, privateKey, projectUrl, serviceKey, bucket, keepBundles })` zips, signs (RSA-SHA256, base64) and uploads `bundles/<release>.zip` and `manifest.json` to a public bucket (`live-updates`), then deletes all but the newest `keepBundles` (2) zips; a failed cleanup only warns. `generateLiveUpdateKeys()` → PEM pair; keep the private key off CI and Vercel. `liveUpdateManifestUrl(projectUrl)` from the main entry, for `watchLiveUpdate`. CLI `inglorious-live-update`: `keys` (private to `~/.config/<name>/live-update.pem` or `LIVE_UPDATE_PRIVATE_KEY`, public to `live-update.pub.pem`), `build` (vite build, `.env` over `.env.local`, stamps `VITE_LIVE_UPDATE_RELEASE`), `release` (builds HEAD in a clean worktree, publishes for `package.json` `liveUpdate.minBuild`+; Supabase CLI login or `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`), `release --on-push` (pre-push: only when `main` gets app changes).
+
+## Sign-in
+
+`supabaseAuth(supabase, { captcha, accountExistsFunction, eraseFunction = "erase-account" })` is the adapter of `createAuth` from [web](../web/SKILL.md). Codes are the email templates' `{{ .Token }}` (Confirm signup, Magic Link, Reset Password); verify types `email`, `recovery`. `onSessionChange` re-reads `getSession()` after each event (a late `USER_UPDATED` can follow `SIGNED_OUT`). `eraseAccount` invokes the function, then `signOut({ scope: "local" })`. `accountExistsFunction` answers `{ exists }` for `{ email }`: rate-limit it. In Edge Functions, `eraseUser(adminClient, userId, { buckets })` empties `<bucket>/<userId>/` recursively, then `auth.admin.deleteUser`; rows go by `on delete cascade` to `auth.users`.
 
 ## CAPTCHA
 

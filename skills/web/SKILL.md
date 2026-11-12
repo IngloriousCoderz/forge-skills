@@ -1,6 +1,6 @@
 ---
 name: web
-description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, app links, back button, system bars, keyboard, haptics, analytics, push, testing."
+description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, sign-in, app links, back button, system bars, keyboard, haptics, analytics, push, testing."
 ---
 
 # @inglorious/web
@@ -104,6 +104,17 @@ watchNativeUpdate(App, store); // launch and every resume; no-op outside native
 ```
 
 Adapter: `requirement(platform)` → `{ minBuild, storeUrl }` or `null` (`supabaseNativeUpdate` from [supabase](../supabase/SKILL.md)). Entity `isUpdateRequired`, `storeUrl`; events `nativeUpdateCheck` `{ platform, build }`, `nativeUpdateApply` (opens the store). Failed checks keep the last answer. Render only the update page while `isUpdateRequired`.
+
+## Sign-in
+
+```javascript
+import { createAuth, watchAuth } from "@inglorious/web/auth";
+
+const types = { Auth: { ...createAuth({ adapter, methods: ["password", "code"] }), render } };
+watchAuth(adapter, store); // `user` follows the session; `isReady` once it's read
+```
+
+`methods`: `password` (sign in, sign up confirmed by code, reset by code), `code` (code only, creates the account). Entity `step` `email|password|signUp|code|reset`, `email`, `codeFor`, `status` `idle|loading`, `error` key (`invalidEmail`, `invalidCode`, `weakPassword`, `invalidCredentials`, `accountExists`, `rateLimited`, `captcha`, `network`, `unknown`), `isCodeResent`, `isEraseAsked`, `user`, `isReady`. Events: `emailSubmit(email)`, `signInSubmit(password)`, `signUpSubmit({ password, data })`, `codeSubmit(code)`, `resetSubmit({ code, password })`, `signUpShow`, `signInShow`, `codeRequest`, `codeResend`, `resetRequest`, `back`, `signOut`, `accountEraseAsk`, `accountErase`, `accountEraseCancel`. Render nothing until `isReady`, the screen while `!user`. Adapter: `supabaseAuth` from [supabase](../supabase/SKILL.md), or any object with `onSessionChange`, `signIn`, `signUp` (→ user or `null` when a code must confirm), `sendCode`, `verifyCode(email, code, purpose)`, `resendCode`, `sendResetCode`, `updatePassword`, `signOut`, `eraseAccount`, `errorCode`, optional `accountExists`.
 
 ## Live updates
 
