@@ -46,7 +46,7 @@ const types = {
 
 ## Sign-in
 
-`supabaseAuth(supabase, { captcha, accountExistsFunction, eraseFunction = "erase-account" })` is the adapter of `createAuth` from [web](../web/SKILL.md). Codes are the email templates' `{{ .Token }}` (Confirm signup, Magic Link, Reset Password); verify types `email`, `recovery`. `onSessionChange` re-reads `getSession()` after each event (a late `USER_UPDATED` can follow `SIGNED_OUT`). `eraseAccount` invokes the function, then `signOut({ scope: "local" })`. `accountExistsFunction` answers `{ exists }` for `{ email }`: rate-limit it. In Edge Functions, `eraseUser(adminClient, userId, { buckets })` empties `<bucket>/<userId>/` recursively, then `auth.admin.deleteUser`; rows go by `on delete cascade` to `auth.users`.
+`supabaseAuth(supabase, { captcha, accountExistsFunction, eraseFunction = "erase-account" })` is the adapter of `createAuth` from [web](../web/SKILL.md). Codes are the email templates' `{{ .Token }}` (Confirm signup, Magic Link, Reset Password); verify types `email`, `recovery`; `verifyLink(tokenHash)` for `{{ .TokenHash }}` links; `prepare(action)` starts the CAPTCHA once the email check knows the next step. `onSessionChange` re-reads `getSession()` after each event (a late `USER_UPDATED` can follow `SIGNED_OUT`). `eraseAccount` invokes the function, then `signOut({ scope: "local" })`. `accountExistsFunction` answers `{ exists }` for `{ email }`: rate-limit it. In Edge Functions, `eraseUser(adminClient, userId, { buckets })` empties `<bucket>/<userId>/` recursively, then `auth.admin.deleteUser`; rows go by `on delete cascade` to `auth.users`.
 
 ## CAPTCHA
 
