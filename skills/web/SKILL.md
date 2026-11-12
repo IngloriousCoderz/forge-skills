@@ -31,7 +31,7 @@ mount(store, (api) => html`${api.render("counter1")}`, document.getElementById("
 - `mount(store, renderFn, element)` returns an unsubscribe.
 - `autoCreateEntities: true` creates one entity per type (init in `create`); list several instances in `entities`.
 - `api`: `render(id)`, `getEntity(id)`, `getEntities()`, `select(fn)`, `notify(event, payload)`, `dispatch`, `getTypes`, `getType`.
-- `withDebounce(delay, ["saveData"])` from `@inglorious/web/decorators/with-debounce`: the debounced handler gets a read-only snapshot; write by notifying a non-debounced event.
+- `withDebounce(delay, ["saveData"])` from `@inglorious/web/decorators/with-debounce`: the handler runs after the delay in an update of its own (`saveDataDebounced` event), so it may write to the entity. Same for `withThrottle` (`<handler>Throttled`). Debounce a request by wrapping the event that starts it: `[Type, withDebounce(300, ["search"])]` with `handleRequest("search", ...)`.
 
 ```javascript
 import { html, nothing, svg } from "@inglorious/web"; // id=${id || nothing} omits the attribute
