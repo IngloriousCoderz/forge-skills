@@ -1,6 +1,6 @@
 ---
 name: web
-description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, sign-in, app links, back button, system bars, keyboard, haptics, analytics, push, testing."
+description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, sign-in, app links, back button, system bars, keyboard, haptics, share, analytics, push, testing."
 ---
 
 # @inglorious/web
@@ -171,6 +171,18 @@ watchKeyboard(); // --iw-keyboard-height on <html>, .iw-keyboard-open while up
 
 From `visualViewport`, no plugin, browser and native alike. Where the page shrinks for the keyboard (Android app), the class is set and the height is `0px`: hide bottom chrome on `.iw-keyboard-open`. Inglorious UI sheets, snackbars and toasts move above it, bottom navigation hides. Own fixed elements: `bottom: var(--iw-keyboard-height, 0px)`. Opens only with a text field focused, closes only when the viewport grows back (not on blur, so a tapped button doesn't move before its click). Returns a stop function.
 
+## Share
+
+```javascript
+import { Share } from "@capacitor/share";
+import { createShare } from "@inglorious/web/share";
+
+const types = { Share: createShare({ plugin: Share }) };
+api.notify("#share:share", { title, text, url }); // fileName too: a file
+```
+
+Native app with the plugin: system sheet. Browser: a `url` with `fileName` downloads; else Web Share; else the link is copied. Entity: `result` `shared|downloaded|copied|cancelled` (closing the sheet isn't an error), `status`/`error` (`unsupported|failed`) from `handleRequest`, `canShare` (a link can be shared at all).
+
 ## Haptics
 
 ```javascript
@@ -189,21 +201,21 @@ Each call returns whether it played. Without the plugin: `navigator.vibrate` (Ch
 
 ```javascript
 import { createAnalytics } from "@inglorious/web/analytics";
-const types = { Analytics: [createAnalytics({ adapter, consentKey }), template] };
+const types = { Analytics: [createAnalytics({ adapter }), template, withStorage(["consent"], { key: "my-app-analytics" })] };
 api.notify("#analytics:analyticsTrack", { name: "sign_up", params: { method: "email" } });
 ```
 
-Adapter: `setConsent(isGranted)`, `pageView({ route, path })`, `event(name, params)`. Nothing before consent; `routeChange` is a page view. Entity `consent` (`granted|denied|null`), `isAsking`. Events `analyticsConsent` (boolean), `analyticsAsk`, `analyticsTrack`.
+Adapter: `setConsent(isGranted)`, `pageView({ route, path })`, `event(name, params)`. Nothing before consent; `routeChange` is a page view. Entity `consent` (`granted|denied|null`; kept between visits only by `withStorage`), `isAsking`. Events `analyticsConsent` (boolean), `analyticsAsk`, `analyticsTrack`.
 
 ## Push
 
 ```javascript
 import { createPushPrompt } from "@inglorious/web/push";
-const prompt = createPushPrompt({ adapter, declineKey, onTap });
-const types = { PushPrompt: { ...prompt, ...template, sessionStart: prompt.pushStart, sessionEnd: prompt.pushStop } };
+const prompt = createPushPrompt({ adapter, onTap });
+const types = { PushPrompt: [{ ...prompt, ...template, sessionStart: prompt.pushStart, sessionEnd: prompt.pushStop }, withStorage(["isDeclined"])] };
 ```
 
-Adapter: `isSupported()`, `permission()`/`request()` → `granted|denied|prompt` (browser `request` calls `Notification.requestPermission()` before any await), `register()`, optional `onTap(listener)`. App unregisters at sign-out. Entity `isOpen`, `isActive`; events `pushStart`, `pushStop`, `pushAsk` (from the tap), `pushDecline`. Taps navigate unless `onTap(url, api)`.
+Adapter: `isSupported()`, `permission()`/`request()` → `granted|denied|prompt` (browser `request` calls `Notification.requestPermission()` before any await), `register()`, optional `onTap(listener)`. App unregisters at sign-out. Entity `isOpen`, `isActive`, `isDeclined` (keep with `withStorage`); events `pushStart`, `pushStop`, `pushAsk` (from the tap), `pushDecline`. Taps navigate unless `onTap(url, api)`.
 
 ## Testing
 

@@ -1,6 +1,6 @@
 ---
 name: store
-description: "@inglorious/store: entity-based, Redux-compatible state - types, events, handleRequest, handleAsync, optimistic, fsm, scenes, systems, middlewares, testing, TypeScript, RTK migration."
+description: "@inglorious/store: entity-based, Redux-compatible state - types, events, handleRequest, handleAsync, optimistic, withStorage, fsm, scenes, systems, middlewares, testing, TypeScript, RTK migration."
 ---
 
 # @inglorious/store
@@ -74,6 +74,18 @@ const Todos = {
 - `handleAsync` is the lower level, same events, no status, every answer kept: background saves, failures only logged, checks that keep their last answer. `scope` (both helpers): `"entity"` (default, `#id:event`), `"type"` (`Type:event`), `"global"` (`event`, common in games).
 - Generates `fetchTodos`, `fetchTodosStart` (always for `handleRequest`, else only if given), `Run`, `Success`, `Error`, `Finally`. `run` gets `(payload, api)`, not the entity.
 - `optimistic(handleRequest(...) or handleAsync(...), patch, { rollback })`: patch (object or function) applied on start, rolled back on error per call. Events carry `callId`.
+
+## Storage
+
+One source of truth: the entity. Storage is only a byproduct, never read by the app.
+
+```javascript
+import { withStorage } from "@inglorious/store/storage";
+const types = { Settings: [Settings, withStorage(["theme"], { key: "my-app", storage: () => localStorage })] };
+```
+
+- Fields come back on `create`, before the type's own `create` (`??=` defaults keep them); written back after any handler that changes them. Last in the array. Key defaults to the entity id. Storage failures keep nothing, silently.
+- Never `localStorage.getItem` in handlers, guards or renders: read the entity (`api.getEntity("session").user`).
 
 ## Composition
 
