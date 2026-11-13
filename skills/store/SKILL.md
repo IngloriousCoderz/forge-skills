@@ -85,7 +85,7 @@ const types = { Settings: [Settings, withStorage(["theme"], { key: "my-app", sto
 ```
 
 - Fields come back on `create`, before the type's own `create` (`??=` defaults keep them); written back after any handler that changes them. Last in the array. Key defaults to the entity id. Storage failures keep nothing, silently.
-- A storage answering with promises (Capacitor Preferences via `createNativeStorage` from `@inglorious/web/mobile`): the entity starts with defaults, then `#id:storageRestore` restores fields unchanged meanwhile; nothing written before. A type's own `storageRestore(entity, restored, api)` runs after, to announce it.
+- A storage answering with promises (Capacitor Preferences via `createNativeStorage` from `@inglorious/web/mobile`): the entity starts with defaults, then `#id:storageRestore` restores the stored fields; nothing written before. A type's own `storageRestore(entity, restored, api)` runs after, to announce it.
 - Never `localStorage.getItem` in handlers, guards or renders: read the entity.
 
 ## Composition
