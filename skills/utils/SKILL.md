@@ -27,6 +27,8 @@ import { applyGravity } from "@inglorious/utils/physics/gravity.js";
 import { readJSON, writeJSON } from "@inglorious/utils/storage.js";
 ```
 
+Storage helpers never throw. `readItem`/`writeItem` handle raw strings, including storages answering with promises (Capacitor Preferences); `parseJSON(raw, fallback)`. Also `pick(obj, keys)` in object and `isPromiseLike` in promise.
+
 Namespace form: `import { algorithms, dataStructures, functions, math, physics, v } from "@inglorious/utils"`.
 
 - Vectors are arrays tagged by `v()` (non-enumerable `__isVector__`) and mutable: copy shared ones with `v(...ZERO_VECTOR)`, not a spread (drops the tag). Name components: `const [, NO_RISE, NO_DEPTH] = ZERO_VECTOR`.

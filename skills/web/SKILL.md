@@ -1,6 +1,6 @@
 ---
 name: web
-description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, sign-in, app links, back button, system bars, keyboard, haptics, share, analytics, push, testing."
+description: "@inglorious/web: lit-html rendering over @inglorious/store - mount, api, directives, router, forms, sensors, PWA, native and live updates, sign-in, app links, back button, system bars, keyboard, haptics, share, native storage, analytics, push, testing."
 ---
 
 # @inglorious/web
@@ -170,6 +170,17 @@ watchKeyboard(); // --iw-keyboard-height on <html>, .iw-keyboard-open while up
 ```
 
 From `visualViewport`, no plugin, browser and native alike. Where the page shrinks for the keyboard (Android app), the class is set and the height is `0px`: hide bottom chrome on `.iw-keyboard-open`. Inglorious UI sheets, snackbars and toasts move above it, bottom navigation hides. Own fixed elements: `bottom: var(--iw-keyboard-height, 0px)`. Opens only with a text field focused, closes only when the viewport grows back (not on blur, so a tapped button doesn't move before its click). Returns a stop function.
+
+## Native storage
+
+```javascript
+import { Preferences } from "@capacitor/preferences";
+import { createNativeStorage } from "@inglorious/web/mobile";
+const preferences = createNativeStorage({ plugin: Preferences }); // localStorage in a browser
+const types = { Settings: [Settings, withStorage(["theme"], { storage: () => preferences })] };
+```
+
+The OS can clear a WebView's localStorage; Preferences survives. Native reads are async: defaults first, then `storageRestore`. Also fits Supabase's `auth.storage`.
 
 ## Share
 

@@ -28,6 +28,8 @@ Never hand-edit `android/` or `ios/` for something `native` in `package.json` co
 }
 ```
 
+`configure` also writes `PrivacyInfo.xcprivacy`: the required-reason APIs of known plugins that don't declare them (live update's `UserDefaults`), plus `ios.privacyManifest` (Apple's keys). Image file inputs offer the camera on iOS: add `NSCameraUsageDescription` to `infoPlist`, or the app closes.
+
 - `appLinks`: Associated Domains + Android intent filter (`/x*` = prefix); with `teamId`/`sha256`, writes `public/.well-known/apple-app-site-association`/`assetlinks.json`. `exclude` (paths or `#` fragments) is iOS only.
 - `ios.swipeBack` (on with routing): WebKit's edge-swipe back, via a generated `MainViewController` set in `Main.storyboard`; an existing controller is left alone (warns if it lacks `allowsBackForwardNavigationGestures`).
 - Detected from dependencies: `@capacitor-firebase/messaging` → push entitlement, `remote-notification`, AppDelegate methods; `@capacitor-firebase/analytics` → collection off until consent.
