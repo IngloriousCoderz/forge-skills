@@ -84,7 +84,7 @@ Events: `fieldChange` `{ path, value, validate? }`, `fieldBlur` `{ path, validat
 ## PWA updates
 
 ```javascript
-import { isNative } from "@inglorious/web/mobile";
+import { isNative } from "@inglorious/web/native";
 import { applyPwaUpdate, PwaUpdate, watchPwaUpdate } from "@inglorious/web/pwa";
 import { registerSW } from "virtual:pwa-register";
 
@@ -97,7 +97,7 @@ Needs `registerType: "prompt"`, `injectRegister: false`. Checks hourly and on fo
 
 ```javascript
 import { App } from "@capacitor/app";
-import { createNativeUpdate, watchNativeUpdate } from "@inglorious/web/native-update";
+import { createNativeUpdate, watchNativeUpdate } from "@inglorious/web/native/update";
 
 const types = { NativeUpdate: [createNativeUpdate({ adapter }), template] };
 watchNativeUpdate(App, store); // launch and every resume; no-op outside native
@@ -120,7 +120,7 @@ watchAuth(adapter, store); // `user` follows the session; `isReady` once it's re
 
 ```javascript
 import { LiveUpdate } from "@capawesome/capacitor-live-update";
-import { createLiveUpdate, watchLiveUpdate } from "@inglorious/web/live-update";
+import { createLiveUpdate, watchLiveUpdate } from "@inglorious/web/native/live-update";
 
 const types = { LiveUpdate: createLiveUpdate({ plugin: LiveUpdate }) };
 const release = Number(import.meta.env.VITE_LIVE_UPDATE_RELEASE);
@@ -133,7 +133,7 @@ Replaces a Capacitor app's web code without the stores. Manifest `{ release, min
 
 ```javascript
 import { App } from "@capacitor/app";
-import { watchAppLinks } from "@inglorious/web/app-links";
+import { watchAppLinks } from "@inglorious/web/native/app-links";
 
 watchAppLinks(App, store); // launch URL and appUrlOpen → #router:navigate; no-op outside native
 ```
@@ -143,7 +143,7 @@ watchAppLinks(App, store); // launch URL and appUrlOpen → #router:navigate; no
 ## Back button
 
 ```javascript
-import { watchBackButton } from "@inglorious/web/back-button";
+import { watchBackButton } from "@inglorious/web/native/back-button";
 
 watchBackButton(App, { rootPaths: ["/", "/profile"] }); // Android back: history.back(), or exitApp() on a root path or empty history
 ```
@@ -154,7 +154,7 @@ Navigate between root paths (tabs, drawer) with `{ to, replace: true }` so they 
 
 ```javascript
 import { SystemBars } from "@capacitor/core";
-import { watchSystemBars } from "@inglorious/web/system-bars";
+import { watchSystemBars } from "@inglorious/web/native/system-bars";
 
 watchSystemBars(SystemBars); // bar style from the app's color-scheme, follows theme class changes
 ```
@@ -175,7 +175,7 @@ From `visualViewport`, no plugin, browser and native alike. Where the page shrin
 
 ```javascript
 import { Preferences } from "@capacitor/preferences";
-import { createNativeStorage } from "@inglorious/web/mobile";
+import { createNativeStorage } from "@inglorious/web/native";
 const preferences = createNativeStorage({ plugin: Preferences }); // localStorage in a browser
 const types = { Settings: [Settings, withStorage(["theme"], { storage: () => preferences })] };
 ```
@@ -186,7 +186,7 @@ The OS can clear a WebView's localStorage; Preferences survives. Native reads ar
 
 ```javascript
 import { Share } from "@capacitor/share";
-import { createShare } from "@inglorious/web/share";
+import { createShare } from "@inglorious/web/native/share";
 
 const types = { Share: createShare({ plugin: Share }) };
 api.notify("#share:share", { title, text, url }); // fileName too: a file
@@ -198,7 +198,7 @@ Native app with the plugin: system sheet. Browser: a `url` with `fileName` downl
 
 ```javascript
 import { Haptics } from "@capacitor/haptics";
-import { haptics } from "@inglorious/web/haptics";
+import { haptics } from "@inglorious/web/native/haptics";
 
 haptics.use(Haptics); // native app: system haptics
 haptics.selection(); // toggle flipped, threshold crossed
